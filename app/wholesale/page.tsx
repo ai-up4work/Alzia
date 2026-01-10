@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Header } from "@/components/header"
 import { 
   Heart, 
   ShoppingCart, 
@@ -968,6 +969,7 @@ function WholesalePageContent({
 
   return (
     <main className="min-h-screen bg-background">
+      <Header/>
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 overflow-hidden pt-32 pb-16">
         {/* Decorative elements */}
