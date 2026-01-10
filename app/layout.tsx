@@ -10,6 +10,7 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
   display: "swap",
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 })
 
 const cormorant = Cormorant_Garamond({
@@ -17,6 +18,7 @@ const cormorant = Cormorant_Garamond({
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-cormorant",
   display: "swap",
+  fallback: ["Georgia", "Cambria", "Times New Roman", "serif"],
 })
 
 const cinzel = Cinzel({
@@ -24,6 +26,7 @@ const cinzel = Cinzel({
   weight: ["400", "500", "600"],
   variable: "--font-cinzel",
   display: "swap",
+  fallback: ["Trajan Pro", "Times New Roman", "serif"],
 })
 
 const fraunces = Fraunces({
@@ -31,6 +34,7 @@ const fraunces = Fraunces({
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-fraunces",
   display: "swap",
+  fallback: ["Georgia", "Garamond", "Times New Roman", "serif"],
 })
 
 export const metadata: Metadata = {
