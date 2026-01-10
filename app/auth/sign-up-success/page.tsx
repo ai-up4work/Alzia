@@ -7,7 +7,7 @@ export default function SignUpSuccessPage() {
     <main className="min-h-screen bg-background flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
         <Link href="/" className="font-serif text-3xl text-foreground font-medium">
-          Lumière
+          Alzìa
         </Link>
 
         <div className="mt-12 bg-card rounded-2xl border border-border/50 p-8 shadow-sm">

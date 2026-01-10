@@ -36,7 +36,7 @@ export function Header() {
 
           {/* Logo - Center */}
           <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-            <span className="font-serif text-foreground text-xl md:text-2xl font-medium tracking-wide">Lumière</span>
+            <span className="font-serif text-foreground text-xl md:text-2xl font-medium tracking-wide">Alzìa</span>
           </Link>
 
           {/* Right Actions */}

@@ -24,7 +24,7 @@ ON CONFLICT (slug) DO NOTHING;
 -- SEED BRANDS
 -- =============================================
 INSERT INTO brands (id, name, slug, is_active) VALUES
-  ('b1111111-1111-1111-1111-111111111111', 'Lumière Paris', 'lumiere-paris', true),
+  ('b1111111-1111-1111-1111-111111111111', 'Alzìa Paris', 'lumiere-paris', true),
   ('b2222222-2222-2222-2222-222222222222', 'Belle Naturelle', 'belle-naturelle', true),
   ('b3333333-3333-3333-3333-333333333333', 'Éclat Royal', 'eclat-royal', true),
   ('b4444444-4444-4444-4444-444444444444', 'Rose de Mai', 'rose-de-mai', true),

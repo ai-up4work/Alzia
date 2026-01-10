@@ -66,7 +66,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="font-serif text-3xl text-foreground font-medium">
-            Lumière
+            Alzìa
           </Link>
           <h1 className="font-serif text-2xl text-foreground mt-6 mb-2">Create Account</h1>
           <p className="text-muted-foreground">Join us and discover luxury beauty</p>

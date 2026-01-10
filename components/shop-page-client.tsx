@@ -65,7 +65,7 @@ const mockProducts: Product[] = [
     },
     brand: {
       id: "b1111111-1111-1111-1111-111111111111",
-      name: "Lumière Paris",
+      name: "Alzìa Paris",
       slug: "lumiere-paris",
       logo_url: null,
       is_active: true,
@@ -275,7 +275,7 @@ const mockProducts: Product[] = [
     },
     brand: {
       id: "b1111111-1111-1111-1111-111111111111",
-      name: "Lumière Paris",
+      name: "Alzìa Paris",
       slug: "lumiere-paris",
       logo_url: null,
       is_active: true,
@@ -329,7 +329,7 @@ const mockCategories: Category[] = [
 const mockBrands: Brand[] = [
   {
     id: "b1111111-1111-1111-1111-111111111111",
-    name: "Lumière Paris",
+    name: "Alzìa Paris",
     slug: "lumiere-paris",
     logo_url: null,
     is_active: true,

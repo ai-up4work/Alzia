@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ShopPageClient } from "@/components/shop-page-client"
 
 export const metadata = {
-  title: "Shop | Lumière Paris",
+  title: "Shop | Alzìa Paris",
   description: "Browse our collection of luxury cosmetics",
 }
 

@@ -18,7 +18,7 @@ const cormorant = Cormorant_Garamond({
 })
 
 export const metadata: Metadata = {
-  title: "Lumière Paris — Luxury Cosmetics",
+  title: "Alzìa Paris — Luxury Cosmetics",
   description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
   generator: "v0.app",
   icons: {

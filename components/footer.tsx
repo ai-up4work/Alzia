@@ -30,7 +30,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-6">
-              <span className="font-serif text-2xl font-medium text-background">Lumière</span>
+              <span className="font-serif text-2xl font-medium text-background">Alzìa</span>
             </Link>
             <p className="text-background/70 leading-relaxed mb-6 max-w-sm">
               Parisian luxury cosmetics crafted with passion. Experience the art of French beauty.
@@ -119,7 +119,7 @@ export function Footer() {
 
         {/* Bottom */}
         <div className="border-t border-background/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-background/50">© 2025 Lumière Paris. All rights reserved.</p>
+          <p className="text-sm text-background/50">© 2025 Alzìa Paris. All rights reserved.</p>
           <div className="flex gap-6 text-sm text-background/50">
             <Link href="/privacy" className="hover:text-background transition-colors">
               Privacy Policy

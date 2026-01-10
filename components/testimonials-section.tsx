@@ -39,7 +39,7 @@ const testimonials = [
   },
   {
     quote:
-      "As a makeup artist, I recommend Lumière to all my clients. The quality is exceptional and rivals brands twice the price.",
+      "As a makeup artist, I recommend Alzìa to all my clients. The quality is exceptional and rivals brands twice the price.",
     author: "Dr. Meera S.",
     role: "Professional MUA",
     avatar: "/professional-woman-makeup-artist.jpg",
