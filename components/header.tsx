@@ -70,28 +70,28 @@ export function Header() {
             {/* Right Actions */}
             <div className="flex items-center gap-2 md:gap-4">
               <button 
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors" 
+                className="p-2 text-muted-foreground hover:text-secondary transition-colors" 
                 aria-label="Search"
               >
                 <Search className="w-5 h-5" />
               </button>
               <Link
                 href="/account"
-                className="hidden md:flex p-2 text-muted-foreground hover:text-foreground transition-colors"
+                className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
                 aria-label="Account"
               >
                 <User className="w-5 h-5" />
               </Link>
               <Link
                 href="/account/wishlist"
-                className="hidden md:flex p-2 text-muted-foreground hover:text-foreground transition-colors"
+                className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
                 aria-label="Wishlist"
               >
                 <Heart className="w-5 h-5" />
               </Link>
               <button
                 onClick={openCart}
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors relative"
+                className="p-2 text-muted-foreground hover:text-secondary transition-colors relative"
                 aria-label="Shopping bag"
               >
                 <ShoppingBag className="w-5 h-5" />
@@ -110,21 +110,21 @@ export function Header() {
               <div className="flex flex-col gap-6">
                 <Link
                   href="/shop"
-                  className="text-sm font-cinzel font-medium text-muted-foreground hover:text-foreground transition-colors tracking-wider"
+                  className="text-sm font-cinzel font-medium text-muted-foreground hover:text-secondary transition-colors tracking-wider"
                   onClick={() => setIsOpen(false)}
                 >
                   Shop
                 </Link>
                 <Link
                   href="/collections"
-                  className="text-sm font-cinzel font-medium text-muted-foreground hover:text-foreground transition-colors tracking-wider"
+                  className="text-sm font-cinzel font-medium text-muted-foreground hover:text-secondary transition-colors tracking-wider"
                   onClick={() => setIsOpen(false)}
                 >
                   Collections
                 </Link>
                 <Link
                   href="/new-arrivals"
-                  className="text-sm font-cinzel font-medium text-muted-foreground hover:text-foreground transition-colors tracking-wider"
+                  className="text-sm font-cinzel font-medium text-muted-foreground hover:text-secondary transition-colors tracking-wider"
                   onClick={() => setIsOpen(false)}
                 >
                   New Arrivals
@@ -132,7 +132,7 @@ export function Header() {
                 <div className="flex gap-6 pt-6 border-t border-border/50">
                   <Link
                     href="/account"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-cinzel"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors font-cinzel"
                   >
                     <User className="w-5 h-5" />
                     <span className="text-xs font-cinzel font-medium tracking-wider">Account</span>
