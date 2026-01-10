@@ -50,7 +50,7 @@ export function HeroSection() {
   const borderRadius = scrollProgress * 24
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen flex items-center overflow-hidden pt-20">
+    <section ref={sectionRef} className="relative min-h-[100svh] flex items-center overflow-hidden pt-16 md:pt-20">
       {/* Full-width background image with zoom effect */}
       <div
         ref={imageContainerRef}
@@ -70,27 +70,46 @@ export function HeroSection() {
       </div>
 
       {/* Content overlay */}
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-24 w-full">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12 lg:py-24 w-full">
         <div className="max-w-2xl">
-          <p className="reveal opacity-0 text-sm uppercase tracking-[0.25em] text-background/80 font-medium mb-6">
+          <p className="reveal opacity-0 text-xs md:text-sm uppercase tracking-[0.2em] md:tracking-[0.25em] text-background/80 font-medium mb-3 md:mb-6">
             Parisian Luxury Beauty
           </p>
-          <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium leading-[1.1] text-background text-balance mb-8">
+          
+          {/* Desktop/Tablet Heading */}
+          <h1 className="hidden md:block font-serif text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium leading-[1.1] text-background text-balance mb-8">
             <AnimatedText text="Discover your" delay={0.2} />
             <br />
             <span className="text-accent">
               <AnimatedText text="radiant beauty" delay={0.6} />
             </span>
           </h1>
-          <p className="reveal opacity-0 animation-delay-400 text-lg text-background/90 leading-relaxed mb-10 md:text-base max-w-lg">
+
+          {/* Mobile Heading - More Compact */}
+          <h1 className="block md:hidden font-serif text-[2rem] leading-[1.15] font-medium text-background text-balance mb-4">
+            <AnimatedText text="Discover" delay={0.2} />
+            {" "}
+            <span className="text-accent">
+              <AnimatedText text="radiant beauty" delay={0.4} />
+            </span>
+          </h1>
+          
+          {/* Desktop/Tablet Description */}
+          <p className="hidden md:block reveal opacity-0 animation-delay-400 text-lg text-background/90 leading-relaxed mb-10 max-w-lg">
             Exquisite cosmetics crafted in Paris with the finest ingredients. Experience luxury that transforms your
             everyday routine into a moment of pure elegance.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 pt-8">
+
+          {/* Mobile Description - Shorter */}
+          <p className="block md:hidden reveal opacity-0 animation-delay-400 text-sm text-background/90 leading-relaxed mb-6 max-w-sm">
+            Premium Parisian cosmetics crafted with the finest ingredients for your everyday elegance.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 md:pt-8">
             <Button
               asChild
               size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 py-6 text-base group"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 md:px-8 py-5 md:py-6 text-sm md:text-base group font-cinzel"
             >
               <Link href="/profile">
                 Get Started
@@ -101,7 +120,7 @@ export function HeroSection() {
               asChild
               size="lg"
               variant="outline"
-              className="rounded-full px-8 py-6 text-base border-background/30 hover:bg-background/10 text-background bg-transparent backdrop-blur-sm"
+              className="rounded-full px-6 md:px-8 py-5 md:py-6 text-sm md:text-base border-background/30 hover:bg-background/10 text-background bg-transparent backdrop-blur-sm"
             >
               <Link href="/shop">Shop</Link>
             </Button>
