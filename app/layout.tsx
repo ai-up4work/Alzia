@@ -10,6 +10,7 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
   display: "swap",
+  preload: true,
 })
 
 const cormorant = Cormorant_Garamond({
@@ -17,6 +18,7 @@ const cormorant = Cormorant_Garamond({
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-cormorant",
   display: "swap",
+  preload: true,
 })
 
 const cinzel = Cinzel({
@@ -24,13 +26,14 @@ const cinzel = Cinzel({
   weight: ["400", "500", "600"],
   variable: "--font-cinzel",
   display: "swap",
+  preload: true,
 })
 
 export const metadata: Metadata = {
   title: "Alzìa Paris — Luxury Cosmetics",
   description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
   authors: [{ name: "up4work" }],
-  metadataBase: new URL("https://alzia.vercel.app"),
+  metadataBase: new URL("https://alzia.vercel.app"), // Add your actual domain
   openGraph: {
     title: "Alzìa Paris — Luxury Cosmetics",
     description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
     siteName: "Alzìa Paris",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.png", // This file needs to exist in /public
         width: 1200,
         height: 630,
         alt: "Alzìa Paris - Luxury Cosmetics",
@@ -75,13 +78,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable}`}>
-      <body className={montserrat.className}>
+    <html lang="en">
+      <body className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable} font-sans antialiased`}>
         <CartProvider>
           {children}
           <CartDrawer />
-          <Analytics />
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   )
