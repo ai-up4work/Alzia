@@ -67,7 +67,7 @@ export function Header() {
                 <User className="w-5 h-5" />
               </Link>
               <Link
-                href="account/wishlist"
+                href="/account/wishlist"
                 className="hidden md:flex p-2 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Wishlist"
               >
@@ -122,7 +122,7 @@ export function Header() {
                     <span className="text-xs font-cinzel font-medium tracking-wider">Account</span>
                   </Link>
                   <Link 
-                    href="account/wishlist" 
+                    href="/account/wishlist" 
                     className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Heart className="w-5 h-5" />

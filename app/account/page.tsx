@@ -19,31 +19,31 @@ export default async function AccountPage() {
     {
       icon: Package,
       label: "My Orders",
-      href: `${process.env.NEXT_PUBLIC_BASE_URL}/account/orders`,
+      href: `/account/orders`,
       description: "Track and manage your orders",
     },
     {
       icon: Heart,
       label: "Wishlist",
-      href: `${process.env.NEXT_PUBLIC_BASE_URL}/account/wishlist`,
+      href: `/account/wishlist`,
       description: "Products you have saved",
     },
     {
       icon: MapPin,
       label: "Addresses",
-      href: `${process.env.NEXT_PUBLIC_BASE_URL}/account/addresses`,
+      href: `/account/addresses`,
       description: "Manage delivery addresses",
     },
     {
       icon: User,
       label: "Profile",
-      href: `${process.env.NEXT_PUBLIC_BASE_URL}/account/profile`,
+      href: `/account/profile`,
       description: "Update personal information",
     },
     {
       icon: CreditCard,
       label: "Payment Methods",
-      href: `${process.env.NEXT_PUBLIC_BASE_URL}/account/payments`,
+      href: `/account/payments`,
       description: "Saved payment options",
     },
   ]
