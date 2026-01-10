@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { Menu, X, Search, Heart, ShoppingBag, User } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
+import Image from "next/image"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -51,7 +52,14 @@ export function Header() {
 
             {/* Logo - Center */}
             <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-              <span className="font-serif text-foreground text-2xl md:text-3xl font-medium tracking-wide">Alzìa</span>
+              {/* <span className="font-serif text-foreground text-2xl md:text-3xl font-medium tracking-wide">Alzìa</span> */}
+              <Image
+                src="/alzia-logo.png"
+                alt="Alzìa Logo"
+                width={120}
+                height={40}
+                className="object-contain"
+              />
             </Link>
 
             {/* Right Actions */}
