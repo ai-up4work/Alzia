@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronLeft,
   Menu,
+  Store,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -24,16 +25,22 @@ const navigation = [
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Customers", href: "/admin/customers", icon: Users },
+  { name: "Wholesale", href: "/admin/wholesale", icon: Store, adminOnly: true },
   { name: "Deliveries", href: "/admin/deliveries", icon: Truck },
   { name: "Discounts", href: "/admin/discounts", icon: Tag },
   { name: "Reports", href: "/admin/reports", icon: BarChart3 },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isRootAdmin?: boolean
+}
+
+export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
+  
   return (
     <>
       {/* Mobile menu button */}
@@ -57,7 +64,7 @@ export function AdminSidebar() {
         <div className="flex h-16 items-center justify-between border-b px-4">
           {!collapsed && (
             <Link href="/admin" className="font-serif text-xl font-bold text-primary">
-              Belle Cosmetics
+              Alzìa Naturals
             </Link>
           )}
           <Button variant="ghost" size="icon" className="hidden lg:flex" onClick={() => setCollapsed(!collapsed)}>

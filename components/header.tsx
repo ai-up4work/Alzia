@@ -21,7 +21,11 @@ export function Header() {
         <nav className="max-w-7xl mx-auto bg-background/80 backdrop-blur-md border border-border/50 rounded-3xl shadow-lg">
           <div className="flex items-center justify-between h-16 md:h-20 px-4 md:px-8">
             {/* Mobile Menu Button */}
-            <button className="md:hidden p-2" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
+            <button 
+              className="md:hidden p-2" 
+              onClick={() => setIsOpen(!isOpen)} 
+              aria-label="Toggle menu"
+            >
               {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
@@ -51,20 +55,24 @@ export function Header() {
             </div>
 
             {/* Logo - Center */}
-            <Link href="/" className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-              {/* <span className="font-serif text-foreground text-2xl md:text-3xl font-medium tracking-wide">Alzìa</span> */}
-              <Image
-                src="/alzia-logo.png"
-                alt="Alzìa Logo"
-                width={120}
-                height={40}
-                className="object-contain"
-              />
-            </Link>
+            <div className="flex-1 flex justify-center md:flex-none md:absolute md:left-1/2 md:-translate-x-1/2">
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/alzia-logo.png"
+                  alt="Alzìa Logo"
+                  width={120}
+                  height={40}
+                  className="object-contain w-24 md:w-32"
+                />
+              </Link>
+            </div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-2 md:gap-4">
-              <button className="p-2 text-muted-foreground hover:text-foreground transition-colors" aria-label="Search">
+              <button 
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors" 
+                aria-label="Search"
+              >
                 <Search className="w-5 h-5" />
               </button>
               <Link
