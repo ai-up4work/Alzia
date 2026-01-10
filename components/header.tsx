@@ -60,14 +60,14 @@ export function Header() {
                 <Search className="w-5 h-5" />
               </button>
               <Link
-                href="/auth/login"
+                href="/account"
                 className="hidden md:flex p-2 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Account"
               >
                 <User className="w-5 h-5" />
               </Link>
               <Link
-                href="/wishlist"
+                href="account/wishlist"
                 className="hidden md:flex p-2 text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Wishlist"
               >
@@ -115,14 +115,14 @@ export function Header() {
                 </Link>
                 <div className="flex gap-6 pt-6 border-t border-border/50">
                   <Link
-                    href="/auth/login"
+                    href="/account"
                     className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-cinzel"
                   >
                     <User className="w-5 h-5" />
                     <span className="text-xs font-cinzel font-medium tracking-wider">Account</span>
                   </Link>
                   <Link 
-                    href="/wishlist" 
+                    href="account/wishlist" 
                     className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Heart className="w-5 h-5" />

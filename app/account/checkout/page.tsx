@@ -97,7 +97,7 @@ export default function CheckoutPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Back Button */}
           <Link
-            href="/cart"
+            href="account/cart"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
           >
             <ChevronLeft className="w-4 h-4" />

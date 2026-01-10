@@ -181,15 +181,16 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-
-                <Button
-                  size="lg"
-                  className="flex-1 h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={!inStock}
-                >
-                  <ShoppingBag className="w-5 h-5 mr-2" />
-                  Add to Cart - {formatPrice(product.retail_price * quantity)}
-                </Button>
+                <div className="flex items-center border rounded-full">
+                  <Button
+                    size="lg"
+                    className="flex-1 h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={!inStock}
+                  >
+                    <ShoppingBag className="w-5 h-5 mr-2" />
+                    Add to Cart - {formatPrice(product.retail_price * quantity)}
+                  </Button>
+                </div>
 
                 <Button
                   size="lg"
@@ -230,28 +231,28 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
           {/* Product Details Tabs */}
           <div className="mt-16">
             <Tabs defaultValue="description" className="w-full">
-              <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0">
+              <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0 overflow-x-auto overflow-y-hidden flex-nowrap">
                 <TabsTrigger
                   value="description"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
                 >
                   Description
                 </TabsTrigger>
                 <TabsTrigger
                   value="ingredients"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
                 >
                   Ingredients
                 </TabsTrigger>
                 <TabsTrigger
                   value="how-to-use"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
                 >
                   How to Use
                 </TabsTrigger>
                 <TabsTrigger
                   value="reviews"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
                 >
                   Reviews ({product.rating_count})
                 </TabsTrigger>

@@ -162,7 +162,7 @@ export function CartDrawer() {
                     className="w-full rounded-full h-12 text-base font-medium"
                     onClick={closeCart}
                   >
-                    <Link href="/checkout">Proceed to Checkout</Link>
+                    <Link href="/account/checkout">Proceed to Checkout</Link>
                   </Button>
                   <Button
                     asChild
@@ -171,7 +171,7 @@ export function CartDrawer() {
                     className="w-full rounded-full h-12 text-base font-medium bg-white hover:bg-gray-50"
                     onClick={closeCart}
                   >
-                    <Link href="/cart">View Full Cart</Link>
+                    <Link href="/account/cart">View Full Cart</Link>
                   </Button>
                 </div>
 

@@ -115,7 +115,7 @@ export function HeroSection() {
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 md:px-8 py-5 md:py-6 text-sm md:text-base group font-cinzel"
             >
-              <Link href="/profile">
+              <Link href="/account/">
                 Get Started
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
