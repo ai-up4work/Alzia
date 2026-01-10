@@ -62,7 +62,7 @@ export function Header() {
                   alt="Alzìa Logo"
                   width={120}
                   height={40}
-                  className="object-contain w-24 md:w-32"
+                  className="object-contain w-20 md:w-28"
                 />
               </Link>
             </div>
