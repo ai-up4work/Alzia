@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect, useCallback, useRef } from "react"
+import { useState, useTransition, useEffect, useCallback, useRef, Suspense } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -527,7 +527,7 @@ const statsVariants = {
   })
 }
 
-export default function WholesalePage({ 
+function WholesalePageContent({ 
   initialProducts = [], 
   categories = [], 
   brands = [],
@@ -1497,5 +1497,21 @@ function WholesaleProductCard({
         </CardContent>
       </Card>
     </motion.div>
+  )
+}
+
+// Wrapper component with Suspense boundary
+export default function WholesalePage(props: WholesalePageProps) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+          <p className="text-muted-foreground">Loading wholesale products...</p>
+        </div>
+      </div>
+    }>
+      <WholesalePageContent {...props} />
+    </Suspense>
   )
 }
