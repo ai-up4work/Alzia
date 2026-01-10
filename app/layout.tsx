@@ -9,18 +9,24 @@ import "./globals.css"
 const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
+    display: "swap", // Add this
+  preload: true, // Add this
 })
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-cormorant",
+    display: "swap", // Add this
+  preload: true, // Add this
 })
 
 const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-cinzel",
+    display: "swap", // Add this
+  preload: true, // Add this
 })
 
 export const metadata: Metadata = {
