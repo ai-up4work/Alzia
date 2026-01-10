@@ -70,7 +70,7 @@ export function HeroSection() {
       </div>
 
       {/* Content overlay */}
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-20 lg:py-32 w-full">
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-8 py-12 lg:py-24 w-full">
         <div className="max-w-2xl">
           <p className="reveal opacity-0 text-sm uppercase tracking-[0.25em] text-background/80 font-medium mb-6">
             Parisian Luxury Beauty
@@ -86,14 +86,14 @@ export function HeroSection() {
             Exquisite cosmetics crafted in Paris with the finest ingredients. Experience luxury that transforms your
             everyday routine into a moment of pure elegance.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 pt-8">
             <Button
               asChild
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 py-6 text-base group"
             >
-              <Link href="/shop">
-                Shop Collection
+              <Link href="/profile">
+                Get Started
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
@@ -103,7 +103,7 @@ export function HeroSection() {
               variant="outline"
               className="rounded-full px-8 py-6 text-base border-background/30 hover:bg-background/10 text-background bg-transparent backdrop-blur-sm"
             >
-              <Link href="/new-arrivals">New Arrivals</Link>
+              <Link href="/shop">Shop</Link>
             </Button>
           </div>
         </div>
