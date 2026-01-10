@@ -8,24 +8,28 @@ const categories = [
   {
     name: "Skincare",
     slug: "skincare",
+    id: "a1111111-1111-1111-1111-111111111111", // Add the actual category ID from your database
     description: "Nourish & protect",
     image: "/luxury-skincare-products-serum-cream-elegant.jpg",
   },
   {
     name: "Makeup",
     slug: "makeup",
+    id: "a2222222-2222-2222-2222-222222222222", // Add the actual category ID from your database
     description: "Express & enhance",
     image: "/luxury-makeup-lipstick-foundation-elegant.jpg",
   },
   {
     name: "Fragrance",
     slug: "fragrance",
+    id: "a4444444-4444-4444-4444-444444444444", // Add the actual category ID from your database
     description: "Captivate & allure",
     image: "/luxury-perfume-bottle-elegant-parisian.jpg",
   },
   {
     name: "Haircare",
     slug: "haircare",
+    id: "a3333333-3333-3333-3333-333333333333", // Add the actual category ID from your database
     description: "Shine & style",
     image: "/luxury-haircare-products-elegant-bottles.jpg",
   },
@@ -71,7 +75,7 @@ export function CategoriesSection() {
           {categories.map((category, index) => (
             <Link
               key={category.slug}
-              href={`/shop/${category.slug}`}
+              href={`/shop?categories=${category.id}`}
               className={`reveal opacity-0 ${index === 1 ? "animation-delay-200" : index === 2 ? "animation-delay-400" : index === 3 ? "animation-delay-600" : ""} group relative overflow-hidden rounded-2xl lg:rounded-3xl aspect-[3/4]`}
             >
               <img

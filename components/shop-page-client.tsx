@@ -1,22 +1,86 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useTransition, useEffect, useCallback, useRef } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Grid3X3, LayoutList } from "lucide-react"
-import type { Product, Category, Brand } from "@/lib/types"
+import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Grid3X3, LayoutList, Loader2 } from "lucide-react"
+import { ProductCard } from "@/components/shop/product-card"
+
+interface Product {
+  id: string
+  sku: string
+  name: string
+  slug: string
+  description: string | null
+  short_description: string | null
+  category_id: string
+  brand_id: string
+  retail_price: number
+  wholesale_price: number
+  cost_price: number
+  min_wholesale_qty: number
+  stock_quantity: number
+  low_stock_threshold: number
+  ingredients: any
+  usage_instructions: any
+  tags: string[]
+  status: string
+  is_featured: boolean
+  rating_avg: number
+  rating_count: number
+  created_at: string
+  updated_at: string
+  category?: {
+    id: string
+    name: string
+    slug: string
+    description: string | null
+    image_url: string | null
+    parent_id: string | null
+    display_order: number
+    is_active: boolean
+  }
+  brand?: {
+    id: string
+    name: string
+    slug: string
+    logo_url: string | null
+    is_active: boolean
+  }
+}
+
+interface Category {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  image_url: string | null
+  parent_id: string | null
+  display_order: number
+  is_active: boolean
+}
+
+interface Brand {
+  id: string
+  name: string
+  slug: string
+  logo_url: string | null
+  is_active: boolean
+}
 
 interface ShopPageClientProps {
-  initialProducts: Product[]
-  categories: Category[]
-  brands: Brand[]
+  initialProducts?: Product[]
+  categories?: Category[]
+  brands?: Brand[]
+  totalCount?: number
+  currentPage?: number
+  pageSize?: number
 }
 
 function formatPrice(price: number) {
@@ -27,7 +91,7 @@ function formatPrice(price: number) {
   }).format(price)
 }
 
-// Mock products for initial display
+// Mock data
 const mockProducts: Product[] = [
   {
     id: "p1111111-1111-1111-1111-111111111111",
@@ -365,55 +429,132 @@ const mockBrands: Brand[] = [
 ]
 
 const productImages: Record<string, string> = {
-  "radiance-renewal-serum": "/luxury-serum-bottle-vitamin-c-gold-elegant.jpg",
-  "hydra-silk-moisturizer": "/luxury-moisturizer-cream-jar-elegant-rose.jpg",
-  "velvet-rouge-lipstick": "/luxury-lipstick-red-velvet-elegant-gold-case.jpg",
-  "eau-de-rose-parfum": "/luxury-perfume-bottle-rose-elegant-parisian.jpg",
-  "gentle-foaming-cleanser": "/luxury-skincare-products-serum-cream-elegant.jpg",
-  "flawless-finish-foundation": "/luxury-makeup-lipstick-foundation-elegant.jpg",
+  "radiance-renewal-serum": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500",
+  "hydra-silk-moisturizer": "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?w=500",
+  "velvet-rouge-lipstick": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=500",
+  "eau-de-rose-parfum": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=500",
+  "gentle-foaming-cleanser": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500",
+  "flawless-finish-foundation": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500",
 }
 
-export function ShopPageClient({ initialProducts, categories, brands }: ShopPageClientProps) {
-  const products = initialProducts.length > 0 ? initialProducts : mockProducts
+export default function ShopPageClient({ 
+  initialProducts = [], 
+  categories = [], 
+  brands = [],
+  totalCount = 0,
+  currentPage = 1,
+  pageSize = 24
+}: ShopPageClientProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
   const allCategories = categories.length > 0 ? categories : mockCategories
   const allBrands = brands.length > 0 ? brands : mockBrands
 
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
-  const [priceRange, setPriceRange] = useState([0, 5000])
-  const [sortBy, setSortBy] = useState("newest")
+  // Cache for storing fetched products by filter combination
+  const cacheRef = useRef<Map<string, { products: Product[], totalCount: number }>>(new Map())
+  
+  // Debounce timer for search
+  const searchDebounceRef = useRef<NodeJS.Timeout>()
+
+  // Parse URL params for initial state
+  const getInitialFiltersFromURL = () => {
+    const search = searchParams.get("search") || ""
+    const categoriesParam = searchParams.get("categories")
+    const brandsParam = searchParams.get("brands")
+    const minPrice = parseInt(searchParams.get("minPrice") || "0")
+    const maxPrice = parseInt(searchParams.get("maxPrice") || "5000")
+    const sortBy = searchParams.get("sortBy") || "newest"
+    const page = parseInt(searchParams.get("page") || "1")
+
+    return {
+      search,
+      selectedCategories: categoriesParam ? categoriesParam.split(",") : [],
+      selectedBrands: brandsParam ? brandsParam.split(",") : [],
+      priceRange: [minPrice, maxPrice] as [number, number],
+      sortBy,
+      page,
+    }
+  }
+
+  const initialFilters = getInitialFiltersFromURL()
+
+  // Products state with pagination support
+  const [products, setProducts] = useState<Product[]>(initialProducts.length > 0 ? initialProducts : mockProducts)
+  const [totalProductCount, setTotalProductCount] = useState(totalCount || mockProducts.length)
+  const [currentPageNum, setCurrentPageNum] = useState(currentPage)
+
+  // Filter states (local, not yet applied)
+  const [searchQuery, setSearchQuery] = useState(initialFilters.search)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(initialFilters.selectedCategories)
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(initialFilters.selectedBrands)
+  const [priceRange, setPriceRange] = useState<[number, number]>(initialFilters.priceRange)
+  const [sortBy, setSortBy] = useState(initialFilters.sortBy)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
-  const filteredProducts = useMemo(() => {
-    let filtered = [...products]
+  // Applied filter states (what's currently in the URL)
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: initialFilters.search,
+    categories: initialFilters.selectedCategories,
+    brands: initialFilters.selectedBrands,
+    minPrice: initialFilters.priceRange[0],
+    maxPrice: initialFilters.priceRange[1],
+    sortBy: initialFilters.sortBy,
+  })
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
+  // Generate cache key from filters
+  const getCacheKey = (filters: any, page: number) => {
+    return JSON.stringify({ ...filters, page })
+  }
+
+  // Fetch products from API (replace with your actual API call)
+  const fetchProducts = useCallback(async (filters: any, page: number) => {
+    const cacheKey = getCacheKey(filters, page)
+    
+    // Check cache first
+    if (cacheRef.current.has(cacheKey)) {
+      const cached = cacheRef.current.get(cacheKey)!
+      return cached
+    }
+
+    // TODO: Replace with actual API call
+    // Example: const response = await fetch(`/api/products?${new URLSearchParams({...filters, page: page.toString()})}`)
+    // const data = await response.json()
+    
+    // For now, simulate API call with mock data
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    let filtered = [...mockProducts]
+
+    // Apply filters (client-side simulation - this would be server-side in production)
+    if (filters.search) {
+      const search = filters.search.toLowerCase()
       filtered = filtered.filter(
         (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.short_description?.toLowerCase().includes(query) ||
-          p.category?.name.toLowerCase().includes(query),
+          p.name.toLowerCase().includes(search) ||
+          p.short_description?.toLowerCase().includes(search) ||
+          p.category?.name.toLowerCase().includes(search) ||
+          p.brand?.name.toLowerCase().includes(search)
       )
     }
 
-    // Category filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((p) => p.category && selectedCategories.includes(p.category.id))
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter((p) => filters.categories.includes(p.category_id))
     }
 
-    // Brand filter
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter((p) => p.brand && selectedBrands.includes(p.brand.id))
+    if (filters.brands.length > 0) {
+      filtered = filtered.filter((p) => filters.brands.includes(p.brand_id))
     }
 
-    // Price filter
-    filtered = filtered.filter((p) => p.retail_price >= priceRange[0] && p.retail_price <= priceRange[1])
+    filtered = filtered.filter(
+      (p) => p.retail_price >= filters.minPrice && p.retail_price <= filters.maxPrice
+    )
 
-    // Sort
-    switch (sortBy) {
+    // Apply sorting
+    switch (filters.sortBy) {
       case "price-low":
         filtered.sort((a, b) => a.retail_price - b.retail_price)
         break
@@ -426,14 +567,189 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
       case "newest":
       default:
         filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        break
     }
 
-    return filtered
-  }, [products, searchQuery, selectedCategories, selectedBrands, priceRange, sortBy])
+    const result = {
+      products: filtered.slice((page - 1) * pageSize, page * pageSize),
+      totalCount: filtered.length
+    }
+
+    // Cache the result
+    cacheRef.current.set(cacheKey, result)
+
+    return result
+  }, [pageSize])
+
+  // Update products when initialProducts change from server
+  useEffect(() => {
+    if (initialProducts.length > 0) {
+      setProducts(initialProducts)
+      setTotalProductCount(totalCount || initialProducts.length)
+      setCurrentPageNum(currentPage)
+    }
+  }, [initialProducts, totalCount, currentPage])
+
+  // Sync filters with URL params on mount and URL changes
+  useEffect(() => {
+    const filters = getInitialFiltersFromURL()
+    setSearchQuery(filters.search)
+    setSelectedCategories(filters.selectedCategories)
+    setSelectedBrands(filters.selectedBrands)
+    setPriceRange(filters.priceRange)
+    setSortBy(filters.sortBy)
+    setCurrentPageNum(filters.page)
+    setAppliedFilters({
+      search: filters.search,
+      categories: filters.selectedCategories,
+      brands: filters.selectedBrands,
+      minPrice: filters.priceRange[0],
+      maxPrice: filters.priceRange[1],
+      sortBy: filters.sortBy,
+    })
+
+    // Fetch products with current filters
+    const loadProducts = async () => {
+      const result = await fetchProducts({
+        search: filters.search,
+        categories: filters.selectedCategories,
+        brands: filters.selectedBrands,
+        minPrice: filters.priceRange[0],
+        maxPrice: filters.priceRange[1],
+        sortBy: filters.sortBy,
+      }, filters.page)
+      
+      setProducts(result.products)
+      setTotalProductCount(result.totalCount)
+    }
+
+    if (initialProducts.length === 0) {
+      loadProducts()
+    }
+  }, [searchParams, fetchProducts, initialProducts])
+
+  // Check if filters have changed
+  const hasFilterChanges = () => {
+    return (
+      searchQuery !== appliedFilters.search ||
+      JSON.stringify(selectedCategories.sort()) !== JSON.stringify(appliedFilters.categories.sort()) ||
+      JSON.stringify(selectedBrands.sort()) !== JSON.stringify(appliedFilters.brands.sort()) ||
+      priceRange[0] !== appliedFilters.minPrice ||
+      priceRange[1] !== appliedFilters.maxPrice ||
+      sortBy !== appliedFilters.sortBy
+    )
+  }
+
+  // Apply filters and update URL
+  const applyFilters = (page = 1) => {
+    const params = new URLSearchParams()
+
+    if (searchQuery) params.set("search", searchQuery)
+    if (selectedCategories.length > 0) params.set("categories", selectedCategories.join(","))
+    if (selectedBrands.length > 0) params.set("brands", selectedBrands.join(","))
+    if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString())
+    if (priceRange[1] < 5000) params.set("maxPrice", priceRange[1].toString())
+    if (sortBy !== "newest") params.set("sortBy", sortBy)
+    if (page > 1) params.set("page", page.toString())
+
+    const queryString = params.toString()
+    const newURL = queryString ? `${pathname}?${queryString}` : pathname
+
+    // Update applied filters state
+    setAppliedFilters({
+      search: searchQuery,
+      categories: selectedCategories,
+      brands: selectedBrands,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+      sortBy: sortBy,
+    })
+
+    // Navigate to new URL with filters
+    startTransition(() => {
+      router.push(newURL)
+    })
+  }
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    
+    // Clear existing timeout
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+
+    // Set new timeout for debounced search
+    searchDebounceRef.current = setTimeout(() => {
+      // Auto-apply search after 500ms of no typing
+      if (value !== appliedFilters.search) {
+        const params = new URLSearchParams()
+        if (value) params.set("search", value)
+        if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
+        if (appliedFilters.brands.length > 0) params.set("brands", appliedFilters.brands.join(","))
+        if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
+        if (appliedFilters.maxPrice < 5000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+        if (appliedFilters.sortBy !== "newest") params.set("sortBy", appliedFilters.sortBy)
+
+        const queryString = params.toString()
+        const newURL = queryString ? `${pathname}?${queryString}` : pathname
+
+        setAppliedFilters({ ...appliedFilters, search: value })
+        startTransition(() => {
+          router.push(newURL)
+        })
+      }
+    }, 500)
+  }
+
+  // Handle sort change immediately
+  const handleSortChange = (value: string) => {
+    setSortBy(value)
+    const params = new URLSearchParams()
+
+    if (appliedFilters.search) params.set("search", appliedFilters.search)
+    if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
+    if (appliedFilters.brands.length > 0) params.set("brands", appliedFilters.brands.join(","))
+    if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
+    if (appliedFilters.maxPrice < 5000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+    if (value !== "newest") params.set("sortBy", value)
+
+    const queryString = params.toString()
+    const newURL = queryString ? `${pathname}?${queryString}` : pathname
+
+    setAppliedFilters({ ...appliedFilters, sortBy: value })
+
+    startTransition(() => {
+      router.push(newURL)
+    })
+  }
+
+  // Load more products (pagination)
+  const loadMoreProducts = async () => {
+    setIsLoadingMore(true)
+    const nextPage = currentPageNum + 1
+    
+    try {
+      const result = await fetchProducts(appliedFilters, nextPage)
+      setProducts(prev => [...prev, ...result.products])
+      setCurrentPageNum(nextPage)
+      
+      // Update URL with new page
+      const params = new URLSearchParams(window.location.search)
+      params.set("page", nextPage.toString())
+      const newURL = `${pathname}?${params.toString()}`
+      window.history.pushState({}, '', newURL)
+    } catch (error) {
+      console.error("Error loading more products:", error)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId],
+      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId]
     )
   }
 
@@ -447,13 +763,28 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
     setSelectedBrands([])
     setPriceRange([0, 5000])
     setSortBy("newest")
+    setAppliedFilters({
+      search: "",
+      categories: [],
+      brands: [],
+      minPrice: 0,
+      maxPrice: 5000,
+      sortBy: "newest",
+    })
+
+    startTransition(() => {
+      router.push(pathname)
+    })
   }
+
+  const totalPages = Math.ceil(totalProductCount / pageSize)
+  const hasMoreProducts = currentPageNum < totalPages
 
   const FilterSidebar = () => (
     <div className="space-y-8">
       {/* Categories */}
       <div>
-        <h3 className="font-medium text-foreground mb-4">Categories</h3>
+        <h3 className="font-medium text-gray-900 mb-4">Categories</h3>
         <div className="space-y-3">
           {allCategories.map((category) => (
             <label key={category.id} className="flex items-center gap-3 cursor-pointer">
@@ -461,7 +792,7 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
                 checked={selectedCategories.includes(category.id)}
                 onCheckedChange={() => toggleCategory(category.id)}
               />
-              <span className="text-sm text-muted-foreground">{category.name}</span>
+              <span className="text-sm text-gray-600">{category.name}</span>
             </label>
           ))}
         </div>
@@ -469,12 +800,12 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
 
       {/* Brands */}
       <div>
-        <h3 className="font-medium text-foreground mb-4">Brands</h3>
+        <h3 className="font-medium text-gray-900 mb-4">Brands</h3>
         <div className="space-y-3">
           {allBrands.map((brand) => (
             <label key={brand.id} className="flex items-center gap-3 cursor-pointer">
               <Checkbox checked={selectedBrands.includes(brand.id)} onCheckedChange={() => toggleBrand(brand.id)} />
-              <span className="text-sm text-muted-foreground">{brand.name}</span>
+              <span className="text-sm text-gray-600">{brand.name}</span>
             </label>
           ))}
         </div>
@@ -482,31 +813,43 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
 
       {/* Price Range */}
       <div>
-        <h3 className="font-medium text-foreground mb-4">Price Range</h3>
+        <h3 className="font-medium text-gray-900 mb-4">Price Range</h3>
         <Slider value={priceRange} onValueChange={setPriceRange} max={5000} step={100} className="mb-4" />
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-gray-600">
           <span>{formatPrice(priceRange[0])}</span>
           <span>{formatPrice(priceRange[1])}</span>
         </div>
       </div>
 
+      {/* Apply Filters Button */}
+      {hasFilterChanges() && (
+        <Button onClick={() => applyFilters(1)} disabled={isPending} className="w-full">
+          {isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Applying...
+            </>
+          ) : (
+            "Apply Filters"
+          )}
+        </Button>
+      )}
+
       {/* Clear Filters */}
-      <Button variant="outline" className="w-full bg-transparent" onClick={clearFilters}>
+      <Button variant="outline" className="w-full" onClick={clearFilters} disabled={isPending}>
         Clear All Filters
       </Button>
     </div>
   )
 
   return (
-    <main className="min-h-screen bg-background">
-      <Header />
-
+    <main className="min-h-screen bg-white">
       <div className="pt-32 pb-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Page Header */}
           <div className="text-center mb-12">
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-foreground font-light mb-4">Shop All</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-gray-900 font-light mb-4">Shop All</h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
               Discover our complete collection of luxury cosmetics crafted in Paris
             </p>
           </div>
@@ -514,22 +857,30 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
           {/* Search & Controls */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 placeholder="Search products..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-12 h-12 rounded-full"
               />
+              {searchQuery && searchQuery !== appliedFilters.search && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
               {/* Mobile Filter Button */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="lg:hidden h-12 px-4 rounded-full bg-transparent">
+                  <Button variant="outline" className="lg:hidden h-12 px-4 rounded-full">
                     <SlidersHorizontal className="w-5 h-5 mr-2" />
                     Filters
+                    {hasFilterChanges() && (
+                      <span className="ml-2 w-2 h-2 bg-blue-600 rounded-full" aria-label="Unsaved changes" />
+                    )}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-80">
@@ -542,7 +893,7 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
                 </SheetContent>
               </Sheet>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={sortBy} onValueChange={handleSortChange} disabled={isPending}>
                 <SelectTrigger className="w-[180px] h-12 rounded-full">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
@@ -557,14 +908,14 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
               <div className="hidden md:flex border rounded-full overflow-hidden">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-3 ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                  className={`p-3 ${viewMode === "grid" ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:text-gray-900"}`}
                   aria-label="Grid view"
                 >
                   <Grid3X3 className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-3 ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:text-foreground"}`}
+                  className={`p-3 ${viewMode === "list" ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:text-gray-900"}`}
                   aria-label="List view"
                 >
                   <LayoutList className="w-5 h-5" />
@@ -581,129 +932,71 @@ export function ShopPageClient({ initialProducts, categories, brands }: ShopPage
 
             {/* Products Grid */}
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-6">Showing {filteredProducts.length} products</p>
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-gray-600">
+                  Showing {products.length} of {totalProductCount} product{totalProductCount !== 1 ? "s" : ""}
+                </p>
+                {isPending && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading...</span>
+                  </div>
+                )}
+              </div>
 
-              {filteredProducts.length === 0 ? (
+              {products.length === 0 ? (
                 <div className="text-center py-16">
-                  <p className="text-lg text-muted-foreground mb-4">No products found</p>
+                  <p className="text-lg text-gray-600 mb-4">No products found</p>
                   <Button onClick={clearFilters}>Clear filters</Button>
                 </div>
               ) : (
-                <div className={viewMode === "grid" ? "grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" : "space-y-4"}>
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      viewMode={viewMode}
-                      image={productImages[product.slug] || "/luxury-cosmetic-product.jpg"}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className={viewMode === "grid" ? "grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" : "space-y-4"}>
+                    {products.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        viewMode={viewMode}
+                        image={productImages[product.slug] || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500"}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Load More / Pagination */}
+                  {hasMoreProducts && (
+                    <div className="mt-12 text-center">
+                      <Button 
+                        onClick={loadMoreProducts} 
+                        disabled={isLoadingMore}
+                        size="lg"
+                        variant="outline"
+                        className="rounded-full"
+                      >
+                        {isLoadingMore ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Loading more...
+                          </>
+                        ) : (
+                          `Load More (${totalProductCount - products.length} remaining)`
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Pagination Info */}
+                  <div className="mt-8 text-center text-sm text-gray-500">
+                    Page {currentPageNum} of {totalPages}
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
-
-      <Footer />
     </main>
   )
 }
 
-function ProductCard({
-  product,
-  viewMode,
-  image,
-}: {
-  product: Product
-  viewMode: "grid" | "list"
-  image: string
-}) {
-  if (viewMode === "list") {
-    return (
-      <div className="bg-card rounded-2xl border border-border/50 overflow-hidden flex">
-        <Link href={`/product/${product.slug}`} className="w-48 aspect-square flex-shrink-0">
-          <img src={image || "/placeholder.svg"} alt={product.name} className="w-full h-full object-cover" />
-        </Link>
-        <div className="p-6 flex-1 flex flex-col justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">{product.category?.name}</p>
-            <Link href={`/product/${product.slug}`}>
-              <h3 className="font-serif text-xl text-foreground font-medium mb-2 hover:text-primary transition-colors">
-                {product.name}
-              </h3>
-            </Link>
-            <p className="text-sm text-muted-foreground mb-3">{product.short_description}</p>
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-accent text-accent" />
-              <span className="text-sm font-medium">{product.rating_avg}</span>
-              <span className="text-sm text-muted-foreground">({product.rating_count} reviews)</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <span className="text-lg font-medium text-foreground">{formatPrice(product.retail_price)}</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="rounded-full bg-transparent" aria-label="Add to wishlist">
-                <Heart className="w-4 h-4" />
-              </Button>
-              <Button size="sm" className="rounded-full">
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Add to Cart
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
-  return (
-    <div className="group bg-card rounded-2xl lg:rounded-3xl overflow-hidden border border-border/50 shadow-sm hover:shadow-lg transition-all duration-500">
-      <Link href={`/product/${product.slug}`} className="relative block aspect-square overflow-hidden bg-muted">
-        <img
-          src={image || "/placeholder.svg"}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-        />
-        {product.is_featured && (
-          <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-medium px-2.5 py-1 rounded-full">
-            Bestseller
-          </span>
-        )}
-        <button
-          className="absolute top-3 right-3 w-8 h-8 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
-          aria-label="Add to wishlist"
-        >
-          <Heart className="w-4 h-4 text-foreground" />
-        </button>
-      </Link>
 
-      <div className="p-4 lg:p-5">
-        <p className="text-xs text-muted-foreground mb-1">{product.category?.name}</p>
-        <Link href={`/product/${product.slug}`}>
-          <h3 className="font-serif text-base lg:text-lg text-foreground font-medium mb-1 hover:text-primary transition-colors line-clamp-1">
-            {product.name}
-          </h3>
-        </Link>
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-1">{product.short_description}</p>
-
-        <div className="flex items-center gap-1 mb-3">
-          <Star className="w-3.5 h-3.5 fill-accent text-accent" />
-          <span className="text-xs font-medium text-foreground">{product.rating_avg}</span>
-          <span className="text-xs text-muted-foreground">({product.rating_count})</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="font-medium text-foreground">{formatPrice(product.retail_price)}</span>
-          <Button
-            size="sm"
-            className="h-8 w-8 p-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-            aria-label="Add to cart"
-          >
-            <ShoppingBag className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-}
