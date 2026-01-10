@@ -20,20 +20,19 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "Alzìa Paris — Luxury Cosmetics",
   description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
-  generator: "v0.app",
+  generator: "up4work",
   icons: {
     icon: [
+      // {
+      //   url: "/",
+      //   media: "(prefers-color-scheme: light)",
+      // },
+      // {
+      //   url: "/icon-dark-32x32.png",
+      //   media: "(prefers-color-scheme: dark)",
+      // },
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/favicon.ico",
       },
     ],
     apple: "/apple-icon.png",
