@@ -87,7 +87,7 @@ export function HeroSection() {
 
           {/* Mobile Heading - More Compact */}
           <h1 className="block md:hidden font-serif text-[2rem] leading-[1.15] font-medium text-background text-balance mb-4">
-            <AnimatedText text="Discover" delay={0.2} />
+            <AnimatedText text="Discover your" delay={0.2} />
             {" "}
             <span className="text-accent">
               <AnimatedText text="radiant beauty" delay={0.4} />

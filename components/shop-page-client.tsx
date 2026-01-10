@@ -848,7 +848,7 @@ export default function ShopPageClient({
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Page Header */}
           <div className="text-center mb-12">
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-gray-900 font-light mb-4">Shop All</h1>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-gray-900 font-light mb-4">Shop Our Products</h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Discover our complete collection of luxury cosmetics crafted in Paris
             </p>
