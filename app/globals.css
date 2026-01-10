@@ -79,6 +79,7 @@
   --font-sans: "DM Sans", "DM Sans Fallback";
   --font-serif: "Fraunces", "Fraunces Fallback";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-cinzel: var(--font-cinzel);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
