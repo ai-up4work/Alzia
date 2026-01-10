@@ -9,41 +9,42 @@ import "./globals.css"
 const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
-    display: "swap", // Add this
-  preload: true, // Add this
+  display: "swap",
+  preload: true,
 })
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-cormorant",
-    display: "swap", // Add this
-  preload: true, // Add this
+  display: "swap",
+  preload: true,
 })
 
 const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-cinzel",
-    display: "swap", // Add this
-  preload: true, // Add this
+  display: "swap",
+  preload: true,
 })
 
 export const metadata: Metadata = {
   title: "Alzìa Paris — Luxury Cosmetics",
   description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
-  generator: "up4work",
+  authors: [{ name: "up4work" }],
+  metadataBase: new URL("https://alzia.vercel.app"), // Add your actual domain
   openGraph: {
     title: "Alzìa Paris — Luxury Cosmetics",
     description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
-    url: "https://alzìa.com",
+    url: "https://alzia.vercel.app",
     siteName: "Alzìa Paris",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.png", // This file needs to exist in /public
         width: 1200,
         height: 630,
-        alt: "Alzìa Paris",
+        alt: "Alzìa Paris - Luxury Cosmetics",
       },
     ],
     locale: "en_US",
@@ -54,14 +55,20 @@ export const metadata: Metadata = {
     title: "Alzìa Paris — Luxury Cosmetics",
     description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
     images: ["/og-image.png"],
+    creator: "@up4work",
   },
   icons: {
     icon: [
       {
         url: "/favicon.ico",
+        sizes: "any",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: {
+      url: "/apple-icon.png",
+      sizes: "180x180",
+      type: "image/png",
+    },
   },
 }
 
