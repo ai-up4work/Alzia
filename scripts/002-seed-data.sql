@@ -4,31 +4,31 @@
 -- SEED CATEGORIES
 -- =============================================
 INSERT INTO categories (id, name, slug, description, display_order, is_active) VALUES
-  ('a1111111-1111-1111-1111-111111111111', 'Skincare', 'skincare', 'Complete skincare solutions for radiant skin', 1, true),
-  ('a2222222-2222-2222-2222-222222222222', 'Makeup', 'makeup', 'Premium makeup for every occasion', 2, true),
-  ('a3333333-3333-3333-3333-333333333333', 'Haircare', 'haircare', 'Luxurious haircare for beautiful tresses', 3, true),
-  ('a4444444-4444-4444-4444-444444444444', 'Fragrance', 'fragrance', 'Exquisite fragrances that captivate', 4, true),
-  ('a5555555-5555-5555-5555-555555555555', 'Body Care', 'body-care', 'Indulgent body care essentials', 5, true)
+  ('11111111-1111-1111-1111-111111111111', 'Skincare', 'skincare', 'Complete skincare solutions for radiant skin', 1, true),
+  ('22222222-2222-2222-2222-222222222222', 'Makeup', 'makeup', 'Premium makeup for every occasion', 2, true),
+  ('33333333-3333-3333-3333-333333333333', 'Haircare', 'haircare', 'Luxurious haircare for beautiful tresses', 3, true),
+  ('44444444-4444-4444-4444-444444444444', 'Fragrance', 'fragrance', 'Exquisite fragrances that captivate', 4, true),
+  ('55555555-5555-5555-5555-555555555555', 'Body Care', 'body-care', 'Indulgent body care essentials', 5, true)
 ON CONFLICT (slug) DO NOTHING;
 
 -- Subcategories
 INSERT INTO categories (name, slug, description, parent_id, display_order, is_active) VALUES
-  ('Cleansers', 'cleansers', 'Gentle cleansing formulas', 'a1111111-1111-1111-1111-111111111111', 1, true),
-  ('Serums', 'serums', 'Concentrated treatment serums', 'a1111111-1111-1111-1111-111111111111', 2, true),
-  ('Moisturizers', 'moisturizers', 'Hydrating moisturizers', 'a1111111-1111-1111-1111-111111111111', 3, true),
-  ('Lipsticks', 'lipsticks', 'Long-lasting lip colors', 'a2222222-2222-2222-2222-222222222222', 1, true),
-  ('Foundations', 'foundations', 'Flawless foundation formulas', 'a2222222-2222-2222-2222-222222222222', 2, true)
+  ('Cleansers', 'cleansers', 'Gentle cleansing formulas', '11111111-1111-1111-1111-111111111111', 1, true),
+  ('Serums', 'serums', 'Concentrated treatment serums', '11111111-1111-1111-1111-111111111111', 2, true),
+  ('Moisturizers', 'moisturizers', 'Hydrating moisturizers', '11111111-1111-1111-1111-111111111111', 3, true),
+  ('Lipsticks', 'lipsticks', 'Long-lasting lip colors', '22222222-2222-2222-2222-222222222222', 1, true),
+  ('Foundations', 'foundations', 'Flawless foundation formulas', '22222222-2222-2222-2222-222222222222', 2, true)
 ON CONFLICT (slug) DO NOTHING;
 
 -- =============================================
 -- SEED BRANDS
 -- =============================================
 INSERT INTO brands (id, name, slug, is_active) VALUES
-  ('b1111111-1111-1111-1111-111111111111', 'Alzìa Paris', 'lumiere-paris', true),
-  ('b2222222-2222-2222-2222-222222222222', 'Belle Naturelle', 'belle-naturelle', true),
-  ('b3333333-3333-3333-3333-333333333333', 'Éclat Royal', 'eclat-royal', true),
-  ('b4444444-4444-4444-4444-444444444444', 'Rose de Mai', 'rose-de-mai', true),
-  ('b5555555-5555-5555-5555-555555555555', 'Jardin Secret', 'jardin-secret', true)
+  ('11111111-1111-1111-1111-111111111111', 'Lumière Paris', 'lumiere-paris', true),
+  ('22222222-2222-2222-2222-222222222222', 'Belle Naturelle', 'belle-naturelle', true),
+  ('33333333-3333-3333-3333-333333333333', 'Éclat Royal', 'eclat-royal', true),
+  ('44444444-4444-4444-4444-444444444444', 'Rose de Mai', 'rose-de-mai', true),
+  ('55555555-5555-5555-5555-555555555555', 'Jardin Secret', 'jardin-secret', true)
 ON CONFLICT (slug) DO NOTHING;
 
 -- =============================================
@@ -36,14 +36,14 @@ ON CONFLICT (slug) DO NOTHING;
 -- =============================================
 INSERT INTO products (id, sku, name, slug, description, short_description, category_id, brand_id, retail_price, wholesale_price, cost_price, min_wholesale_qty, stock_quantity, low_stock_threshold, ingredients, usage_instructions, tags, status, is_featured, rating_avg, rating_count) VALUES
   (
-    'p1111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
     'LP-SER-001',
     'Radiance Renewal Serum',
     'radiance-renewal-serum',
     'A luxurious vitamin C serum that brightens and evens skin tone while reducing the appearance of fine lines. Formulated with 15% stabilized vitamin C and hyaluronic acid for maximum efficacy.',
     'Brightening vitamin C serum for radiant skin',
-    'a1111111-1111-1111-1111-111111111111',
-    'b1111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-1111-1111-111111111111',
     2450.00,
     1960.00,
     980.00,
@@ -59,14 +59,14 @@ INSERT INTO products (id, sku, name, slug, description, short_description, categ
     124
   ),
   (
-    'p2222222-2222-2222-2222-222222222222',
+    '22222222-2222-2222-2222-222222222222',
     'BN-CRM-001',
     'Hydra-Silk Moisturizer',
     'hydra-silk-moisturizer',
     'An ultra-rich yet lightweight moisturizer that delivers 72-hour hydration. Infused with silk proteins and botanical extracts for a silky-smooth finish.',
     'Luxurious 72-hour hydrating cream',
-    'a1111111-1111-1111-1111-111111111111',
-    'b2222222-2222-2222-2222-222222222222',
+    '11111111-1111-1111-1111-111111111111',
+    '22222222-2222-2222-2222-222222222222',
     1850.00,
     1480.00,
     740.00,
@@ -82,14 +82,14 @@ INSERT INTO products (id, sku, name, slug, description, short_description, categ
     89
   ),
   (
-    'p3333333-3333-3333-3333-333333333333',
+    '33333333-3333-3333-3333-333333333333',
     'ER-LIP-001',
     'Velvet Rouge Lipstick',
     'velvet-rouge-lipstick',
     'A creamy, long-wearing lipstick with intense color payoff. The velvet formula glides on smoothly and stays put for up to 8 hours without drying.',
     'Intense color velvet-finish lipstick',
-    'a2222222-2222-2222-2222-222222222222',
-    'b3333333-3333-3333-3333-333333333333',
+    '22222222-2222-2222-2222-222222222222',
+    '33333333-3333-3333-3333-333333333333',
     1200.00,
     960.00,
     480.00,
@@ -105,14 +105,14 @@ INSERT INTO products (id, sku, name, slug, description, short_description, categ
     156
   ),
   (
-    'p4444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
     'RM-PRF-001',
     'Eau de Rose Parfum',
     'eau-de-rose-parfum',
     'A captivating rose fragrance with notes of Turkish rose, bergamot, and sandalwood. This elegant scent evokes the romance of a Parisian garden at dusk.',
     'Elegant rose eau de parfum',
-    'a4444444-4444-4444-4444-444444444444',
-    'b4444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-4444-444444444444',
     4500.00,
     3600.00,
     1800.00,
@@ -128,14 +128,14 @@ INSERT INTO products (id, sku, name, slug, description, short_description, categ
     67
   ),
   (
-    'p5555555-5555-5555-5555-555555555555',
+    '55555555-5555-5555-5555-555555555555',
     'JS-CLN-001',
     'Gentle Foaming Cleanser',
     'gentle-foaming-cleanser',
     'A sulfate-free foaming cleanser that removes makeup and impurities without stripping the skin. Enriched with chamomile and aloe vera for a soothing cleanse.',
     'Sulfate-free gentle foaming cleanser',
-    'a1111111-1111-1111-1111-111111111111',
-    'b5555555-5555-5555-5555-555555555555',
+    '11111111-1111-1111-1111-111111111111',
+    '55555555-5555-5555-5555-555555555555',
     950.00,
     760.00,
     380.00,
@@ -151,14 +151,14 @@ INSERT INTO products (id, sku, name, slug, description, short_description, categ
     203
   ),
   (
-    'p6666666-6666-6666-6666-666666666666',
+    '66666666-6666-6666-6666-666666666666',
     'LP-FND-001',
     'Flawless Finish Foundation',
     'flawless-finish-foundation',
     'A buildable, medium-to-full coverage foundation with a natural satin finish. Enriched with skincare ingredients for a flawless look that lasts all day.',
     'Buildable satin-finish foundation',
-    'a2222222-2222-2222-2222-222222222222',
-    'b1111111-1111-1111-1111-111111111111',
+    '22222222-2222-2222-2222-222222222222',
+    '11111111-1111-1111-1111-111111111111',
     2200.00,
     1760.00,
     880.00,
@@ -179,12 +179,12 @@ ON CONFLICT (slug) DO NOTHING;
 -- SEED PRODUCT IMAGES
 -- =============================================
 INSERT INTO product_images (product_id, image_url, alt_text, display_order, is_primary) VALUES
-  ('p1111111-1111-1111-1111-111111111111', '/placeholder.svg?height=600&width=600', 'Radiance Renewal Serum', 0, true),
-  ('p2222222-2222-2222-2222-222222222222', '/placeholder.svg?height=600&width=600', 'Hydra-Silk Moisturizer', 0, true),
-  ('p3333333-3333-3333-3333-333333333333', '/placeholder.svg?height=600&width=600', 'Velvet Rouge Lipstick', 0, true),
-  ('p4444444-4444-4444-4444-444444444444', '/placeholder.svg?height=600&width=600', 'Eau de Rose Parfum', 0, true),
-  ('p5555555-5555-5555-5555-555555555555', '/placeholder.svg?height=600&width=600', 'Gentle Foaming Cleanser', 0, true),
-  ('p6666666-6666-6666-6666-666666666666', '/placeholder.svg?height=600&width=600', 'Flawless Finish Foundation', 0, true)
+  ('11111111-1111-1111-1111-111111111111', '/placeholder.svg?height=600&width=600', 'Radiance Renewal Serum', 0, true),
+  ('22222222-2222-2222-2222-222222222222', '/placeholder.svg?height=600&width=600', 'Hydra-Silk Moisturizer', 0, true),
+  ('33333333-3333-3333-3333-333333333333', '/placeholder.svg?height=600&width=600', 'Velvet Rouge Lipstick', 0, true),
+  ('44444444-4444-4444-4444-444444444444', '/placeholder.svg?height=600&width=600', 'Eau de Rose Parfum', 0, true),
+  ('55555555-5555-5555-5555-555555555555', '/placeholder.svg?height=600&width=600', 'Gentle Foaming Cleanser', 0, true),
+  ('66666666-6666-6666-6666-666666666666', '/placeholder.svg?height=600&width=600', 'Flawless Finish Foundation', 0, true)
 ON CONFLICT DO NOTHING;
 
 -- =============================================
