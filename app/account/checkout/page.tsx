@@ -69,7 +69,9 @@ export default function CheckoutPage() {
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     clearCart()
-    router.push(`/order-confirmation?order=${orderNumber}`)
+    // Use window.location.href for absolute URL redirect
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+    window.location.href = `${baseUrl}/account/order-confirmation?order=${orderNumber}`
   }
 
   if (state.items.length === 0) {

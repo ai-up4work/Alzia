@@ -9,9 +9,9 @@ const footerLinks = {
     { label: "Gift Sets", href: "/shop/gifts" },
   ],
   help: [
-    { label: "Track Order", href: "/track-order" },
+    { label: "Track Order", href: "/account/orders" },
     { label: "Shipping Info", href: "/shipping" },
-    { label: "Returns", href: "/returns" },
+    { label: "Returns", href: "/account/returns" },
     { label: "FAQs", href: "/faqs" },
   ],
   company: [
@@ -46,7 +46,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4" />
-                <span>Mumbai, India</span>
+                <span>Colombo, Sri Lanka</span>
               </div>
             </div>
 
@@ -119,7 +119,7 @@ export function Footer() {
 
         {/* Bottom */}
         <div className="border-t border-background/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-background/50">© 2025 Alzìa Paris. All rights reserved.</p>
+          <p className="text-sm text-background/50">© 2026 Alzìa. All rights reserved.</p>
           <div className="flex gap-6 text-sm text-background/50">
             <Link href="/privacy" className="hover:text-background transition-colors">
               Privacy Policy

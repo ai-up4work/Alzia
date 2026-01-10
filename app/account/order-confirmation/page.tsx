@@ -47,7 +47,7 @@ export default async function OrderConfirmationPage({
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="rounded-full">
-              <Link href="/account/orders">Track Order</Link>
+              <Link href={`/account/order/${orderNumber}`}>Track Order</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-full bg-transparent">
               <Link href="/shop">Continue Shopping</Link>
