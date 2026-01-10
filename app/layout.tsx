@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Cormorant_Garamond, Montserrat, Cinzel } from "next/font/google"
+import { Cormorant_Garamond, Montserrat, Cinzel, Fraunces } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { CartProvider } from "@/lib/cart-context"
 import { CartDrawer } from "@/components/cart-drawer"
@@ -23,6 +23,13 @@ const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-cinzel",
+  display: "swap",
+})
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-fraunces",
   display: "swap",
 })
 
@@ -75,7 +82,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable} ${fraunces.variable}`}>
       <body className={montserrat.className}>
         <CartProvider>
           {children}
