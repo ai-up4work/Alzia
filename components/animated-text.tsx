@@ -9,7 +9,7 @@ interface AnimatedTextProps {
 
 export function AnimatedText({ text, delay = 0 }: AnimatedTextProps) {
   return (
-    <span className="text-7xl">
+    <span className="text-8xl">
       {text.split("").map((char, index) => (
         <motion.span
           key={index}
