@@ -61,7 +61,7 @@ export function HeroSection() {
         }}
       >
         <img
-          src="/elegant-woman-parisian-beauty-cosmetics-luxury-ros.jpg"
+          src="/hero.png"
           alt="Elegant woman with luxury cosmetics"
           className="w-full h-full object-cover animate-zoom-in"
         />
