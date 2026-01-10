@@ -102,8 +102,8 @@ export function HeroSection() {
 
           {/* Mobile Description - Shorter */}
           <p className="block md:hidden reveal opacity-0 animation-delay-400 text-sm text-background/90 leading-relaxed mb-6 max-w-sm">
-            Premium Parisian cosmetics crafted with the finest ingredients for your everyday elegance.
-          </p>
+            Exquisite cosmetics crafted in Paris with the finest ingredients. Experience luxury that transforms your
+            everyday routine into a moment of pure elegance.          </p>
 
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 md:pt-8">
             <Button
