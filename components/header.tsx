@@ -1,21 +1,104 @@
 // components/header.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Menu, X, Heart, ShoppingBag, User } from "lucide-react"
+import { Menu, X, Heart, ShoppingBag, User, LogOut } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
 import { getRoleBasedRedirect } from "@/lib/utils/role-redirect"
+import Cookies from "js-cookie"
+
+const DASHBOARD_LINK_KEY = "user_dashboard_link"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { totalItems, openCart } = useCart()
   const { user, isAuthenticated, isLoading } = useAuth()
 
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Debug logging - check what we're receiving
+  useEffect(() => {
+    if (mounted) {
+      console.log("🔍 Header Debug:")
+      console.log("- mounted:", mounted)
+      console.log("- isLoading:", isLoading)
+      console.log("- isAuthenticated:", isAuthenticated)
+      console.log("- user object:", user)
+      console.log("- user.role:", user?.role)
+      console.log("- user.name:", user?.name)
+      console.log("- user.email:", user?.email)
+      console.log("- user.profilePicture:", user?.profilePicture)
+    }
+  }, [mounted, isLoading, isAuthenticated, user])
+
   // Get the appropriate dashboard link based on user role
-  const dashboardLink = user?.role ? getRoleBasedRedirect(user.role) : '/account'
+  const getDashboardLink = () => {
+    if (!user?.role) {
+      return Cookies.get(DASHBOARD_LINK_KEY) || '/account'
+    }
+    
+    const link = getRoleBasedRedirect(user.role)
+    // Cache the dashboard link in cookies
+    Cookies.set(DASHBOARD_LINK_KEY, link, { 
+      expires: 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
+    })
+    return link
+  }
+
+  const dashboardLink = getDashboardLink()
+
+  // Clear dashboard link cookie on logout
+  useEffect(() => {
+    if (!isAuthenticated && mounted) {
+      Cookies.remove(DASHBOARD_LINK_KEY)
+    }
+  }, [isAuthenticated, mounted])
+
+  // Sync auth state across tabs using storage events
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'supabase.auth.token') {
+        window.location.reload()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
+
+  // Render the user avatar/initial
+  const renderUserAvatar = (size: 'small' | 'large') => {
+    const dimensions = size === 'small' ? 24 : 32
+    const sizeClasses = size === 'small' ? 'w-6 h-6' : 'w-8 h-8'
+    const textSize = size === 'small' ? 'text-[10px]' : 'text-xs'
+
+    return (
+      <div className={`${sizeClasses} rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all`}>
+        {user?.profilePicture ? (
+          <Image
+            src={user.profilePicture}
+            alt={user.name || 'User'}
+            width={dimensions}
+            height={dimensions}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className={`${textSize} font-semibold text-primary`}>
+            {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -72,7 +155,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-              {isAuthenticated && user?.role === 'normal' && (
+              {mounted && isAuthenticated && user?.role === 'normal' && (
                 <Link
                   href="/account/wishlist"
                   className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -95,36 +178,35 @@ export function Header() {
                 )}
               </button>
 
-              {!isLoading && (
-                <>
-                  {isAuthenticated ? (
-                    <Link href={dashboardLink} className="hidden md:flex" aria-label="Account">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all">
-                        {user?.profilePicture ? (
-                          <Image
-                            src={user.profilePicture}
-                            alt={user.name || 'User'}
-                            width={32}
-                            height={32}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs font-semibold text-primary">
-                            {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
+              {/* Auth UI - Desktop */}
+              <div className="hidden md:flex items-center gap-2">
+                {!mounted || isLoading ? (
+                  <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                ) : isAuthenticated && user ? (
+                  <>
+                    <Link href={dashboardLink} aria-label="Account">
+                      {renderUserAvatar('large')}
                     </Link>
-                  ) : (
-                    <Link
-                      href="/auth/login"
-                      className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
-                    >
-                      <User className="w-5 h-5" />
-                    </Link>
-                  )}
-                </>
-              )}
+                    <form action="/auth/signout" method="post">
+                      <button
+                        type="submit"
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label="Logout"
+                      >
+                        <LogOut className="w-5 h-5" />
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <Link
+                    href="/auth/login"
+                    className="p-2 text-muted-foreground hover:text-secondary transition-colors"
+                    aria-label="Login"
+                  >
+                    <User className="w-5 h-5" />
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
 
@@ -155,8 +237,8 @@ export function Header() {
                 >
                   New Arrivals
                 </Link>
-                <div className="flex gap-6 pt-6 border-t border-border/50">
-                  {isAuthenticated && user?.role === 'normal' && (
+                <div className="flex flex-col gap-4 pt-6 border-t border-border/50">
+                  {mounted && isAuthenticated && user?.role === 'normal' && (
                     <Link 
                       href="/account/wishlist" 
                       className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -169,42 +251,43 @@ export function Header() {
                     </Link>
                   )}
 
-                  {!isLoading && (
+                  {/* Auth UI - Mobile */}
+                  {!mounted || isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
+                      <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                    </div>
+                  ) : isAuthenticated && user ? (
                     <>
-                      {isAuthenticated ? (
-                        <Link href={dashboardLink} className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
-                            {user?.profilePicture ? (
-                              <Image
-                                src={user.profilePicture}
-                                alt={user.name || 'User'}
-                                width={24}
-                                height={24}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-[10px] font-semibold text-primary">
-                                {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                            {user?.role === 'admin' ? 'Admin' : user?.role === 'wholesaler' ? 'Dashboard' : 'Account'}
-                          </span>
-                        </Link>
-                      ) : (
-                        <Link
-                          href="/auth/login"
-                          className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
-                          onClick={() => setIsOpen(false)}
+                      <Link href={dashboardLink} className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
+                        {renderUserAvatar('small')}
+                        <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                          {user?.role === 'admin' ? 'Admin' : user?.role === 'wholesaler' ? 'Dashboard' : 'Account'}
+                        </span>
+                      </Link>
+                      <form action="/auth/signout" method="post">
+                        <button
+                          type="submit"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors"
                         >
-                          <User className="w-5 h-5" />
+                          <LogOut className="w-5 h-5" />
                           <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                            Login
+                            Logout
                           </span>
-                        </Link>
-                      )}
+                        </button>
+                      </form>
                     </>
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                        Login
+                      </span>
+                    </Link>
                   )}
                 </div>
               </div>
