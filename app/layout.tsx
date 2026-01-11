@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     siteName: "Alzìa Paris",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.png?v=2",
         width: 1200,
         height: 630,
         alt: "Alzìa Paris - Luxury Cosmetics",
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Alzìa Paris — Luxury Cosmetics",
     description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
-    images: ["/og-image.png"],
+    images: ["/og-image.png?v=2"],
     creator: "@up4work",
   },
   icons: {
