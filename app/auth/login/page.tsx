@@ -1,109 +1,198 @@
+// app/auth/login/page.tsx
 "use client"
 
-import type React from "react"
-
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
+import { getRoleBasedRedirect } from "@/lib/utils/role-redirect"
 
 export default function LoginPage() {
+  console.log("🎨🎨🎨 LoginPage RENDERED 🎨🎨🎨")
+  
+  const searchParams = useSearchParams()
+  const redirect = searchParams?.get("redirect")
+  
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState("")
 
   const handleLogin = async (e: React.FormEvent) => {
+    console.log("=" .repeat(50))
+    console.log("🚨 HANDLE LOGIN CALLED!")
+    console.log("=" .repeat(50))
+    
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
-    setError(null)
+    setError("")
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("🔐 Starting login process...")
+      const supabase = createClient()
+
+      // Sign in the user
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      if (error) throw error
-      router.push("/account")
-      router.refresh()
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
+
+      if (authError) throw authError
+
+      if (!authData.user) {
+        throw new Error("No user data returned")
+      }
+
+      console.log("✅ User authenticated:", authData.user.id)
+
+      // Get user role and status from customers table
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("role, status")
+        .eq("id", authData.user.id)
+        .single()
+
+      if (customerError) {
+        throw new Error(`Failed to fetch customer profile: ${customerError.message}`)
+      }
+
+      if (!customer) {
+        throw new Error("Customer profile not found in database")
+      }
+
+      console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
+
+      if (customer.status !== "active") {
+        await supabase.auth.signOut()
+        throw new Error("Your account is not active. Please contact support.")
+      }
+
+      // Determine redirect URL (with debug logging enabled)
+      const redirectUrl = getRoleBasedRedirect(customer.role, redirect, true)
+      
+      console.log("=" .repeat(50))
+      console.log("🎯 FINAL REDIRECT DECISION")
+      console.log("📊 Customer.role:", customer.role)
+      console.log("🎯 Computed redirectUrl:", redirectUrl)
+      console.log("=" .repeat(50))
+      
+      // Small delay to ensure auth cookies are set
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      console.log("🚀🚀🚀 EXECUTING REDIRECT NOW 🚀🚀🚀")
+      console.log("window.location.href =", redirectUrl)
+      
+      // Use window.location.href for a hard navigation
+      window.location.href = redirectUrl
+      
+      console.log("⚠️ This line should NEVER execute if redirect worked")
+
+    } catch (err: any) {
+      console.error("❌ Login error:", err.message)
+      setError(err.message || "Failed to login. Please try again.")
       setIsLoading(false)
     }
   }
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-6">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="font-serif text-3xl text-foreground font-medium">
-            Lumière
-          </Link>
-          <h1 className="font-serif text-2xl text-foreground mt-6 mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to your account to continue</p>
-        </div>
+        <div className="bg-card border border-border rounded-2xl shadow-lg p-8">
+          <div className="text-center mb-8">
+            {/* <div className="mb-4">
+              Safnas 
+            </div> */}
+            <h1 
+              className="text-3xl font-bold text-foreground mb-2"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              Welcome Back
+            </h1>
+            <p className="text-muted-foreground">
+              Sign in to your account
+            </p>
+          </div>
 
-        <div className="bg-card rounded-2xl border border-border/50 p-8 shadow-sm">
+          {error && (
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <Label htmlFor="email">Email Address</Label>
-              <Input
+              <label 
+                htmlFor="email" 
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Email
+              </label>
+              <input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 h-12 rounded-xl"
+                required
+                className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                placeholder="you@example.com"
+                disabled={isLoading}
+                autoComplete="email"
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <Input
+              <label 
+                htmlFor="password" 
+                className="block text-sm font-medium text-foreground mb-2"
+              >
+                Password
+              </label>
+              <input
                 id="password"
                 type="password"
-                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5 h-12 rounded-xl"
+                required
+                className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                placeholder="••••••••"
+                disabled={isLoading}
+                autoComplete="current-password"
               />
             </div>
 
-            {error && <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>}
+            <div className="flex items-center justify-between">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
 
-            <Button type="submit" size="lg" className="w-full rounded-full" disabled={isLoading}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              onClick={() => console.log("🔘🔘🔘 BUTTON CLICKED 🔘🔘🔘")}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
               {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
+            </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Do not have an account?{" "}
-              <Link href="/auth/sign-up" className="text-primary hover:underline font-medium">
-                Create Account
+              Don't have an account?{" "}
+              <Link
+                href="/auth/register"
+                className="text-primary hover:text-primary/80 font-semibold transition-colors"
+              >
+                Sign up
               </Link>
             </p>
           </div>
         </div>
-
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Back to Home
-          </Link>
-        </p>
       </div>
-    </main>
+    </div>
   )
 }
