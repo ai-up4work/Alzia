@@ -22,9 +22,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // }
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
+    <div className="flex max-h-screen bg-muted/30 scrollbar-custom">
+      <div className="hidden max-h-screen md:flex">
       <AdminSidebar />
-      <main className="flex-1 overflow-auto">
+      </div>
+      <main className="flex-1 overflow-auto scrollbar-custom">
         <div className="p-6 lg:p-8">{children}</div>
       </main>
     </div>
