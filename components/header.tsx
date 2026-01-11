@@ -1,9 +1,9 @@
 // components/header.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, Heart, ShoppingBag, User, LogOut } from "lucide-react"
+import { Menu, X, Heart, ShoppingBag, User } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
@@ -11,20 +11,11 @@ import { getRoleBasedRedirect } from "@/lib/utils/role-redirect"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const { totalItems, openCart } = useCart()
   const { user, isAuthenticated, isLoading } = useAuth()
 
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
   // Get the appropriate dashboard link based on user role
   const dashboardLink = user?.role ? getRoleBasedRedirect(user.role) : '/account'
-
-  // Don't render auth UI until mounted and loaded
-  const showAuthUI = mounted && !isLoading
 
   return (
     <>
@@ -81,7 +72,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-              {showAuthUI && isAuthenticated && user?.role === 'normal' && (
+              {isAuthenticated && user?.role === 'normal' && (
                 <Link
                   href="/account/wishlist"
                   className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -104,14 +95,10 @@ export function Header() {
                 )}
               </button>
 
-              {/* Auth UI - Desktop */}
-              <div className="hidden md:flex items-center gap-2">
-                {!showAuthUI ? (
-                  // Loading skeleton
-                  <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-                ) : isAuthenticated ? (
-                  <>
-                    <Link href={dashboardLink} aria-label="Account">
+              {!isLoading && (
+                <>
+                  {isAuthenticated ? (
+                    <Link href={dashboardLink} className="hidden md:flex" aria-label="Account">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all">
                         {user?.profilePicture ? (
                           <Image
@@ -128,26 +115,16 @@ export function Header() {
                         )}
                       </div>
                     </Link>
-                    <form action="/auth/signout" method="post">
-                      <button
-                        type="submit"
-                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                        aria-label="Logout"
-                      >
-                        <LogOut className="w-5 h-5" />
-                      </button>
-                    </form>
-                  </>
-                ) : (
-                  <Link
-                    href="/auth/login"
-                    className="p-2 text-muted-foreground hover:text-secondary transition-colors"
-                    aria-label="Login"
-                  >
-                    <User className="w-5 h-5" />
-                  </Link>
-                )}
-              </div>
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
+                    >
+                      <User className="w-5 h-5" />
+                    </Link>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
@@ -178,8 +155,8 @@ export function Header() {
                 >
                   New Arrivals
                 </Link>
-                <div className="flex flex-col gap-4 pt-6 border-t border-border/50">
-                  {showAuthUI && isAuthenticated && user?.role === 'normal' && (
+                <div className="flex gap-6 pt-6 border-t border-border/50">
+                  {isAuthenticated && user?.role === 'normal' && (
                     <Link 
                       href="/account/wishlist" 
                       className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -192,58 +169,42 @@ export function Header() {
                     </Link>
                   )}
 
-                  {/* Auth UI - Mobile */}
-                  {!showAuthUI ? (
-                    // Loading state
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
-                      <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-                    </div>
-                  ) : isAuthenticated ? (
+                  {!isLoading && (
                     <>
-                      <Link href={dashboardLink} className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
-                          {user?.profilePicture ? (
-                            <Image
-                              src={user.profilePicture}
-                              alt={user.name || 'User'}
-                              width={24}
-                              height={24}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-[10px] font-semibold text-primary">
-                              {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                          {user?.role === 'admin' ? 'Admin' : user?.role === 'wholesaler' ? 'Dashboard' : 'Account'}
-                        </span>
-                      </Link>
-                      <form action="/auth/signout" method="post">
-                        <button
-                          type="submit"
-                          className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <LogOut className="w-5 h-5" />
+                      {isAuthenticated ? (
+                        <Link href={dashboardLink} className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
+                            {user?.profilePicture ? (
+                              <Image
+                                src={user.profilePicture}
+                                alt={user.name || 'User'}
+                                width={24}
+                                height={24}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-[10px] font-semibold text-primary">
+                                {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                            Logout
+                            {user?.role === 'admin' ? 'Admin' : user?.role === 'wholesaler' ? 'Dashboard' : 'Account'}
                           </span>
-                        </button>
-                      </form>
+                        </Link>
+                      ) : (
+                        <Link
+                          href="/auth/login"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <User className="w-5 h-5" />
+                          <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                            Login
+                          </span>
+                        </Link>
+                      )}
                     </>
-                  ) : (
-                    <Link
-                      href="/auth/login"
-                      className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <User className="w-5 h-5" />
-                      <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                        Login
-                      </span>
-                    </Link>
                   )}
                 </div>
               </div>
