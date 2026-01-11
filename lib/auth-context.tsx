@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const cached = Cookies.get(USER_CACHE_KEY)
       if (cached) {
         const userData = JSON.parse(cached)
-        console.log("💾 Loaded user from cache:", userData.role)
+        // console.log("💾 Loaded user from cache:", userData.role)
         return userData
       }
     } catch (error) {
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("❌ Error fetching customer data:", error.message)
         const cached = loadCachedUser()
         if (cached && cached.id === authUser.id) {
-          console.log("⚠️ Using cached user data due to query error")
+        //   console.log("⚠️ Using cached user data due to query error")
           return cached
         }
         return authUser
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("💥 Exception in fetchUserData:", error)
       const cached = loadCachedUser()
       if (cached && cached.id === authUser.id) {
-        console.log("⚠️ Using cached user data due to exception")
+        // console.log("⚠️ Using cached user data due to exception")
         return cached
       }
       return authUser
@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore auth changes on login page
       if (isLoginPage) return
       
-      console.log("🔔 Auth state changed:", event)
+    //   console.log("🔔 Auth state changed:", event)
       
       if (!mounted) return
 

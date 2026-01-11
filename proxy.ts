@@ -32,12 +32,12 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname
 
-  console.log("🌐 MIDDLEWARE TRIGGERED - Full URL:", request.url)
-  console.log("🌐 Path:", path)
+  // console.log("🌐 MIDDLEWARE TRIGGERED - Full URL:", request.url)
+  // console.log("🌐 Path:", path)
 
   // Public routes - allow access
   if (!path.startsWith('/account') && !path.startsWith('/admin') && !path.startsWith('/wholesale')) {
-    console.log("✅ Public route, allowing access")
+    // console.log("✅ Public route, allowing access")
     return response
   }
 
@@ -47,17 +47,17 @@ export async function proxy(request: NextRequest) {
     error
   } = await supabase.auth.getUser()
 
-  console.log('🔒 Middleware - Path:', path, '| User:', user ? 'Found' : 'None')
+  // console.log('🔒 Middleware - Path:', path, '| User:', user ? 'Found' : 'None')
 
   // No user or error - redirect to login
   if (error || !user) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirect', path)
-    console.log('❌ No user, redirecting to login')
+    // console.log('❌ No user, redirecting to login')
     return NextResponse.redirect(redirectUrl)
   }
 
-  console.log('👤 User ID:', user.id)
+  // console.log('👤 User ID:', user.id)
 
   // Get user role from customers table
   const { data: customer, error: customerError } = await supabase
@@ -66,22 +66,22 @@ export async function proxy(request: NextRequest) {
     .eq('id', user.id)
     .single()
 
-  console.log('👤 Middleware - Customer role:', customer?.role, '| Path:', path)
+  // console.log('👤 Middleware - Customer role:', customer?.role, '| Path:', path)
 
   // Check if customer exists and is active
   if (!customer) {
-    console.log('❌ No customer found')
+    // console.log('❌ No customer found')
     return NextResponse.redirect(new URL('/unauthorized', request.url))
   }
 
   if (customer.status !== 'active') {
-    console.log('❌ Customer not active')
+    // console.log('❌ Customer not active')
     return NextResponse.redirect(new URL('/unauthorized', request.url))
   }
 
   // CRITICAL: Check if role exists
   if (!customer.role) {
-    console.log('❌ No role found')
+    // console.log('❌ No role found')
     return NextResponse.redirect(new URL('/unauthorized', request.url))
   }
 
@@ -93,26 +93,26 @@ export async function proxy(request: NextRequest) {
   if (path.startsWith('/admin')) {
     // Only admin can access admin routes
     if (customer.role !== 'admin') {
-      console.log('❌ Access denied to /admin - redirecting to correct dashboard')
+      // console.log('❌ Access denied to /admin - redirecting to correct dashboard')
       const correctPath = customer.role === 'wholesaler' ? '/wholesale' : '/account'
       return NextResponse.redirect(new URL(correctPath, request.url))
     }
-    console.log('✅ Admin route - access granted for admin')
+    // console.log('✅ Admin route - access granted for admin')
   } 
   else if (path.startsWith('/wholesale')) {
     // Admin and wholesaler can access wholesale routes
     if (customer.role !== 'admin' && customer.role !== 'wholesaler') {
-      console.log('❌ Access denied to /wholesale - not admin or wholesaler, redirecting to /account')
+      // console.log('❌ Access denied to /wholesale - not admin or wholesaler, redirecting to /account')
       return NextResponse.redirect(new URL('/account', request.url))
     }
-    console.log('✅ Wholesale route - access granted for role:', customer.role)
+    // console.log('✅ Wholesale route - access granted for role:', customer.role)
   } 
   else if (path.startsWith('/account')) {
     // All authenticated users can access account routes (hierarchical)
-    console.log('✅ Account route - access granted for role:', customer.role)
+    // console.log('✅ Account route - access granted for role:', customer.role)
   }
 
-  console.log('✅ Middleware - Final access granted to', path)
+  // console.log('✅ Middleware - Final access granted to', path)
   return response
 }
 

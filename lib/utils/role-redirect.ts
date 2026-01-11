@@ -5,19 +5,19 @@ export function getRoleBasedRedirect(
   debug: boolean = false // Only log when debug=true
 ): string {
   if (debug) {
-    console.log("═══════════════════════════════════════")
-    console.log("🎯 getRoleBasedRedirect called")
-    console.log("📥 Input role:", role)
-    console.log("📥 Type of role:", typeof role)
-    console.log("📥 Role value (JSON):", JSON.stringify(role))
-    console.log("📥 Redirect param:", redirectParam)
+    // console.log("═══════════════════════════════════════")
+    // console.log("🎯 getRoleBasedRedirect called")
+    // console.log("📥 Input role:", role)
+    // console.log("📥 Type of role:", typeof role)
+    // console.log("📥 Role value (JSON):", JSON.stringify(role))
+    // console.log("📥 Redirect param:", redirectParam)
   }
   
   // If there's a redirect parameter, use it
   if (redirectParam) {
     if (debug) {
-      console.log("✅ Using redirect parameter:", redirectParam)
-      console.log("═══════════════════════════════════════")
+      // console.log("✅ Using redirect parameter:", redirectParam)
+      // console.log("═══════════════════════════════════════")
     }
     return redirectParam
   }
@@ -51,8 +51,8 @@ export function getRoleBasedRedirect(
   }
   
   if (debug) {
-    console.log("🚀 Final return value:", result)
-    console.log("═══════════════════════════════════════")
+    // console.log("🚀 Final return value:", result)
+    // console.log("═══════════════════════════════════════")
   }
   
   return result

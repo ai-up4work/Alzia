@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { getRoleBasedRedirect } from "@/lib/utils/role-redirect"
 
 export default function LoginPage() {
-  console.log("🎨🎨🎨 LoginPage RENDERED 🎨🎨🎨")
+  // console.log("🎨🎨🎨 LoginPage RENDERED 🎨🎨🎨")
   
   const searchParams = useSearchParams()
   const redirect = searchParams?.get("redirect")
@@ -19,16 +19,16 @@ export default function LoginPage() {
   const [error, setError] = useState("")
 
   const handleLogin = async (e: React.FormEvent) => {
-    console.log("=" .repeat(50))
-    console.log("🚨 HANDLE LOGIN CALLED!")
-    console.log("=" .repeat(50))
+    // console.log("=" .repeat(50))
+    // console.log("🚨 HANDLE LOGIN CALLED!")
+    // console.log("=" .repeat(50))
     
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
     try {
-      console.log("🔐 Starting login process...")
+      // console.log("🔐 Starting login process...")
       const supabase = createClient()
 
       // Sign in the user
@@ -43,7 +43,7 @@ export default function LoginPage() {
         throw new Error("No user data returned")
       }
 
-      console.log("✅ User authenticated:", authData.user.id)
+      // console.log("✅ User authenticated:", authData.user.id)
 
       // Get user role and status from customers table
       const { data: customer, error: customerError } = await supabase
@@ -60,7 +60,7 @@ export default function LoginPage() {
         throw new Error("Customer profile not found in database")
       }
 
-      console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
+      // console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
 
       if (customer.status !== "active") {
         await supabase.auth.signOut()
@@ -70,22 +70,22 @@ export default function LoginPage() {
       // Determine redirect URL (with debug logging enabled)
       const redirectUrl = getRoleBasedRedirect(customer.role, redirect, true)
       
-      console.log("=" .repeat(50))
-      console.log("🎯 FINAL REDIRECT DECISION")
-      console.log("📊 Customer.role:", customer.role)
-      console.log("🎯 Computed redirectUrl:", redirectUrl)
-      console.log("=" .repeat(50))
+      // console.log("=" .repeat(50))
+      // console.log("🎯 FINAL REDIRECT DECISION")
+      // console.log("📊 Customer.role:", customer.role)
+      // console.log("🎯 Computed redirectUrl:", redirectUrl)
+      // console.log("=" .repeat(50))
       
       // Small delay to ensure auth cookies are set
       await new Promise(resolve => setTimeout(resolve, 300))
       
-      console.log("🚀🚀🚀 EXECUTING REDIRECT NOW 🚀🚀🚀")
-      console.log("window.location.href =", redirectUrl)
+      // console.log("🚀🚀🚀 EXECUTING REDIRECT NOW 🚀🚀🚀")
+      // console.log("window.location.href =", redirectUrl)
       
       // Use window.location.href for a hard navigation
       window.location.href = redirectUrl
       
-      console.log("⚠️ This line should NEVER execute if redirect worked")
+      // console.log("⚠️ This line should NEVER execute if redirect worked")
 
     } catch (err: any) {
       console.error("❌ Login error:", err.message)
@@ -172,7 +172,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              onClick={() => console.log("🔘🔘🔘 BUTTON CLICKED 🔘🔘🔘")}
+              // onClick={() => console.log("🔘🔘🔘 BUTTON CLICKED 🔘🔘🔘")}
               className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
