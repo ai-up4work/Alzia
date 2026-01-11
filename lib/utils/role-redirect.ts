@@ -1,59 +1,26 @@
 // lib/utils/role-redirect.ts
 export function getRoleBasedRedirect(
   role: string, 
-  redirectParam?: string | null,
-  debug: boolean = false // Only log when debug=true
+  redirectParam?: string | null
 ): string {
-  if (debug) {
-    // console.log("═══════════════════════════════════════")
-    // console.log("🎯 getRoleBasedRedirect called")
-    // console.log("📥 Input role:", role)
-    // console.log("📥 Type of role:", typeof role)
-    // console.log("📥 Role value (JSON):", JSON.stringify(role))
-    // console.log("📥 Redirect param:", redirectParam)
-  }
-  
   // If there's a redirect parameter, use it
   if (redirectParam) {
-    if (debug) {
-      // console.log("✅ Using redirect parameter:", redirectParam)
-      // console.log("═══════════════════════════════════════")
-    }
     return redirectParam
   }
 
   // Normalize the role (trim whitespace and convert to lowercase)
   const normalizedRole = role?.trim().toLowerCase()
-  if (debug) {
-    console.log("🔄 Normalized role:", normalizedRole)
-  }
-
-  let result: string
 
   // Default redirects based on role
   switch (normalizedRole) {
     case 'admin':
-      result = '/admin'
-      if (debug) console.log("✅ ADMIN detected - returning /admin")
-      break
+      return '/admin'
     case 'wholesaler':
-      result = '/wholesale'
-      if (debug) console.log("✅ WHOLESALER detected - returning /wholesale")
-      break
+      return '/wholesale'
     case 'normal':
-      result = '/account'
-      if (debug) console.log("✅ NORMAL detected - returning /account")
-      break
+      return '/account'
     default:
-      result = '/account'
-      if (debug) console.warn('⚠️ Unknown role:', role, '- defaulting to /account')
-      break
+      console.warn('⚠️ Unknown role:', role, '- defaulting to /account')
+      return '/account'
   }
-  
-  if (debug) {
-    // console.log("🚀 Final return value:", result)
-    // console.log("═══════════════════════════════════════")
-  }
-  
-  return result
 }
