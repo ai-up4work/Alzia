@@ -16,8 +16,6 @@ import {
   ChevronLeft,
   Menu,
   Store,
-  Box,
-  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -63,6 +61,21 @@ export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
+  const handleLogout = async () => {
+    try {
+      // Submit to server-side logout endpoint
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/auth/signout'
+      document.body.appendChild(form)
+      form.submit()
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Fallback to client-side logout
+      window.location.href = '/auth/login'
+    }
+  }
+
   return (
     <>
       {/* Mobile menu button */}
@@ -87,7 +100,6 @@ export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
           {!collapsed ? (
             <Link href="/admin" className="flex items-center gap-3 group">
               <div className="relative">
-                {/* <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" /> */}
                 <Image
                   src="/alzia-logo.png"
                   alt="Alzìa Logo"
@@ -96,24 +108,18 @@ export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
                   className="relative rounded-2xl flex bg-transparent items-center justify-center object-contain"
                 />
               </div>
-              <div>
-                {/* <h2 className="font-serif text-xl font-bold text-foreground tracking-wide">
-                  Alzìa
-                </h2> */}
-              </div>
+              
             </Link>
           ) : (
             <div className="relative mx-auto">
-              {/* <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" /> */}
               <Image
-                  src="/alzia-logo.png"
-                  alt="Alzìa Logo"
-                  width={100}
-                  height={100}
-                  className="relative rounded-2xl flex bg-transparent items-center justify-center object-contain"
-                />
+                src="/alzia-logo.png"
+                alt="Alzìa Logo"
+                width={100}
+                height={100}
+                className="relative rounded-2xl flex bg-transparent items-center justify-center object-contain"
+              />
             </div>
-            
           )}
           <Button 
             variant="ghost" 
@@ -124,8 +130,6 @@ export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
             <ChevronLeft className={cn("h-4 w-4 transition-transform duration-300", collapsed && "rotate-180")} />
           </Button>
         </div>
-
-        {/* <p className="text-xs text-muted-foreground font-medium">Admin Panel</p> */}
 
         {/* Navigation Sections */}
         <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-8 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
@@ -138,8 +142,6 @@ export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
               )}
               <div className="space-y-1">
                 {section.items.map((item) => {
-                  // Hide admin-only items if not root admin
-
                   const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
                   
                   return (
@@ -184,21 +186,21 @@ export function AdminSidebar({ isRootAdmin = false }: AdminSidebarProps) {
           ))}
         </nav>
 
-        {/* Footer Section */}
+        {/* Footer Section - Only Logout Button */}
         <div className="border-t border-border/50 p-3 bg-background/50 backdrop-blur-sm">
-          <Link
-            href="/"
+          <button
+            onClick={handleLogout}
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground hover:bg-muted/50 group relative overflow-hidden",
+              "w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-destructive hover:bg-destructive/10 group relative overflow-hidden",
               collapsed && "justify-center px-3"
             )}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-            <LogOut className="h-5 w-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110" />
+            <div className="absolute inset-0 bg-gradient-to-r from-destructive/5 to-destructive/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <LogOut className="h-5 w-5 flex-shrink-0 relative z-10 transition-transform group-hover:scale-110 group-hover:text-destructive" />
             {!collapsed && (
-              <span className="relative z-10 font-medium tracking-wide">Back to Store</span>
+              <span className="relative z-10 font-medium tracking-wide">Sign Out</span>
             )}
-          </Link>
+          </button>
         </div>
       </aside>
 

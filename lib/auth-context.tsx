@@ -1,7 +1,7 @@
-// lib/auth-context.tsx
+// lib/auth-context.tsx - Updated version
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import Cookies from "js-cookie"
@@ -29,18 +29,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const pathname = usePathname()
+  const initializedRef = useRef(false)
 
-  // Don't initialize auth on login page - let login handle the redirect
-  const isLoginPage = pathname === '/auth/login'
-
-  // Load cached user data from cookies immediately
+  // Load cached user data immediately
   const loadCachedUser = (): AuthUser | null => {
+    if (typeof window === 'undefined') return null
     try {
-      const cached = Cookies.get(USER_CACHE_KEY)
+      const cached = localStorage.getItem(USER_CACHE_KEY) || Cookies.get(USER_CACHE_KEY)
       if (cached) {
-        const userData = JSON.parse(cached)
-        // console.log("💾 Loaded user from cache:", userData.role)
-        return userData
+        return JSON.parse(cached)
       }
     } catch (error) {
       console.error("Error loading cached user:", error)
@@ -48,16 +45,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null
   }
 
-  // Save user data to cookies
+  // Save user data to both localStorage and cookies
   const cacheUser = (userData: AuthUser | null) => {
+    if (typeof window === 'undefined') return
     try {
       if (userData) {
-        Cookies.set(USER_CACHE_KEY, JSON.stringify(userData), { 
-          expires: 7, // 7 days
+        const userString = JSON.stringify(userData)
+        localStorage.setItem(USER_CACHE_KEY, userString)
+        Cookies.set(USER_CACHE_KEY, userString, { 
+          expires: 7,
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production'
         })
       } else {
+        localStorage.removeItem(USER_CACHE_KEY)
         Cookies.remove(USER_CACHE_KEY)
       }
     } catch (error) {
@@ -76,39 +77,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        console.error("❌ Error fetching customer data:", error.message)
-        const cached = loadCachedUser()
-        if (cached && cached.id === authUser.id) {
-        //   console.log("⚠️ Using cached user data due to query error")
-          return cached
+        console.error("Error fetching customer data:", error.message)
+        // Fall back to existing user data if available
+        return {
+          ...authUser,
+          role: user?.role || 'normal',
+          name: user?.name || authUser.email?.split('@')[0] || 'User'
         }
-        return authUser
       }
 
       if (customer) {
-        const userData = {
+        return {
           ...authUser,
           role: customer.role,
           name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim(),
         }
-        cacheUser(userData)
-        return userData
       }
 
       return authUser
     } catch (error) {
-      console.error("💥 Exception in fetchUserData:", error)
-      const cached = loadCachedUser()
-      if (cached && cached.id === authUser.id) {
-        // console.log("⚠️ Using cached user data due to exception")
-        return cached
-      }
+      console.error("Exception in fetchUserData:", error)
       return authUser
     }
   }
 
   const refreshUser = async () => {
     try {
+      setIsLoading(true)
       const supabase = createClient()
       const { data: { user: authUser }, error } = await supabase.auth.getUser()
       
@@ -131,77 +126,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Error in refreshUser:", error)
       setUser(null)
       cacheUser(null)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    // Skip auth initialization on login page
-    if (isLoginPage) {
+    // Skip if already initialized
+    if (initializedRef.current) {
       setIsLoading(false)
       return
     }
 
-    const supabase = createClient()
-    let mounted = true
-
-    // Load cached user immediately for instant display
-    const cachedUser = loadCachedUser()
-    if (cachedUser) {
-      setUser(cachedUser)
-      setIsLoading(false)
-    }
-
-    // Get initial session
     const initializeAuth = async () => {
+      // Immediately load from cache for instant UI
+      const cachedUser = loadCachedUser()
+      if (cachedUser) {
+        setUser(cachedUser)
+        setIsLoading(false)
+        initializedRef.current = true
+      }
+
       try {
+        const supabase = createClient()
         const { data: { user: authUser }, error } = await supabase.auth.getUser()
         
         if (error) {
-          if (mounted) {
-            setUser(null)
-            cacheUser(null)
-            setIsLoading(false)
-          }
+          console.error("Error getting user:", error)
+          setUser(null)
+          cacheUser(null)
           return
         }
 
-        if (authUser && mounted) {
+        if (authUser) {
           const userData = await fetchUserData(authUser)
           setUser(userData)
           cacheUser(userData)
-        } else if (mounted) {
+        } else {
           setUser(null)
           cacheUser(null)
         }
-        
-        if (mounted) {
-          setIsLoading(false)
-        }
       } catch (error) {
-        console.error("💥 Error initializing auth:", error)
-        if (mounted) {
-          if (!cachedUser) {
-            setUser(null)
-            cacheUser(null)
-          }
-          setIsLoading(false)
-        }
+        console.error("Error initializing auth:", error)
+      } finally {
+        setIsLoading(false)
+        initializedRef.current = true
       }
     }
 
     initializeAuth()
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Ignore auth changes on login page
-      if (isLoginPage) return
-      
-    //   console.log("🔔 Auth state changed:", event)
-      
-      if (!mounted) return
-
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const userData = await fetchUserData(session.user)
         setUser(userData)
@@ -210,24 +187,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
         cacheUser(null)
       }
-      
       setIsLoading(false)
     })
 
     return () => {
-      mounted = false
       subscription.unsubscribe()
     }
-  }, [isLoginPage])
+  }, []) // Empty dependency array - only run once
 
   const signOut = async () => {
     try {
+      setIsLoading(true)
       const supabase = createClient()
       await supabase.auth.signOut()
       setUser(null)
       cacheUser(null)
     } catch (error) {
       console.error("Error signing out:", error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
