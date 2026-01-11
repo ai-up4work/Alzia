@@ -43,7 +43,22 @@ export function Header() {
     return getRoleBasedRedirect(user.role)
   }
 
-  // Remove the handleLogout function since we're using server-side forms
+  const handleLogout = async () => {
+    try {
+      // Submit to server-side logout endpoint
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/auth/signout'
+      document.body.appendChild(form)
+      form.submit()
+    } catch (error) {
+      console.error("Logout error:", error)
+      // Fallback to client-side logout if server-side fails
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      window.location.href = '/auth/login'
+    }
+  }
 
   const getUserInitials = () => {
     if (user?.name) {
@@ -143,16 +158,14 @@ export function Header() {
                     <Link href={getDashboardLink()} aria-label="Account" className="transition-transform hover:scale-105">
                       {renderUserAvatar('large')}
                     </Link>
-                    {/* Server-side logout form */}
-                    <form action="/auth/signout" method="post">
-                      <button
-                        type="submit"
-                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                        aria-label="Logout"
-                      >
-                        <LogOut className="w-5 h-5" />
-                      </button>
-                    </form>
+                    {/* Desktop logout using the handleLogout function */}
+                    <button
+                      onClick={handleLogout}
+                      className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                      aria-label="Logout"
+                    >
+                      <LogOut className="w-5 h-5" />
+                    </button>
                   </>
                 ) : (
                   <Link href="/auth/login" className="p-2 text-muted-foreground hover:text-secondary transition-colors" aria-label="Login">
@@ -222,19 +235,19 @@ export function Header() {
                           {user.role === 'admin' ? 'Admin' : user.role === 'wholesaler' ? 'Dashboard' : 'Account'}
                         </span>
                       </Link>
-                      {/* Fixed: Simplified mobile logout form */}
-                      <form action="/auth/signout" method="post">
-                        <button
-                          type="submit"
-                          className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors w-full text-left"
-                          onClick={() => setIsOpen(false)} // Close menu immediately
-                        >
-                          <LogOut className="w-5 h-5" />
-                          <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                            Sign Out
-                          </span>
-                        </button>
-                      </form>
+                      {/* Mobile logout using the same handleLogout function */}
+                      <button
+                        onClick={() => {
+                          setIsOpen(false) // Close menu first
+                          handleLogout() // Then logout
+                        }}
+                        className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors w-full text-left"
+                      >
+                        <LogOut className="w-5 h-5" />
+                        <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                          Sign Out
+                        </span>
+                      </button>
                     </>
                   ) : (
                     <Link 
