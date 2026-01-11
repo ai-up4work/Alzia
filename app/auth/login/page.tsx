@@ -1,15 +1,13 @@
 // app/auth/login/page.tsx
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { getRoleBasedRedirect } from "@/lib/utils/role-redirect"
 
-export default function LoginPage() {
-  // console.log("🎨🎨🎨 LoginPage RENDERED 🎨🎨🎨")
-  
+function LoginForm() {
   const searchParams = useSearchParams()
   const redirect = searchParams?.get("redirect")
   
@@ -19,16 +17,12 @@ export default function LoginPage() {
   const [error, setError] = useState("")
 
   const handleLogin = async (e: React.FormEvent) => {
-    // console.log("=" .repeat(50))
-    // console.log("🚨 HANDLE LOGIN CALLED!")
-    // console.log("=" .repeat(50))
-    
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
     try {
-      // console.log("🔐 Starting login process...")
+      console.log("🔐 Starting login process...")
       const supabase = createClient()
 
       // Sign in the user
@@ -43,7 +37,7 @@ export default function LoginPage() {
         throw new Error("No user data returned")
       }
 
-      // console.log("✅ User authenticated:", authData.user.id)
+      console.log("✅ User authenticated:", authData.user.id)
 
       // Get user role and status from customers table
       const { data: customer, error: customerError } = await supabase
@@ -60,32 +54,25 @@ export default function LoginPage() {
         throw new Error("Customer profile not found in database")
       }
 
-      // console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
+      console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
 
       if (customer.status !== "active") {
         await supabase.auth.signOut()
         throw new Error("Your account is not active. Please contact support.")
       }
 
-      // Determine redirect URL (with debug logging enabled)
-      const redirectUrl = getRoleBasedRedirect(customer.role, redirect, true)
+      // Determine redirect URL
+      const redirectUrl = getRoleBasedRedirect(customer.role, redirect)
       
-      // console.log("=" .repeat(50))
-      // console.log("🎯 FINAL REDIRECT DECISION")
-      // console.log("📊 Customer.role:", customer.role)
-      // console.log("🎯 Computed redirectUrl:", redirectUrl)
-      // console.log("=" .repeat(50))
+      console.log("🎯 Redirect URL:", redirectUrl, "for role:", customer.role)
       
       // Small delay to ensure auth cookies are set
       await new Promise(resolve => setTimeout(resolve, 300))
       
-      // console.log("🚀🚀🚀 EXECUTING REDIRECT NOW 🚀🚀🚀")
-      // console.log("window.location.href =", redirectUrl)
+      console.log("🚀 Executing redirect to:", redirectUrl)
       
       // Use window.location.href for a hard navigation
       window.location.href = redirectUrl
-      
-      // console.log("⚠️ This line should NEVER execute if redirect worked")
 
     } catch (err: any) {
       console.error("❌ Login error:", err.message)
@@ -99,9 +86,6 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-card border border-border rounded-2xl shadow-lg p-8">
           <div className="text-center mb-8">
-            {/* <div className="mb-4">
-              Safnas 
-            </div> */}
             <h1 
               className="text-3xl font-bold text-foreground mb-2"
               style={{ fontFamily: "'Cinzel', serif" }}
@@ -172,7 +156,6 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              // onClick={() => console.log("🔘🔘🔘 BUTTON CLICKED 🔘🔘🔘")}
               className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontFamily: "'Cinzel', serif" }}
             >
@@ -194,5 +177,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
