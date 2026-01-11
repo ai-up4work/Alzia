@@ -1,9 +1,9 @@
+// app/layout.tsx
 import type React from "react"
 import type { Metadata } from "next"
 import { Cormorant_Garamond, Montserrat, Cinzel, Fraunces } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { CartProvider } from "@/lib/cart-context"
-import { AuthProvider } from "@/lib/auth-context"
 import { CartDrawer } from "@/components/cart-drawer"
 import "./globals.css"
 
@@ -89,13 +89,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable} ${fraunces.variable}`}>
       <body className={montserrat.className}>
-        <AuthProvider>
         <CartProvider>
           {children}
           <CartDrawer />
           <Analytics />
         </CartProvider>
-        </AuthProvider>
       </body>
     </html>
   )

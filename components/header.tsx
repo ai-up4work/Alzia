@@ -1,16 +1,128 @@
+// components/header.tsx
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Menu, X, Heart, ShoppingBag, User } from "lucide-react"
+import { Menu, X, Heart, ShoppingBag, User, LogOut } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
-import { useAuth } from "@/lib/auth-context"
 import Image from "next/image"
+import { getRoleBasedRedirect } from "@/lib/utils/role-redirect"
+import { useRouter, usePathname } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const { totalItems, openCart } = useCart()
-  const { user, isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
+  
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasCheckedRole, setHasCheckedRole] = useState(false)
+
+  // Function to fetch user data
+  const fetchUser = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError || !session?.user) {
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+
+      const { data: customer, error: customerError } = await supabase
+        .from("customers")
+        .select("role, first_name, last_name")
+        .eq("id", session.user.id)
+        .single()
+
+      if (customerError) {
+        console.error("Error fetching customer:", customerError)
+        setUser({
+          ...session.user,
+          role: null,
+          name: session.user.email,
+        })
+      } else if (customer) {
+        const userData = {
+          ...session.user,
+          role: customer.role,
+          name: `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || session.user.email,
+        }
+        setUser(userData)
+        
+        // Auto-redirect on first load if not on correct page
+        if (!hasCheckedRole) {
+          setHasCheckedRole(true)
+          const storedRole = sessionStorage.getItem('user_role')
+          
+          if (storedRole && storedRole === customer.role) {
+            sessionStorage.removeItem('user_role')
+            const correctPath = getRoleBasedRedirect(customer.role)
+            
+            // Only redirect if we're on login page or root
+            if (pathname === '/auth/login' || pathname === '/') {
+              window.location.href = correctPath
+            }
+          }
+        }
+      }
+
+      setIsLoading(false)
+    } catch (error) {
+      console.error("Error in fetchUser:", error)
+      setUser(null)
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    // Initial fetch
+    fetchUser()
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event)
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+        await fetchUser()
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setIsLoading(false)
+        setHasCheckedRole(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Refetch user on route change to ensure fresh data
+  useEffect(() => {
+    if (!isLoading && pathname !== '/auth/login') {
+      fetchUser()
+    }
+  }, [pathname])
+
+  const isAuthenticated = !!user
+
+  // Get the appropriate dashboard link based on user role
+  const dashboardLink = user?.role ? getRoleBasedRedirect(user.role) : '/account'
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setUser(null)
+    setHasCheckedRole(false)
+    setIsOpen(false)
+    sessionStorage.removeItem('user_role')
+    window.location.href = '/'
+  }
 
   return (
     <>
@@ -67,7 +179,7 @@ export function Header() {
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-              {isAuthenticated && (
+              {isAuthenticated && user?.role === 'normal' && (
                 <Link
                   href="/account/wishlist"
                   className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -93,27 +205,37 @@ export function Header() {
               {!isLoading && (
                 <>
                   {isAuthenticated ? (
-                    <Link href="/account" className="hidden md:flex" aria-label="Account">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all">
-                        {user?.profilePicture ? (
-                          <Image
-                            src={user.profilePicture}
-                            alt={user.name}
-                            width={32}
-                            height={32}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs font-semibold text-primary">
-                            {user?.name?.charAt(0).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
+                    <div className="hidden md:flex items-center gap-2">
+                      <Link href={dashboardLink} aria-label="Account">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-all">
+                          {user?.profilePicture ? (
+                            <Image
+                              src={user.profilePicture}
+                              alt={user.name || 'User'}
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-semibold text-primary">
+                              {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label="Logout"
+                      >
+                        <LogOut className="w-5 h-5" />
+                      </button>
+                    </div>
                   ) : (
                     <Link
                       href="/auth/login"
                       className="hidden md:flex p-2 text-muted-foreground hover:text-secondary transition-colors"
+                      aria-label="Login"
                     >
                       <User className="w-5 h-5" />
                     </Link>
@@ -150,8 +272,8 @@ export function Header() {
                 >
                   New Arrivals
                 </Link>
-                <div className="flex gap-6 pt-6 border-t border-border/50">
-                  {isAuthenticated && (
+                <div className="flex flex-col gap-4 pt-6 border-t border-border/50">
+                  {isAuthenticated && user?.role === 'normal' && (
                     <Link 
                       href="/account/wishlist" 
                       className="flex items-center gap-2 text-muted-foreground hover:text-secondary transition-colors"
@@ -167,26 +289,37 @@ export function Header() {
                   {!isLoading && (
                     <>
                       {isAuthenticated ? (
-                        <Link href="/account" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
-                            {user?.profilePicture ? (
-                              <Image
-                                src={user.profilePicture}
-                                alt={user.name}
-                                width={24}
-                                height={24}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-[10px] font-semibold text-primary">
-                                {user?.name?.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                            Account
-                          </span>
-                        </Link>
+                        <>
+                          <Link href={dashboardLink} className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
+                              {user?.profilePicture ? (
+                                <Image
+                                  src={user.profilePicture}
+                                  alt={user.name || 'User'}
+                                  width={24}
+                                  height={24}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-[10px] font-semibold text-primary">
+                                  {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                              {user?.role === 'admin' ? 'Admin' : user?.role === 'wholesaler' ? 'Dashboard' : 'Account'}
+                            </span>
+                          </Link>
+                          <button
+                            onClick={handleSignOut}
+                            className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <LogOut className="w-5 h-5" />
+                            <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                              Logout
+                            </span>
+                          </button>
+                        </>
                       ) : (
                         <Link
                           href="/auth/login"
