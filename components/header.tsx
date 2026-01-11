@@ -13,7 +13,7 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { totalItems, openCart } = useCart()
-  const { user, isAuthenticated, isLoading, signOut } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
 
   // Handle client-side mounting
   useEffect(() => {
@@ -22,12 +22,6 @@ export function Header() {
 
   // Get the appropriate dashboard link based on user role
   const dashboardLink = user?.role ? getRoleBasedRedirect(user.role) : '/account'
-
-  const handleSignOut = async () => {
-    await signOut()
-    setIsOpen(false)
-    window.location.href = '/'
-  }
 
   // Don't render auth UI until mounted and loaded
   const showAuthUI = mounted && !isLoading
@@ -134,13 +128,15 @@ export function Header() {
                         )}
                       </div>
                     </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-                      aria-label="Logout"
-                    >
-                      <LogOut className="w-5 h-5" />
-                    </button>
+                    <form action="/auth/signout" method="post">
+                      <button
+                        type="submit"
+                        className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                        aria-label="Logout"
+                      >
+                        <LogOut className="w-5 h-5" />
+                      </button>
+                    </form>
                   </>
                 ) : (
                   <Link
@@ -225,15 +221,17 @@ export function Header() {
                           {user?.role === 'admin' ? 'Admin' : user?.role === 'wholesaler' ? 'Dashboard' : 'Account'}
                         </span>
                       </Link>
-                      <button
-                        onClick={handleSignOut}
-                        className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
-                          Logout
-                        </span>
-                      </button>
+                      <form action="/auth/signout" method="post">
+                        <button
+                          type="submit"
+                          className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
+                            Logout
+                          </span>
+                        </button>
+                      </form>
                     </>
                   ) : (
                     <Link
