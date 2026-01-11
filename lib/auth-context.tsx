@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User } from "@supabase/supabase-js"
 import Cookies from "js-cookie"
+import { usePathname } from "next/navigation"
 
 interface AuthUser extends User {
   role?: string
@@ -27,6 +28,10 @@ const USER_CACHE_KEY = "auth_user_cache"
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const pathname = usePathname()
+
+  // Don't initialize auth on login page - let login handle the redirect
+  const isLoginPage = pathname === '/auth/login'
 
   // Load cached user data from cookies immediately
   const loadCachedUser = (): AuthUser | null => {
@@ -62,30 +67,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserData = async (authUser: User): Promise<AuthUser> => {
     try {
-      console.log("📊 Fetching customer data from database for user:", authUser.id)
       const supabase = createClient()
       
-      console.log("🔍 About to query customers table...")
-      
-      // Add timeout to detect hanging queries
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout after 5 seconds')), 5000)
-      )
-      
-      const queryPromise = supabase
+      const { data: customer, error } = await supabase
         .from("customers")
         .select("role, first_name, last_name")
         .eq("id", authUser.id)
         .single()
-      
-      const { data: customer, error } = await Promise.race([queryPromise, timeoutPromise]) as any
-
-      console.log("📦 Database response:", { customer, error })
-      console.log("📦 Error details:", error ? JSON.stringify(error) : "none")
 
       if (error) {
-        console.error("❌ Error fetching customer data:", error.message, error.details, error.hint)
-        // Return cached data if query fails but user is authenticated
+        console.error("❌ Error fetching customer data:", error.message)
         const cached = loadCachedUser()
         if (cached && cached.id === authUser.id) {
           console.log("⚠️ Using cached user data due to query error")
@@ -95,7 +86,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (customer) {
-        console.log("✅ Customer found:", customer)
         const userData = {
           ...authUser,
           role: customer.role,
@@ -105,11 +95,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return userData
       }
 
-      console.warn("⚠️ No customer data found, returning basic auth user")
       return authUser
     } catch (error) {
       console.error("💥 Exception in fetchUserData:", error)
-      // Try to use cached data on exception
       const cached = loadCachedUser()
       if (cached && cached.id === authUser.id) {
         console.log("⚠️ Using cached user data due to exception")
@@ -147,6 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    // Skip auth initialization on login page
+    if (isLoginPage) {
+      setIsLoading(false)
+      return
+    }
+
     const supabase = createClient()
     let mounted = true
 
@@ -155,17 +149,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (cachedUser) {
       setUser(cachedUser)
       setIsLoading(false)
-      console.log("⚡ Using cached user for instant display")
     }
 
     // Get initial session
     const initializeAuth = async () => {
       try {
-        console.log("🔄 Initializing auth...")
         const { data: { user: authUser }, error } = await supabase.auth.getUser()
         
         if (error) {
-          console.error("❌ Error getting user:", error)
           if (mounted) {
             setUser(null)
             cacheUser(null)
@@ -174,12 +165,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
 
-        console.log("📋 User:", authUser ? "Found" : "None")
-
         if (authUser && mounted) {
-          console.log("👤 Fetching user data for:", authUser.id)
           const userData = await fetchUserData(authUser)
-          console.log("✅ User data loaded:", userData.role)
           setUser(userData)
           cacheUser(userData)
         } else if (mounted) {
@@ -188,13 +175,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         if (mounted) {
-          console.log("✅ Auth initialized, loading complete")
           setIsLoading(false)
         }
       } catch (error) {
         console.error("💥 Error initializing auth:", error)
         if (mounted) {
-          // Keep cached user if auth check fails
           if (!cachedUser) {
             setUser(null)
             cacheUser(null)
@@ -210,18 +195,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Ignore auth changes on login page
+      if (isLoginPage) return
+      
       console.log("🔔 Auth state changed:", event)
       
       if (!mounted) return
 
       if (session?.user) {
-        console.log("👤 User signed in, fetching data...")
         const userData = await fetchUserData(session.user)
-        console.log("✅ User data updated:", userData.role)
         setUser(userData)
         cacheUser(userData)
       } else {
-        console.log("🚪 User signed out")
         setUser(null)
         cacheUser(null)
       }
@@ -233,7 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [isLoginPage])
 
   const signOut = async () => {
     try {
