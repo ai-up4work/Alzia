@@ -79,7 +79,7 @@ export default async function AccountPage() {
             ))}
           </div>
 
-          <form action="/auth/signout" method="post" className="mt-8">
+          {/* <form action="/auth/signout" method="post" className="mt-8">
             <button
               type="submit"
               className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors"
@@ -87,7 +87,7 @@ export default async function AccountPage() {
               <LogOut className="w-5 h-5" />
               <span>Sign Out</span>
             </button>
-          </form>
+          </form> */}
         </div>
       </div>
 
