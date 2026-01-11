@@ -19,8 +19,6 @@ export function Header() {
   useEffect(() => {
     setMounted(true)
     
-    // Optimistically set local loading to false after mount
-    // This prevents unnecessary loading states if we have cached auth
     const timer = setTimeout(() => {
       setLocalLoading(false)
     }, 300)
@@ -28,10 +26,8 @@ export function Header() {
     return () => clearTimeout(timer)
   }, [])
 
-  // Sync auth loading with local loading state
   useEffect(() => {
     if (mounted) {
-      // Only show loading if auth is still loading AND we don't have cached user
       if (authLoading && !user) {
         setLocalLoading(true)
       } else {
@@ -47,22 +43,7 @@ export function Header() {
     return getRoleBasedRedirect(user.role)
   }
 
-  const handleLogout = async () => {
-    try {
-      // Submit to server-side logout endpoint
-      const form = document.createElement('form')
-      form.method = 'POST'
-      form.action = '/auth/signout'
-      document.body.appendChild(form)
-      form.submit()
-    } catch (error) {
-      console.error("Logout error:", error)
-      // Fallback to client-side logout if server-side fails
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      window.location.href = '/auth/login'
-    }
-  }
+  // Remove the handleLogout function since we're using server-side forms
 
   const getUserInitials = () => {
     if (user?.name) {
@@ -88,7 +69,6 @@ export function Header() {
     )
   }
 
-  // Show loading skeleton only when needed
   const showLoading = !mounted || (localLoading && !user)
 
   return (
@@ -242,12 +222,12 @@ export function Header() {
                           {user.role === 'admin' ? 'Admin' : user.role === 'wholesaler' ? 'Dashboard' : 'Account'}
                         </span>
                       </Link>
-                      {/* Server-side logout form for mobile */}
+                      {/* Fixed: Simplified mobile logout form */}
                       <form action="/auth/signout" method="post">
                         <button
                           type="submit"
-                          className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors w-full"
-                          onClick={() => setIsOpen(false)}
+                          className="flex items-center gap-2 text-muted-foreground hover:text-destructive transition-colors w-full text-left"
+                          onClick={() => setIsOpen(false)} // Close menu immediately
                         >
                           <LogOut className="w-5 h-5" />
                           <span className="text-xs font-medium tracking-wider" style={{ fontFamily: "'Cinzel', serif" }}>
