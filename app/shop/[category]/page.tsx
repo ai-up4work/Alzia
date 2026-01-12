@@ -10,7 +10,7 @@ const products = [
     name: "Radiance Elixir Serum",
     category: "skincare",
     price: 128,
-    image: "/luxury-serum-bottle-elegant.jpg",
+    image: "/luxury-serum-bottle-vitamin-c-gold-elegant.jpg",
     description: "Illuminating facial serum"
   },
   {
@@ -18,7 +18,7 @@ const products = [
     name: "Velvet Rose Moisturizer",
     category: "skincare",
     price: 95,
-    image: "/luxury-cream-jar-elegant.jpg",
+    image: "/luxury-lipstick-red-velvet-elegant-gold-case.jpg",
     description: "Hydrating day cream"
   },
   {

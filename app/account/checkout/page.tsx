@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { ChevronLeft, CreditCard, Truck, ShieldCheck } from "lucide-react"
 import Link from "next/link"
+import { CheckoutSteps } from "@/components/CheckoutSteps"
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -36,6 +37,9 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
 
+  // Track which steps have been completed (validated)
+  const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({})
+
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -56,6 +60,28 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  // Validation functions for each step
+  const isStep1Valid = () => {
+    return !!(formData.email && formData.firstName && formData.lastName && formData.phone)
+  }
+
+  const isStep2Valid = () => {
+    return !!(formData.addressLine1 && formData.city && formData.state && formData.pinCode)
+  }
+
+  const handleContinueToStep = (nextStep: number) => {
+    // Mark current step as completed
+    setCompletedSteps((prev) => ({ ...prev, [step]: true }))
+    setStep(nextStep)
+  }
+
+  const handleStepClick = (targetStep: number) => {
+    // Only allow navigation to completed steps or current step
+    if (targetStep <= step || completedSteps[targetStep - 1]) {
+      setStep(targetStep)
+    }
   }
 
   const handlePlaceOrder = async () => {
@@ -111,39 +137,12 @@ export default function CheckoutPage() {
             <div>
               <h1 className="font-serif text-3xl md:text-4xl text-foreground font-light mb-8">Checkout</h1>
 
-              {/* Progress Steps */}
-              <div className="flex items-center gap-4 mb-8">
-                <div className={`flex items-center gap-2 ${step >= 1 ? "text-foreground" : "text-muted-foreground"}`}>
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                  >
-                    1
-                  </span>
-                  <span className="text-sm font-medium">Contact</span>
-                </div>
-                <div className="flex-1 h-px bg-border" />
-                <div className={`flex items-center gap-2 ${step >= 2 ? "text-foreground" : "text-muted-foreground"}`}>
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                  >
-                    2
-                  </span>
-                  <span className="text-sm font-medium">Shipping</span>
-                </div>
-                <div className="flex-1 h-px bg-border" />
-                <div className={`flex items-center gap-2 ${step >= 3 ? "text-foreground" : "text-muted-foreground"}`}>
-                  <span
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                  >
-                    3
-                  </span>
-                  <span className="text-sm font-medium">Payment</span>
-                </div>
-              </div>
+              {/* Progress Steps - Now using the new component */}
+              <CheckoutSteps currentStep={step} onStepClick={handleStepClick} />
 
               {/* Step 1: Contact Information */}
               {step === 1 && (
-                <div className="space-y-6">
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="font-serif text-xl text-foreground">Contact Information</h2>
 
                   <div className="space-y-4">
@@ -204,8 +203,8 @@ export default function CheckoutPage() {
                   <Button
                     size="lg"
                     className="w-full rounded-full"
-                    onClick={() => setStep(2)}
-                    disabled={!formData.email || !formData.firstName || !formData.lastName || !formData.phone}
+                    onClick={() => handleContinueToStep(2)}
+                    disabled={!isStep1Valid()}
                   >
                     Continue to Shipping
                   </Button>
@@ -214,7 +213,7 @@ export default function CheckoutPage() {
 
               {/* Step 2: Shipping Address */}
               {step === 2 && (
-                <div className="space-y-6">
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="font-serif text-xl text-foreground">Shipping Address</h2>
 
                   <div className="space-y-4">
@@ -319,8 +318,8 @@ export default function CheckoutPage() {
                     <Button
                       size="lg"
                       className="flex-1 rounded-full"
-                      onClick={() => setStep(3)}
-                      disabled={!formData.addressLine1 || !formData.city || !formData.state || !formData.pinCode}
+                      onClick={() => handleContinueToStep(3)}
+                      disabled={!isStep2Valid()}
                     >
                       Continue to Payment
                     </Button>
@@ -330,7 +329,7 @@ export default function CheckoutPage() {
 
               {/* Step 3: Payment */}
               {step === 3 && (
-                <div className="space-y-6">
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="font-serif text-xl text-foreground">Payment Method</h2>
 
                   <RadioGroup
