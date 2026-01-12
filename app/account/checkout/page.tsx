@@ -354,14 +354,19 @@ export default function CheckoutPage() {
                     </div>
 
                     <div
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${formData.paymentMethod === "online" ? "border-primary bg-primary/5" : "border-border"}`}
+                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-not-allowed transition-colors opacity-60 border-border bg-muted/30`}
                     >
-                      <RadioGroupItem value="online" id="online" />
-                      <Label htmlFor="online" className="flex-1 cursor-pointer">
+                      <RadioGroupItem value="online" id="online" disabled />
+                      <Label htmlFor="online" className="flex-1 cursor-not-allowed">
                         <div className="flex items-center gap-3">
                           <CreditCard className="w-5 h-5 text-muted-foreground" />
                           <div>
-                            <p className="font-medium text-foreground">Online Payment</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground">Online Payment</p>
+                              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                Not yet enabled
+                              </span>
+                            </div>
                             <p className="text-sm text-muted-foreground">Credit/Debit Card, UPI, Net Banking</p>
                           </div>
                         </div>
