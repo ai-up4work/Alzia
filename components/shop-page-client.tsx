@@ -997,6 +997,3 @@ export default function ShopPageClient({
     </main>
   )
 }
-
-
-
