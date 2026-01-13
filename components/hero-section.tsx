@@ -20,6 +20,7 @@ export function HeroSection() {
       image: "/hero-1.jpg",
       subtitle: "Parisian Luxury Beauty",
       title: ["Discover your", "radiant beauty"],
+      mobileTitle: ["Discover", "your", "radiant", "beauty"],
       description:
         "Exquisite cosmetics crafted in Paris with the finest ingredients. Experience luxury that transforms your everyday routine into a moment of pure elegance.",
     },
@@ -27,6 +28,7 @@ export function HeroSection() {
       image: "/hero-2.png",
       subtitle: "Timeless Elegance",
       title: ["Elevate your", "skincare ritual"],
+      mobileTitle: ["Elevate", "your", "skincare", "ritual"],
       description:
         "Transform your skin with our luxurious skincare collection. Each product is formulated to nourish, rejuvenate, and reveal your natural radiance.",
     },
@@ -34,6 +36,7 @@ export function HeroSection() {
       image: "/hero-3.jpg",
       subtitle: "Natural Brilliance",
       title: ["Express your", "unique beauty"],
+      mobileTitle: ["Express", "your", "unique", "beauty"],
       description:
         "From vibrant makeup to nourishing skincare, discover products that celebrate your individuality and enhance your natural beauty.",
     },
@@ -57,7 +60,7 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[100dvh] w-full flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div
         ref={imageContainerRef}
@@ -79,7 +82,7 @@ export function HeroSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 w-full items-center">
           
           {/* Left Column - Main Content */}
-          <div className="space-y-6 md:space-y-8">
+          <div className="space-y-6 md:space-y-8 -mt-16">
             <div className="space-y-4 md:space-y-6">
               <p className="text-xs md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] text-background/90 font-medium animate-fade-up">
                 {slide.subtitle}
@@ -96,10 +99,16 @@ export function HeroSection() {
 
               {/* Mobile Heading */}
               <h1 className="block md:hidden font-serif text-[2.25rem] leading-[1.1] font-medium text-background text-balance">
-                <AnimatedText text={slide.title[0]} delay={0.2} />
+                <AnimatedText text={slide.mobileTitle[0]} delay={0.2} />
                 <br />
                 <span className="text-accent">
-                  <AnimatedText text={slide.title[1]} delay={0.4} />
+                  <AnimatedText text={slide.mobileTitle[1]} delay={0.4} />
+                </span>
+                <br />
+                <AnimatedText text={slide.mobileTitle[2]} delay={0.6} />
+                <br />
+                <span className="text-accent">
+                  <AnimatedText text={slide.mobileTitle[3]} delay={0.8} />
                 </span>
               </h1>
 
@@ -110,7 +119,7 @@ export function HeroSection() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 animate-fade-up animation-delay-600">
+            <div className="flex flex-row gap-3 md:gap-4 animate-fade-up animation-delay-600">
               <Button
                 asChild
                 size="lg"
@@ -132,16 +141,39 @@ export function HeroSection() {
             </div>
 
             {/* Slide Indicators */}
-            <div className="flex gap-2 animate-fade-up animation-delay-800">
+            <div
+              className="
+                absolute
+                right-4
+                top-1/2
+                -translate-y-1/2
+                flex flex-col gap-3
+                z-20
+                animate-fade-up animation-delay-800
+                md:static
+                md:translate-y-0
+                md:flex-row
+                md:gap-2
+              "
+            >
               {slides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`transition-all duration-300 rounded-full ${
-                    index === currentSlide
-                      ? "w-10 md:w-12 h-2 md:h-2.5 bg-background"
-                      : "w-2 md:w-2.5 h-2 md:h-2.5 bg-background/50 hover:bg-background/70"
-                  }`}
+                  className={`
+                    transition-all duration-300 rounded-full
+                    ${
+                      index === currentSlide
+                        ? `
+                          h-8 w-2.5 bg-background
+                          md:h-2 md:w-10
+                        `
+                        : `
+                          h-2.5 w-2.5 bg-background/50 hover:bg-background/70
+                          md:h-2 md:w-2
+                        `
+                    }
+                  `}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
