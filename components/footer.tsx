@@ -174,7 +174,8 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="text-sm font-cinzel font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
-                  UP4WORK Studio
+                <Image src="/up4work-logo-transparent-2.png" alt="UP4WORK Logo" width={60} height={60} className="inline-block ml-2 object-contain" />
+                UP4WORK Studio
                 </a>
               </div>
               <div className="flex gap-3">
