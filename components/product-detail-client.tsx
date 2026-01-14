@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, ShoppingBag, Star, Minus, Plus, Truck, RotateCcw, Shield, ChevronRight } from "lucide-react"
+import { ProductShareButton } from "@/components/ProductShareButton"
 import type { Product } from "@/lib/types"
 
 interface ProductDetailClientProps {
@@ -160,47 +161,53 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 )}
               </div>
 
-              {/* Quantity & Add to Cart */}
-              <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <div className="flex items-center border rounded-full">
-                  <button
-                    onClick={decreaseQuantity}
-                    className="w-12 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-l-full"
-                    disabled={quantity <= 1}
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
-                  <button
-                    onClick={increaseQuantity}
-                    className="w-12 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-r-full"
-                    disabled={quantity >= product.stock_quantity}
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex items-center border rounded-full">
-                  <Button
-                    size="lg"
-                    className="flex-1 h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={!inStock}
-                    // onClick={}
-                  >
-                    <ShoppingBag className="w-5 h-5 mr-2" />
-                    Add to Cart - {formatPrice(product.retail_price * quantity)}
-                  </Button>
-                </div>
-
+             {/* Quantity & Add to Cart */}
+              <div className="flex flex-col gap-3 mb-8">
+                {/* Add to Cart Button - Full width on mobile, first line on desktop */}
                 <Button
                   size="lg"
-                  variant="outline"
-                  className="h-12 w-12 rounded-full p-0 bg-transparent"
-                  aria-label="Add to wishlist"
+                  className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={!inStock}
                 >
-                  <Heart className="w-5 h-5" />
+                  <ShoppingBag className="w-5 h-5 mr-2" />
+                  <span className="hidden sm:inline">Add to Cart - {formatPrice(product.retail_price * quantity)}</span>
+                  <span className="sm:hidden">Add to Cart</span>
                 </Button>
+
+                {/* Quantity, Wishlist, Share - Full width on mobile */}
+                <div className="flex gap-3 w-full">
+                  <div className="flex items-center border rounded-full flex-1">
+                    <button
+                      onClick={decreaseQuantity}
+                      className="w-12 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-l-full"
+                      disabled={quantity <= 1}
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="flex-1 text-center font-medium">{quantity}</span>
+                    <button
+                      onClick={increaseQuantity}
+                      className="w-12 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-r-full"
+                      disabled={quantity >= product.stock_quantity}
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 w-40 flex-shrink-0 rounded-full p-0"
+                    aria-label="Add to wishlist"
+                  >
+                    <Heart className="w-5 h-5" />
+                    Wishlist
+                  </Button>
+
+                  <ProductShareButton product={product} className="h-12 w-32 flex-shrink-0 rounded-full p-0" />
+                </div>
               </div>
 
               {/* Benefits */}
@@ -282,7 +289,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   <p className="text-muted-foreground mb-4">
                     Reviews will be displayed here once customers start reviewing this product.
                   </p>
-                  <Button variant="outline" className="rounded-full bg-transparent">
+                  <Button variant="outline" className="rounded-full">
                     Write a Review
                   </Button>
                 </div>
