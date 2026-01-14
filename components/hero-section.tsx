@@ -10,8 +10,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export function HeroSection() {
-  const imageContainerRef = useRef<HTMLDivElement>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set([0]))
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
 
@@ -42,6 +42,18 @@ export function HeroSection() {
     },
   ]
 
+  // Preload all images
+  useEffect(() => {
+    slides.forEach((slide, index) => {
+      const img = new Image()
+      img.src = slide.image
+      img.onload = () => {
+        setLoadedImages(prev => new Set([...prev, index]))
+      }
+    })
+  }, [])
+
+  // Auto-advance slides
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length)
@@ -52,44 +64,71 @@ export function HeroSection() {
 
   const slide = slides[currentSlide]
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      if (searchQuery.trim()) {
+        router.push(`/shop?search=${encodeURIComponent(searchQuery)}`)
+      }
+    }
+  }
+
+  const handleSearchClick = () => {
     if (searchQuery.trim()) {
       router.push(`/shop?search=${encodeURIComponent(searchQuery)}`)
     }
   }
 
+  const handleSlideChange = (index: number) => {
+    setCurrentSlide(index)
+  }
+
   return (
-    <section className="relative min-h-[100dvh] w-full flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div
-        ref={imageContainerRef}
-        className="absolute inset-0 w-full h-full overflow-hidden transition-all duration-1000 ease-out"
-      >
-        <img
-          key={currentSlide}
-          src={slide.image || "/placeholder.svg?height=1080&width=1920&query=luxury cosmetics hero"}
-          alt={slide.subtitle}
-          className="w-full h-full object-cover animate-zoom-in"
-        />
-        {/* Enhanced gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+    <section className="relative min-h-[100dvh] w-full flex items-center justify-center overflow-hidden bg-black">
+      {/* Background Images with Crossfade */}
+      <div className="absolute inset-0 w-full h-full">
+        {slides.map((s, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+              index === currentSlide ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <img
+              src={s.image || "/placeholder.svg?height=1080&width=1920&query=luxury cosmetics hero"}
+              alt={s.subtitle}
+              className="w-full h-full object-cover"
+              style={{
+                transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)',
+                transition: 'transform 15s ease-out'
+              }}
+            />
+            {/* Enhanced gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+          </div>
+        ))}
       </div>
 
       {/* Main Content Container */}
-      <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full h-full flex items-center pt-20 md:pt-24">
+      <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 w-full h-full flex items-center pt-20 md:pt-24 z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 w-full items-center">
           
           {/* Left Column - Main Content */}
           <div className="space-y-6 md:space-y-8 -mt-16">
             <div className="space-y-4 md:space-y-6">
-              <p className="text-xs md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] text-background/90 font-medium animate-fade-up">
+              <p 
+                key={`subtitle-${currentSlide}`}
+                className="text-xs md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] text-background/90 font-medium animate-fade-up"
+              >
                 {slide.subtitle}
               </p>
 
               {/* Desktop/Tablet Heading */}
-              <h1 className="hidden md:block font-serif text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium leading-[1.1] text-background text-balance">
+              <h1 
+                key={`title-desktop-${currentSlide}`}
+                className="hidden md:block font-serif text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-medium leading-[1.1] text-background text-balance"
+              >
                 <AnimatedText text={slide.title[0]} delay={0.2} />
                 <br />
                 <span className="text-accent">
@@ -98,7 +137,10 @@ export function HeroSection() {
               </h1>
 
               {/* Mobile Heading */}
-              <h1 className="block md:hidden font-serif text-[2.25rem] leading-[1.1] font-medium text-background text-balance">
+              <h1 
+                key={`title-mobile-${currentSlide}`}
+                className="block md:hidden font-serif text-[2.25rem] leading-[1.1] font-medium text-background text-balance"
+              >
                 <AnimatedText text={slide.mobileTitle[0]} delay={0.2} />
                 <br />
                 <span className="text-accent">
@@ -113,7 +155,10 @@ export function HeroSection() {
               </h1>
 
               {/* Description */}
-              <p className="text-base md:text-lg text-background/90 leading-relaxed max-w-xl animate-fade-up animation-delay-400">
+              <p 
+                key={`desc-${currentSlide}`}
+                className="text-base md:text-lg text-background/90 leading-relaxed max-w-xl animate-fade-up animation-delay-400"
+              >
                 {slide.description}
               </p>
             </div>
@@ -159,7 +204,7 @@ export function HeroSection() {
               {slides.map((_, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentSlide(index)}
+                  onClick={() => handleSlideChange(index)}
                   className={`
                     transition-all duration-300 rounded-full
                     ${
@@ -182,10 +227,7 @@ export function HeroSection() {
 
           {/* Right Column - Search Bar (Desktop only) */}
           <div className="hidden lg:flex justify-end items-start pt-8">
-            <form
-              onSubmit={handleSearch}
-              className="w-full max-w-md animate-fade-up animation-delay-400"
-            >
+            <div className="w-full max-w-md animate-fade-up animation-delay-400">
               <div className="flex items-center gap-3 bg-background/15 backdrop-blur-xl rounded-2xl px-6 py-4 border border-background/30 hover:border-background/50 hover:bg-background/20 transition-all shadow-2xl">
                 <Search className="w-5 h-5 text-background/80 flex-shrink-0" />
                 <input
@@ -193,10 +235,11 @@ export function HeroSection() {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
                   className="flex-1 bg-transparent text-base text-background placeholder-background/60 outline-none font-light"
                 />
                 <button
-                  type="submit"
+                  onClick={handleSearchClick}
                   className="bg-primary text-primary-foreground px-6 py-2 rounded-full hover:bg-primary/90 transition-colors font-medium text-sm whitespace-nowrap"
                 >
                   Search
@@ -207,36 +250,34 @@ export function HeroSection() {
               <p className="text-xs text-background/60 mt-3 ml-2">
                 Try: "lipstick", "moisturizer", "foundation"
               </p>
-            </form>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Mobile Search Bar - Bottom Floating */}
       <div className="lg:hidden absolute bottom-6 left-4 right-4 z-10 animate-fade-up animation-delay-400">
-        <form
-          onSubmit={handleSearch}
-          className="flex items-center gap-2 bg-background/15 backdrop-blur-xl rounded-full px-5 py-3.5 border border-background/30 shadow-2xl"
-        >
+        <div className="flex items-center gap-2 bg-background/15 backdrop-blur-xl rounded-full px-5 py-3.5 border border-background/30 shadow-2xl">
           <Search className="w-5 h-5 text-background/80 flex-shrink-0" />
           <input
             type="text"
             placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
             className="flex-1 bg-transparent text-sm text-background placeholder-background/60 outline-none font-light"
           />
           <button
-            type="submit"
+            onClick={handleSearchClick}
             className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs font-medium whitespace-nowrap"
           >
             Search
           </button>
-        </form>
+        </div>
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 animate-bounce animation-delay-1000">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 animate-bounce animation-delay-1000 z-10">
         <p className="text-xs text-background/60 uppercase tracking-widest">Scroll</p>
         <div className="w-px h-12 bg-gradient-to-b from-background/60 to-transparent" />
       </div>
