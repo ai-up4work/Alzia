@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Header } from "@/components/header"
 import { 
   Heart, 
   ShoppingCart, 
@@ -862,6 +863,7 @@ function WholesalePageContent({
       transition={{ duration: 0.5 }}
     >
       <div>
+        <Header />
         <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
           <Leaf className="w-4 h-4 text-secondary" />
           Categories
