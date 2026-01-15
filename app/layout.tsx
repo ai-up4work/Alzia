@@ -56,13 +56,13 @@ export const metadata: Metadata = {
         alt: "Alzìa – Makeup & Cosmetics Sri Lanka",
       },
     ],
-    locale: "en_US",
+    locale: "en_LK",
     type: "website",
   },
-  icons: {
-    icon: "/icon.png",
-    apple: "/apple-icon.png",
-  },
+  // icons: {
+  //   icon: "/icon.png",
+  //   apple: "/apple-icon.png",
+  // },
   twitter: {
     card: "summary_large_image",
     title: "Alzìa – Makeup & Cosmetics Sri Lanka",
