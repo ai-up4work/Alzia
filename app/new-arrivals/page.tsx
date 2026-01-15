@@ -8,7 +8,7 @@ export default function NewArrivalsPage() {
     {
       id: 1,
       name: "Radiance Renewal Serum",
-      brand: "Alzìa Paris",
+      brand: "Partner with Alzìa for wholesale cosmetics in Sri Lanka. Bulk makeup, skincare & beauty products at competitive rates. Fast delivery for retailers in Sri Lanka",
       price: 8999,
       image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600&h=600&fit=crop",
       badge: "New",
@@ -18,7 +18,7 @@ export default function NewArrivalsPage() {
     {
       id: 2,
       name: "Velvet Matte Lipstick",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 2499,
       image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=600&h=600&fit=crop",
       badge: "New",
@@ -28,7 +28,7 @@ export default function NewArrivalsPage() {
     {
       id: 3,
       name: "Luminous Silk Foundation",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 4999,
       image: "https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?w=600&h=600&fit=crop",
       badge: "New",
@@ -38,7 +38,7 @@ export default function NewArrivalsPage() {
     {
       id: 4,
       name: "Rose Gold Highlighter",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 3499,
       image: "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=600&h=600&fit=crop",
       badge: "New",
@@ -48,7 +48,7 @@ export default function NewArrivalsPage() {
     {
       id: 5,
       name: "Hydrating Face Mist",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 2999,
       image: "https://images.unsplash.com/photo-1570554886111-e80fcca6a029?w=600&h=600&fit=crop",
       badge: "New",
@@ -58,7 +58,7 @@ export default function NewArrivalsPage() {
     {
       id: 6,
       name: "Midnight Rose Parfum",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 12999,
       image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&h=600&fit=crop",
       badge: "Limited",
@@ -68,7 +68,7 @@ export default function NewArrivalsPage() {
     {
       id: 7,
       name: "Nourishing Night Cream",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 6999,
       image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=600&h=600&fit=crop",
       badge: "New",
@@ -78,7 +78,7 @@ export default function NewArrivalsPage() {
     {
       id: 8,
       name: "Precision Eyeliner Pen",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 1999,
       image: "https://images.unsplash.com/photo-1583241800698-c93b43cf3c02?w=600&h=600&fit=crop",
       badge: "New",
@@ -88,7 +88,7 @@ export default function NewArrivalsPage() {
     {
       id: 9,
       name: "Vitamin C Brightening Mask",
-      brand: "Alzìa Paris",
+      brand: "Alzìa Makeup & Cosmetics",
       price: 4499,
       image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600&h=600&fit=crop",
       badge: "New",

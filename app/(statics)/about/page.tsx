@@ -3,102 +3,101 @@ import { BlogPageLayout } from "@/components/blog-page-layout"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Our Story — Alzìa Paris | Luxury Beauty Brand",
-  description:
-    "Discover the heritage, values, and commitment behind Alzìa Paris luxury cosmetics. Crafted in Paris with passion for timeless elegance.",
+  title: "About Alzìa Cosmetics Sri Lanka | Premium Makeup & Skincare",
+  description: "Alzìa Cosmetics Sri Lanka: premium makeup, skincare & beauty products for Sri Lankan skin types. Fast island wide delivery.",
   openGraph: {
-    title: "Our Story — Alzìa Paris",
-    description: "Heritage and values behind Alzìa Paris luxury cosmetics",
+    title: "About Alzìa Cosmetics Sri Lanka",
+    description: "Premium cosmetics brand for Sri Lanka – makeup, skincare, island wide delivery",
   },
 }
 
 export default function AboutPage() {
   return (
     <BlogPageLayout
-      title="Our Story"
-      subtitle="From the heart of Paris, we crafted a beauty philosophy rooted in elegance, authenticity, and timeless sophistication."
-      publishDate="2024"
+      title="About Alzìa Cosmetics Sri Lanka"
+      subtitle="Premium makeup & skincare crafted for Sri Lankan beauty. Fast island wide delivery from Colombo."
+      publishDate="January 2026"
       readTime="5 min read"
     >
       <div className="space-y-12 md:space-y-16">
         <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">Heritage & Craftsmanship</h2>
+          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
+            Premium Cosmetics Sri Lanka
+          </h2>
           <p className="text-muted-foreground leading-relaxed mb-4 text-lg">
-            Alzìa Paris was founded on the belief that beauty is not merely appearance—it's a reflection of self-care,
-            confidence, and personal expression. Our founders, inspired by Parisian elegance and botanical wisdom,
-            created a collection that honors both tradition and innovation.
+            Alzìa Cosmetics Sri Lanka delivers premium makeup & skincare for Sri Lankan skin types. From Colombo to 
+            island wide, we bring quality beauty products with 1-5 day delivery.
           </p>
           <p className="text-muted-foreground leading-relaxed text-lg">
-            Every product is meticulously crafted using the finest ingredients, combining centuries of beauty knowledge
-            with modern scientific research. We source botanicals from sustainable suppliers worldwide, ensuring quality
-            without compromise.
+            High quality ingredients meet Sri Lanka climate needs – humidity, sun protection, diverse skin tones.
           </p>
         </section>
 
         <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-8">Our Values</h2>
+          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-8">
+            Why Choose Alzìa Sri Lanka
+          </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-muted/50 rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <span className="text-2xl">✨</span> Authenticity
+                <span className="text-2xl">🌞</span> Sri Lanka Climate
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                We believe in transparency. Every ingredient, every formula, every promise is backed by rigorous testing
-                and genuine commitment to your beauty journey.
+                Humidity-proof makeup, SPF skincare, long-lasting formulas for tropical climate.
               </p>
             </div>
             <div className="bg-muted/50 rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <span className="text-2xl">🌿</span> Sustainability
+                <span className="text-2xl">🇱🇰</span> Sri Lankan Skin Tones
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                Our packaging is eco-conscious, our sourcing is ethical, and our production respects both people and the
-                planet.
+                Foundation shades for fair to deep Sri Lankan complexions. Inclusive beauty.
               </p>
             </div>
             <div className="bg-muted/50 rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <span className="text-2xl">💎</span> Elegance
+                <span className="text-2xl">🚚</span> Fast Island Wide
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                Beauty should be sophisticated yet accessible. Our products deliver luxury without pretense, performance
-                without compromise.
+                Colombo 1-3 days, Kandy/Galle 2-4 days, nationwide 1-5 business days.
               </p>
             </div>
             <div className="bg-muted/50 rounded-xl p-6 border border-border hover:border-primary/50 transition-colors">
               <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                <span className="text-2xl">🔬</span> Innovation
+                <span className="text-2xl">✅</span> NMRA Compliant
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                We continuously evolve, combining traditional beauty wisdom with cutting-edge research to deliver
-                exceptional results.
+                Sri Lanka cosmetics regulation approved. Safe quality products.
               </p>
             </div>
           </div>
         </section>
 
         <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">Our Commitment</h2>
+          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
+            Our Cosmetics Commitment Sri Lanka
+          </h2>
           <p className="text-muted-foreground leading-relaxed mb-4 text-lg">
-            At Alzìa Paris, we're committed to helping you feel confident and beautiful. Whether you're starting a
-            skincare routine or refining your signature look, our products are designed to work with your unique beauty.
+            Alzìa Cosmetics Sri Lanka serves diverse beauty needs – bridal makeup, daily skincare, acne solutions, 
+            anti-aging for tropical skin.
           </p>
           <p className="text-muted-foreground leading-relaxed text-lg">
-            We celebrate diversity, support self-care as self-love, and believe that true beauty comes from feeling
-            comfortable in your own skin.
+            Fast delivery + quality products = confidence for Sri Lankan women.
           </p>
         </section>
 
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-8 md:p-12 mt-16">
-          <h3 className="font-serif text-2xl font-medium text-foreground mb-4">Experience Alzìa</h3>
+          <h3 className="font-serif text-2xl font-medium text-foreground mb-4">
+            Shop Sri Lanka Cosmetics
+          </h3>
           <p className="text-muted-foreground mb-6">
-            Discover our complete collection and find products that celebrate your unique beauty.
+            Premium makeup & skincare with island wide delivery.
           </p>
           <Link
             href="/shop"
             className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors"
           >
-            Shop Now
+            Shop All Products
           </Link>
         </div>
       </div>

@@ -43,7 +43,7 @@ export default function ContactPage() {
               <div className="text-2xl">✉️</div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Email</h3>
-                <p className="text-muted-foreground text-sm">hello@alzianaturals.com</p>
+                <p className="text-muted-foreground text-sm">hello@alziagroup.lk</p>
               </div>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function ContactPage() {
               <div className="text-2xl">📞</div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Phone</h3>
-                <p className="text-muted-foreground text-sm">+94 11 123 4567</p>
+                <p className="text-muted-foreground text-sm">+94 74 053 3972</p>
               </div>
             </div>
           </div>
@@ -63,7 +63,7 @@ export default function ContactPage() {
               <div className="text-2xl">📍</div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Location</h3>
-                <p className="text-muted-foreground text-sm">Colombo, Sri Lanka</p>
+                <p className="text-muted-foreground text-sm">Ampara, Sri Lanka</p>
               </div>
             </div>
           </div>

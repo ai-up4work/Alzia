@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: Props) {
   }
 
   return {
-    title: `${product.name} | Alzìa Paris`,
+    title: `${product.name} | Alzìa Makeup & Cosmetics`,
     description: product.short_description || product.description,
   }
 }
@@ -113,7 +113,7 @@ function getMockProduct(slug: string) {
       },
       brand: {
         id: "b1111111-1111-1111-1111-111111111111",
-        name: "Alzìa Paris",
+        name: "Alzìa Makeup & Cosmetics",
         slug: "lumiere-paris",
       },
       images: [{ id: "1", image_url: "/luxury-serum-bottle-vitamin-c-gold-elegant.jpg", is_primary: true }],

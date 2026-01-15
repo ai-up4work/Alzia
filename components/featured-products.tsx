@@ -59,9 +59,9 @@ const featuredProducts = [
 ]
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-LK", {
     style: "currency",
-    currency: "INR",
+    currency: "LKR",
     maximumFractionDigits: 0,
   }).format(price)
 }

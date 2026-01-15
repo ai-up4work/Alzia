@@ -18,15 +18,15 @@ export function HeroSection() {
   const slides = [
     {
       image: "/hero-1.jpg",
-      subtitle: "Parisian Luxury Beauty",
-      title: ["Discover your", "radiant beauty"],
-      mobileTitle: ["Discover", "your", "radiant", "beauty"],
+      subtitle: "Cosmetics Sri Lanka",
+      title: ["Premium Cosmetics", "Island Wide"],
+      mobileTitle: ["Discover", "your", "radiant", "beauty", "Premium", "Makeup", "Sri Lanka"],
       description:
-        "Exquisite cosmetics crafted in Paris with the finest ingredients. Experience luxury that transforms your everyday routine into a moment of pure elegance.",
+        "High quality premium cosmetics shop online in Sri Lanka. Makeup & beauty products with 1-5 day island wide delivery.",
     },
     {
       image: "/hero-2.png",
-      subtitle: "Timeless Elegance",
+      subtitle: "Beauty Sri Lanka",
       title: ["Elevate your", "skincare ritual"],
       mobileTitle: ["Elevate", "your", "skincare", "ritual"],
       description:
@@ -34,7 +34,7 @@ export function HeroSection() {
     },
     {
       image: "/hero-3.jpg",
-      subtitle: "Natural Brilliance",
+      subtitle: "Makeup Sri Lanka",
       title: ["Express your", "unique beauty"],
       mobileTitle: ["Express", "your", "unique", "beauty"],
       description:

@@ -3,7 +3,7 @@ import ShopPageClient from "@/components/shop-page-client"
 import { Header } from "@/components/header"
 
 export const metadata = {
-  title: "Shop | Alzìa Paris",
+  title: "Shop | Alzìa Makeup & Cosmetics",
   description: "Browse our collection of luxury cosmetics",
 }
 

@@ -3,16 +3,16 @@ import { BlogPageLayout } from "@/components/blog-page-layout"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Wholesale Partnership — Alzìa Paris",
+  title: "Wholesale Cosmetics Sri Lanka | Bulk Makeup & Cosmetic Supply – Alzìa",
   description:
-    "Partner with Alzìa Paris. Competitive wholesale pricing and B2B solutions for retailers and distributors worldwide.",
+    "Partner with Alzìa for wholesale cosmetics in Sri Lanka. Bulk makeup, skincare & beauty products at competitive rates. Fast delivery for retailers in Sri Lanka",
 }
 
 export default function WholesalePage() {
   const features = [
     {
       title: "Competitive Pricing",
-      description: "Attractive wholesale rates that maintain your profit margins while offering luxury products.",
+      description: "Attractive bulk rates on luxury cosmetics for Sri Lankan retailers. Maintain healthy margins on makeup and skincare.",
       icon: "💰",
     },
     {
@@ -37,7 +37,7 @@ export default function WholesalePage() {
     },
     {
       title: "Fast Shipping",
-      description: "Efficient fulfillment with reliable shipping to get products to your customers quickly.",
+      description: "Reliable shipping from Colombo to Kandy, Galle and island‑wide for your wholesale orders.",
       icon: "🚚",
     },
   ]
@@ -45,7 +45,7 @@ export default function WholesalePage() {
   return (
     <BlogPageLayout
       title="Wholesale Partnership"
-      subtitle="Join retailers and distributors worldwide who trust Alzìa Paris for premium beauty products and exceptional wholesale pricing."
+      subtitle="Partner with Alzìa for wholesale cosmetics in Sri Lanka. Bulk makeup, skincare & beauty products at competitive rates. Fast delivery for retailers in Sri Lanka"
       readTime="5 min read"
     >
       <div className="space-y-16">

@@ -5,17 +5,17 @@ import { Sparkles, Heart, Award, Leaf } from "lucide-react"
 import { ScrollBlurText } from "./scroll-blur-text"
 
 const stats = [
-  { icon: Sparkles, value: "25+", label: "Years of expertise" },
-  { icon: Heart, value: "500K+", label: "Happy customers" },
-  { icon: Award, value: "50+", label: "Beauty awards" },
-  { icon: Leaf, value: "100%", label: "Cruelty-free" },
+  { icon: Sparkles, value: "10+", label: "Years of expertise" },
+  { icon: Heart, value: "10K+", label: "Happy customers" },
+  { icon: Award, value: "50k+", label: "Products" },
+  { icon: Leaf, value: "100%", label: "Original" },
 ]
 
 const values = [
   {
     number: "01",
-    title: "Parisian Heritage",
-    description: "Born in the heart of Paris, our formulas embody centuries of French beauty expertise and elegance.",
+    title: "Sri Lanka Cosmetics",
+    description: "Premium makeup & cosmetics crafted for Sri Lankan skin tones and tropical climate.",
   },
   {
     number: "02",
@@ -25,8 +25,8 @@ const values = [
   },
   {
     number: "03",
-    title: "Sustainable Beauty",
-    description: "Our commitment to the environment guides every decision, from packaging to production methods.",
+    title: "Trusted Quality",
+    description: "100% approved cosmetics. Humidity-proof formulas for Sri Lanka weather.",
   },
 ]
 
@@ -95,12 +95,11 @@ export function BrandStorySection() {
             Our Story
           </p>
           <ScrollBlurText
-            text="Beauty born in Paris"
+            text="Beauty born in Ceylon"
             className="font-serif text-3xl md:text-5xl lg:text-6xl text-primary-foreground text-balance mb-6 font-light"
           />
           <p className="reveal opacity-0 animation-delay-400 text-lg text-primary-foreground/80 max-w-2xl mx-auto leading-relaxed">
-            For over two decades, we have crafted luxury cosmetics that celebrate the art of French beauty, blending
-            timeless elegance with modern innovation.
+            Shop cosmetics online Sri Lanka for over a decade. Best makeup & skincare crafted for Sri Lankan skin types with quality beauty products nationwide
           </p>
         </div>
 

@@ -18,7 +18,7 @@ const footerLinks = {
   company: [
     { label: "Our Story", href: "/about" },
     { label: "Wholesale", href: "/wholesale" },
-    { label: "Careers", href: "/careers" },
+    // { label: "Careers", href: "/careers" },
     { label: "Contact", href: "/contact" },
   ],
 }
@@ -39,15 +39,15 @@ export function Footer() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-secondary" />
-                <span>hello@alzianaturals.com</span>
+                <span>hello@alziagroup.lk</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-secondary" />
-                <span>+94 11 123 4567</span>
+                <span>+94 74 053 3972</span>
               </div>
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-secondary" />
-                <span>Colombo, Sri Lanka</span>
+                <span>Ampara, Sri Lanka</span>
               </div>
             </div>
 

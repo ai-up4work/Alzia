@@ -1,59 +1,70 @@
 import type { Metadata } from "next"
 import { BlogPageLayout } from "@/components/blog-page-layout"
+import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "FAQs — Alzìa Paris | Frequently Asked Questions",
-  description: "Frequently asked questions about Alzìa products, orders, shipping, and customer service.",
+  title: "Cosmetics FAQ Sri Lanka | Makeup Skincare Questions – Alzìa",
+  description: "Cosmetics FAQ Sri Lanka: delivery times, returns, payments, skin types & more. Makeup skincare questions answered for Sri Lanka shoppers.",
 }
 
 export default function FAQsPage() {
   const faqs = [
     {
-      question: "Are Alzìa products cruelty-free?",
+      question: "How long cosmetics delivery Sri Lanka?",
       answer:
-        "Yes, all our products are cruelty-free and not tested on animals. We're committed to ethical beauty practices.",
+        "Island wide 1-5 business days. Colombo 1-3 days, Kandy/Galle 2-4 days. Free shipping over LKR 10,000.",
     },
     {
-      question: "Can I return a product if I don't like it?",
+      question: "Cosmetics returns policy Sri Lanka?",
       answer:
-        "We offer a 30-day return policy on unused products in original packaging. Please see our refund policy for details.",
+        "30 days for unopened products with intact seals only. No refunds on opened beauty products or broken packaging.",
     },
     {
-      question: "Are your products suitable for sensitive skin?",
+      question: "Payment methods Sri Lanka cosmetics?",
       answer:
-        "Many of our products are formulated for sensitive skin, but we recommend checking individual product descriptions. If you have specific concerns, contact our support team.",
+        "Credit/debit cards, bank transfer, online wallets accepted. Secure PCI-compliant processing for Sri Lanka.",
     },
     {
-      question: "Do you offer international shipping?",
+      question: "Which skin type products Sri Lanka?",
       answer:
-        "Yes, we ship to most countries worldwide. Delivery times vary by location (7-14 business days typically). Customs fees may apply.",
+        "Oily, dry, combination, sensitive skin products available. Check product descriptions for skin type suitability.",
     },
     {
-      question: "How do I know which product is right for me?",
+      question: "Lipstick shade matching Sri Lanka?",
       answer:
-        "Our product pages include detailed descriptions and usage recommendations. You can also reach out to our customer service team for personalized suggestions.",
+        "Upload photo for shade matching or visit shade finder. Fair, medium, dark Sri Lankan skin tones catered.",
     },
     {
-      question: "Are there subscription options available?",
+      question: "Free shipping threshold Sri Lanka?",
       answer:
-        "Yes! Sign up for our beauty subscription service to receive curated products monthly. Subscribers enjoy exclusive discounts and early access to new launches.",
+        "Free island wide delivery over LKR 10,000. Colombo LKR 500, outstation LKR 800-1200 under threshold.",
     },
     {
-      question: "Can I use multiple Alzìa products together?",
+      question: "NMRA approved cosmetics Sri Lanka?",
       answer:
-        "Yes, our products are designed to complement each other. Check individual product recommendations for the best layering sequence.",
+        "All Alzìa products NMRA registered or compliant. Check product pages for Sri Lanka cosmetics registration.",
     },
     {
-      question: "What should I do if I experience an allergic reaction?",
+      question: "Skincare routine order Sri Lanka?",
       answer:
-        "Stop using the product immediately and consult a healthcare professional. Contact us with details about the reaction—we'll arrange a full refund.",
+        "Cleanse → Tone → Serum → Eye cream → Moisturize → Sunscreen (AM). Night: remove makeup first.",
+    },
+    {
+      question: "Best face wash oily skin Sri Lanka?",
+      answer:
+        "Gel cleansers with salicylic acid or tea tree for oily/acne skin. See oily skin collection.",
+    },
+    {
+      question: "Vitamin C serum benefits Sri Lanka?",
+      answer:
+        "Brightens skin, reduces dark spots, protects from sun damage. Morning use after cleansing.",
     },
   ]
 
   return (
     <BlogPageLayout
-      title="Frequently Asked Questions"
-      subtitle="Got questions? We have answers. Browse through our most commonly asked questions about Alzìa products and services."
+      title="Cosmetics FAQ Sri Lanka – Makeup & Skincare"
+      subtitle="Sri Lanka shoppers: delivery, returns, payments, skin care routine & product questions answered."
       readTime="5 min read"
     >
       <div className="space-y-4">
@@ -74,16 +85,18 @@ export default function FAQsPage() {
       </div>
 
       <div className="mt-16 bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
-        <h3 className="font-serif text-2xl font-medium text-foreground mb-3">Still have questions?</h3>
+        <h3 className="font-serif text-2xl font-medium text-foreground mb-3">
+          More Cosmetics Questions Sri Lanka?
+        </h3>
         <p className="text-muted-foreground mb-6">
-          Can't find the answer you're looking for? Our customer service team is ready to help.
+          Can't find your makeup or skincare answer? Sri Lanka support ready to help.
         </p>
-        <a
+        <Link
           href="/contact"
           className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors"
         >
-          Contact Us
-        </a>
+          Contact Sri Lanka Support
+        </Link>
       </div>
     </BlogPageLayout>
   )

@@ -7,42 +7,50 @@ import { Star } from "lucide-react"
 const testimonials = [
   {
     quote:
-      "The Radiance Serum has transformed my skin. After just two weeks, my complexion is brighter and more even than ever before.",
-    author: "Sophie M.",
-    role: "Verified Buyer",
+      "Best cosmetics online Sri Lanka! Fast delivery to Kandy, perfect lipstick shades for my skin tone.",
+    author: "Akithma Fernando",
+    role: "Verified Buyer, Kandy",
     avatar: "/elegant-woman-professional-portrait.png",
     rating: 5,
   },
   {
     quote:
-      "Finally, a luxury brand that delivers on its promises. The packaging is exquisite and the products are absolutely divine.",
-    author: "Priya K.",
-    role: "Verified Buyer",
+      "හොඳම කොස්මෙටික්ස් සයිට් එක! ලංකාවේ ඕනෑම තැනකට ඉක්මනින් එනවා. Quality products.",
+    author: "Sandali Minoli",
+    role: "Verified Buyer, Galle",
     avatar: "/indian-woman-portrait-elegant.jpg",
     rating: 5,
   },
   {
     quote:
-      "The Velvet Rouge lipstick stays on all day without drying my lips. The color is stunning and the formula is incredibly comfortable.",
-    author: "Emma L.",
-    role: "Verified Buyer",
+      "Premium skincare for oily Sri Lankan skin. Serum cleared my acne. Island wide delivery perfect.",
+    author: "Hafsa Siraj",
+    role: "Verified Buyer, Colombo",
     avatar: "/young-professional-portrait.png",
     rating: 5,
   },
   {
     quote:
-      "Eau de Rose is my signature scent now. I receive compliments everywhere I go. It's sophisticated yet not overpowering.",
-    author: "Ananya R.",
+      "Hair cream & perfume excellent! Long lasting fragrance, quality cream for dry hair Sri Lanka.",
+    author: "Aathif Azeez",
     role: "Verified Buyer",
-    avatar: "/woman-portrait-elegant-professional.jpg",
+    avatar: "/placeholder.svg" ,
     rating: 5,
   },
   {
     quote:
-      "As a makeup artist, I recommend Alzìa to all my clients. The quality is exceptional and rivals brands twice the price.",
-    author: "Dr. Meera S.",
-    role: "Professional MUA",
+      "Foundation matches Sri Lankan skin perfectly. Best makeup shop online Sri Lanka.",
+    author: "Dheekshitha Balakumaran",
+    role: "Verified Buyer, Jaffna",
     avatar: "/professional-woman-makeup-artist.jpg",
+    rating: 5,
+  },
+  {
+    quote:
+      "නිවසටම cosmetics delivery! Oily skin face wash excellent. සුපිරි service.",
+    author: "Nima Nisam",
+    role: "Verified Buyer",
+    avatar: "/woman-portrait-elegant-professional.jpg",
     rating: 5,
   },
 ]
@@ -112,10 +120,10 @@ export function TestimonialsSection() {
       <div className="w-full">
         <div className="text-center mb-16 lg:mb-20 px-6">
           <p className="reveal opacity-0 text-sm uppercase tracking-[0.25em] text-secondary font-medium mb-4">
-            Customer Love
+            Happy Customers
           </p>
           <ScrollBlurText
-            text="What they say about us"
+            text="Trusted Cosmetics Dealer in Sri Lanka"
             className="font-serif text-3xl md:text-5xl lg:text-6xl text-foreground text-balance font-light"
           />
         </div>

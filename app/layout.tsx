@@ -39,21 +39,21 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: "Alzìa Paris — Luxury Cosmetics",
-  description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
+  title: "Alzìa – Makeup & Cosmetics Sri Lanka",
+  description: "Shop luxury and high quality beauty products, makeup, skincare & cosmetics online in Sri Lanka at Alzìa. Premium beauty products with fast delivery across Sri Lanka",
   authors: [{ name: "up4work" }],
   metadataBase: new URL("https://alzia.vercel.app"),
   openGraph: {
-    title: "Alzìa Paris — Luxury Cosmetics",
-    description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
+    title: "Alzìa – Makeup & Cosmetics Sri Lanka",
+    description: "Shop luxury and high quality beauty products, makeup, skincare & cosmetics online in Sri Lanka at Alzìa. Premium beauty products with fast delivery across Sri Lanka",
     url: "https://alzia.vercel.app",
-    siteName: "Alzìa Paris",
+    siteName: "Alzìa - Makeup & Cosmetics Sri Lanka",
     images: [
       {
         url: "/og-image-v2.png",
         width: 1200,
         height: 630,
-        alt: "Alzìa Paris - Luxury Cosmetics",
+        alt: "Alzìa – Makeup & Cosmetics Sri Lanka",
       },
     ],
     locale: "en_US",
@@ -65,8 +65,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Alzìa Paris — Luxury Cosmetics",
-    description: "Discover exquisite Parisian beauty. Premium cosmetics crafted with elegance for the modern woman.",
+    title: "Alzìa – Makeup & Cosmetics Sri Lanka",
+    description: "Shop luxury and high quality beauty products, makeup, skincare & cosmetics online in Sri Lanka at Alzìa. Premium beauty products with fast delivery across Sri Lanka",
     images: ["/og-image-v2.png"],
     creator: "@up4work",
   },
