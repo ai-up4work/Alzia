@@ -58,12 +58,12 @@ export const metadata: Metadata = {
         height: 630,
         alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
       },
-      {
-        url: "/og-image-v2.png",  // WhatsApp optimized
-        width: 1200,
-        height: 630,
-        alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
-      },
+      // {
+      //   url: "/og-image-v2.png",  // WhatsApp optimized
+      //   width: 1200,
+      //   height: 630,
+      //   alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
+      // },
     ],
     locale: "en_LK",
     type: "website",
