@@ -863,7 +863,6 @@ function WholesalePageContent({
       transition={{ duration: 0.5 }}
     >
       <div>
-        <Header />
         <h3 className="font-medium text-foreground mb-4 flex items-center gap-2">
           <Leaf className="w-4 h-4 text-secondary" />
           Categories
@@ -970,6 +969,7 @@ function WholesalePageContent({
 
   return (
     <main className="min-h-screen bg-background">
+      <Header />
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 overflow-hidden pt-32 pb-16">
         {/* Decorative elements */}
