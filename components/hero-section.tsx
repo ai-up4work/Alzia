@@ -20,7 +20,7 @@ export function HeroSection() {
       image: "/hero-1.jpg",
       subtitle: "Cosmetics Sri Lanka",
       title: ["Premium Cosmetics", "Island Wide"],
-      mobileTitle: ["Discover", "your", "radiant", "beauty", "Premium", "Makeup", "Sri Lanka"],
+      mobileTitle: ["Premium", "Cosmetics", "Island", "Wide"],
       description:
         "High quality premium cosmetics shop online in Sri Lanka. Makeup & beauty products with 1-5 day island wide delivery.",
     },
