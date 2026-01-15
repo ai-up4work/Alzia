@@ -26,7 +26,7 @@ export function ScrollBlurText({ text, className = "", startBlur = 80, endBlur =
       const scrollProgress = Math.max(0, Math.min(1, (windowHeight - rect.top) / (windowHeight * 0.7)))
 
       const newProgress = words.map((_, index) => {
-        const wordDelay = index * 0.15 // Stagger delay per word (increased from 0.15)
+        const wordDelay = index * 0.13 // Stagger delay per word (increased from 0.15)
         const wordProgress = Math.max(0, Math.min(1, (scrollProgress - wordDelay) / 0.3))
         return wordProgress
       })
