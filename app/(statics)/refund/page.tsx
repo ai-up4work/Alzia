@@ -1,142 +1,170 @@
 import type { Metadata } from "next"
-import { BlogPageLayout } from "@/components/blog-page-layout"
 import Link from "next/link"
 
 export const metadata: Metadata = {
   title: "Refund Policy Sri Lanka | Cosmetics Returns – Alzìa",
-  description: "Cosmetics refund policy Sri Lanka. Unopened sealed products returnable within 30 days. No refunds on opened beauty products or damaged seals.",
+  description:
+    "Cosmetics refund policy Sri Lanka. Unopened sealed products returnable within 30 days. No refunds on opened beauty products or damaged seals.",
 }
 
 export default function RefundPage() {
   return (
-    <BlogPageLayout
-      title="Refund Policy – Alzìa Cosmetics Sri Lanka"
-      subtitle="Returns for unopened cosmetics within 30 days. No refunds on opened products or broken seals."
-      readTime="3 min read"
-    >
-      <div className="space-y-12 md:space-y-16">
-        <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
-            30-Day Return Policy Sri Lanka (Unopened Only)
-          </h2>
-          <p className="text-muted-foreground leading-relaxed text-lg">
-            Return <strong>unopened cosmetics with intact seals</strong> within 30 days of Sri Lanka delivery for full refund.
+    <main className="min-h-screen bg-background">
+      <section className="relative py-20 md:py-32 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-primary/5" />
+        <div className="max-w-5xl mx-auto px-4 md:px-8 relative z-10">
+          <span className="inline-block text-sm font-medium text-secondary mb-4 tracking-widest uppercase">
+            Peace of Mind
+          </span>
+          <h1 className="font-serif text-6xl md:text-7xl leading-tight font-light text-foreground mb-8 text-balance">
+            Refund Policy
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-3xl font-light">
+            Returns for unopened cosmetics within 30 days. No refunds on opened products or broken seals.
           </p>
-        </section>
+        </div>
+      </section>
 
-        <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
-            Eligible Returns Sri Lanka
-          </h2>
-          <p className="text-muted-foreground leading-relaxed text-lg mb-6">
-            Only these cosmetics qualify for refund:
-          </p>
-          <div className="space-y-4">
-            {[
-              "Unopened products with intact factory seals",
-              "Original packaging & labels complete",
-              "Proof of purchase (Alzìa order number)",
-              "Within 30 days of island wide delivery",
-            ].map((condition, idx) => (
-              <div key={idx} className="bg-muted/50 rounded-lg p-4 border-l-4 border-secondary flex gap-3">
-                <span className="text-primary font-semibold text-xl flex-shrink-0">✓</span>
-                <span className="text-muted-foreground">{condition}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className="border-b border-border" />
 
-        <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
-            Non-Refundable Cosmetics Sri Lanka
-          </h2>
-          <p className="text-muted-foreground leading-relaxed text-lg mb-6">
-            No refunds for beauty products that:
-          </p>
-          <div className="space-y-4">
-            {[
-              "Opened or used (hygiene regulations)",
-              "Broken/damaged seals or packaging",
-              "Sale/clearance cosmetics items",
-              "Customized/personalized products",
-            ].map((condition, idx) => (
-              <div key={idx} className="bg-destructive/10 rounded-lg p-4 border-l-4 border-destructive flex gap-3">
-                <span className="text-destructive font-semibold text-xl flex-shrink-0">✗</span>
-                <span className="text-muted-foreground">{condition}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-20 md:py-32">
+        <div className="space-y-20 md:space-y-28">
+          {/* 30-Day Return Policy */}
+          <section className="space-y-6">
+            <h2 className="font-serif text-4xl md:text-5xl font-light text-foreground leading-tight">
+              30-Day Return Policy
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Return unopened cosmetics with intact seals within 30 days of Sri Lanka delivery for full refund.
+            </p>
+          </section>
 
-        <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
-            How to Return Cosmetics Sri Lanka
-          </h2>
-          <ol className="space-y-6">
-            <li className="bg-muted/30 rounded-lg p-6 border-l-4 border-accent">
-              <span className="font-semibold text-foreground block mb-2">1. Contact Support</span>
-              <p className="text-muted-foreground text-sm">
-                Email hello@alzianaturals.com with order number & photos of unopened seal.
+          {/* Eligible Returns */}
+          <section className="space-y-8">
+            <h2 className="font-serif text-4xl md:text-5xl font-light text-foreground leading-tight">
+              Eligible Returns
+            </h2>
+            <div className="space-y-4">
+              {[
+                "Unopened products with intact factory seals",
+                "Original packaging and labels complete",
+                "Proof of purchase with Alzìa order number",
+                "Within 30 days of island wide delivery",
+              ].map((condition, idx) => (
+                <div
+                  key={idx}
+                  className="bg-gradient-to-r from-secondary/10 to-transparent border-l-4 border-secondary rounded-xl p-6 flex gap-4"
+                >
+                  <span className="text-secondary font-semibold text-2xl flex-shrink-0">+</span>
+                  <span className="text-muted-foreground text-lg">{condition}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Non-Refundable Items */}
+          <section className="space-y-8">
+            <h2 className="font-serif text-4xl md:text-5xl font-light text-foreground leading-tight">
+              Non-Refundable Cosmetics
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed">No refunds for beauty products that:</p>
+            <div className="space-y-4">
+              {[
+                "Opened or used (hygiene regulations)",
+                "Have broken or damaged seals or packaging",
+                "Are sale or clearance cosmetics items",
+                "Are customized or personalized products",
+              ].map((condition, idx) => (
+                <div
+                  key={idx}
+                  className="bg-gradient-to-r from-destructive/10 to-transparent border-l-4 border-destructive rounded-xl p-6 flex gap-4"
+                >
+                  <span className="text-destructive font-semibold text-2xl flex-shrink-0">−</span>
+                  <span className="text-muted-foreground text-lg">{condition}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* How to Return */}
+          <section className="space-y-8">
+            <h2 className="font-serif text-4xl md:text-5xl font-light text-foreground leading-tight">
+              How to Return Cosmetics
+            </h2>
+            <div className="space-y-4">
+              {[
+                {
+                  step: "Step 1",
+                  title: "Contact Support",
+                  desc: "Email hello@alziagroup.lk with order number and photos of unopened seal.",
+                },
+                {
+                  step: "Step 2",
+                  title: "Return Label",
+                  desc: "We'll send you a prepaid label for island wide return shipping.",
+                },
+                {
+                  step: "Step 3",
+                  title: "Ship Back",
+                  desc: "Send unopened cosmetics securely within 30 days of purchase.",
+                },
+                { step: "Step 4", title: "Get Refund", desc: "Processed 7-10 business days after our inspection." },
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="bg-card border-l-4 border-primary rounded-xl p-8 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex gap-4 items-start">
+                    <span className="text-primary font-serif text-3xl font-light flex-shrink-0">{item.step}</span>
+                    <div>
+                      <h3 className="font-semibold text-foreground text-lg mb-2">{item.title}</h3>
+                      <p className="text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Refund Timeline */}
+          <section className="space-y-6 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl p-10 md:p-12 border border-primary/20">
+            <h2 className="font-serif text-3xl md:text-4xl font-light text-foreground">Refund Timeline</h2>
+            <div className="space-y-4">
+              {[
+                { label: "Processing", value: "7-10 business days after Sri Lanka receipt" },
+                { label: "Method", value: "Original payment method credited" },
+                { label: "Shipping", value: "Free returns for unopened cosmetics with our prepaid label" },
+              ].map((item, idx) => (
+                <div key={idx} className="flex gap-4 pb-4 border-b border-primary/10 last:border-0">
+                  <span className="text-primary font-semibold flex-shrink-0">•</span>
+                  <span className="text-muted-foreground">
+                    <strong className="text-foreground">{item.label}:</strong> {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* CTA */}
+          <section className="relative overflow-hidden rounded-3xl p-12 md:p-16 bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent border border-secondary/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+            <div className="relative z-10 text-center">
+              <h3 className="font-serif text-3xl md:text-4xl font-light text-foreground mb-4">
+                Need Help With a Return?
+              </h3>
+              <p className="text-muted-foreground mb-8 text-lg">
+                Contact our support team for unopened product returns island wide.
               </p>
-            </li>
-            <li className="bg-muted/30 rounded-lg p-6 border-l-4 border-accent">
-              <span className="font-semibold text-foreground block mb-2">2. Return Label</span>
-              <p className="text-muted-foreground text-sm">Prepaid label for island wide return shipping.</p>
-            </li>
-            <li className="bg-muted/30 rounded-lg p-6 border-l-4 border-accent">
-              <span className="font-semibold text-foreground block mb-2">3. Ship Back</span>
-              <p className="text-muted-foreground text-sm">Send unopened cosmetics securely within 30 days.</p>
-            </li>
-            <li className="bg-muted/30 rounded-lg p-6 border-l-4 border-accent">
-              <span className="font-semibold text-foreground block mb-2">4. Get Refund</span>
-              <p className="text-muted-foreground text-sm">Processed 7-10 business days after inspection.</p>
-            </li>
-          </ol>
-        </section>
-
-        <section>
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-foreground mb-6">
-            Refund Timeline Sri Lanka
-          </h2>
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
-            <ul className="space-y-3">
-              <li className="flex gap-3">
-                <span className="text-primary font-semibold flex-shrink-0">•</span>
-                <span className="text-muted-foreground">
-                  <strong>Processing:</strong> 7-10 business days after Sri Lanka receipt
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary font-semibold flex-shrink-0">•</span>
-                <span className="text-muted-foreground">
-                  <strong>Method:</strong> Original payment credited
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-primary font-semibold flex-shrink-0">•</span>
-                <span className="text-muted-foreground">
-                  <strong>Shipping:</strong> Free returns for unopened cosmetics (our prepaid label)
-                </span>
-              </li>
-            </ul>
-          </div>
-        </section>
-
-        <div className="mt-16 bg-secondary/5 border border-secondary/20 rounded-xl p-8 text-center">
-          <h3 className="font-serif text-2xl font-medium text-foreground mb-3">
-            Cosmetics Refund Help Sri Lanka?
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            Contact for unopened product returns island wide.
-          </p>
-          <Link
-            href="/contact"
-            className="inline-block bg-secondary text-secondary-foreground px-8 py-3 rounded-full font-medium hover:bg-secondary/90 transition-colors"
-          >
-            Contact Support
-          </Link>
+              <Link
+                href="/contact"
+                className="inline-block bg-secondary text-secondary-foreground px-10 py-4 rounded-full font-medium hover:bg-secondary/90 transition-all duration-300 hover:shadow-lg hover:scale-105"
+              >
+                Contact Support
+              </Link>
+            </div>
+          </section>
         </div>
       </div>
-    </BlogPageLayout>
+    </main>
   )
 }
