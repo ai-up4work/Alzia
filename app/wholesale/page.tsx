@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { 
   Heart, 
   ShoppingCart, 
@@ -1243,6 +1244,7 @@ function WholesalePageContent({
           </div>
         </div>
       </div>
+      <Footer />
     </main>
   )
 }
