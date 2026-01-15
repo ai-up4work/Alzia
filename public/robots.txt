@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /collections
+Allow: /new-arrivals
+Allow: /about
+Allow: /shipping
+Allow: /refund
+Allow: /privacy
+Allow: /faq
+Allow: /wholesale
+Allow: /terms
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /account/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /customer/
+Sitemap: https://alzia.vercel.app/sitemap.xml
+
