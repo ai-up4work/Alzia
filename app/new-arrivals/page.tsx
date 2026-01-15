@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronRight, ArrowRight, Sparkles, Heart, Star, ShoppingBag } from 'lucide-react';
-import { Footer } from 'react-day-picker';
+import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 
 export default function NewArrivalsPage() {
