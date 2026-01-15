@@ -23,7 +23,7 @@ export function ScrollBlurText({ text, className = "", startBlur = 80, endBlur =
       const windowHeight = window.innerHeight
 
       // Calculate when element enters viewport (bottom) to when it reaches center
-      const scrollProgress = Math.max(0, Math.min(1, (windowHeight - rect.top) / (windowHeight * 0.6)))
+      const scrollProgress = Math.max(0, Math.min(1, (windowHeight - rect.top) / (windowHeight * 0.7)))
 
       const newProgress = words.map((_, index) => {
         const wordDelay = index * 0.15 // Stagger delay per word (increased from 0.15)
