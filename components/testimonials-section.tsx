@@ -123,7 +123,7 @@ export function TestimonialsSection() {
             Happy Customers
           </p>
           <ScrollBlurText
-            text="Trusted Cosmetics Dealer in Sri Lanka"
+            text="Trusted Cosmetics Dealer in Sri-Lanka"
             className="font-serif text-3xl md:text-5xl lg:text-6xl text-foreground text-balance font-light"
           />
         </div>
