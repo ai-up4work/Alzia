@@ -20,9 +20,10 @@ interface ProductShareButtonProps {
     images?: { image_url: string; is_primary: boolean }[]
   }
   className?: string
+  showText?: boolean
 }
 
-export function ProductShareButton({ product, className = "", showtext = true }: ProductShareButtonProps) {
+export function ProductShareButton({ product, className = "", showText = true }: ProductShareButtonProps) {
   const [copied, setCopied] = useState(false)
 
   // Get the current URL
@@ -85,7 +86,7 @@ export function ProductShareButton({ product, className = "", showtext = true }:
           className={`gap-2 ${className}`}
         >
           <Share2 className="w-4 h-4" />
-          {showtext && "Share"}
+          {showText && "Share"}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

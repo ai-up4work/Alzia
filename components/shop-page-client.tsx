@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Grid3X3, LayoutList, Loader2 } from "lucide-react"
 import { ProductCard } from "@/components/shop/product-card"
+import { Footer } from "./footer"
 
 interface Product {
   id: string
@@ -843,7 +844,7 @@ export default function ShopPageClient({
   )
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-background">
       <div className="pt-32 pb-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Page Header */}
@@ -994,6 +995,7 @@ export default function ShopPageClient({
           </div>
         </div>
       </div>
+      <Footer />
     </main>
   )
 }

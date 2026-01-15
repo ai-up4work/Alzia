@@ -48,7 +48,7 @@ export function ProductCard({
               <Button size="sm" variant="outline" className="rounded-full bg-transparent" aria-label="Add to wishlist">
                 <Heart className="w-4 h-4" />
               </Button>
-              <ProductShareButton product={product} className="h-8 w-24 p-0 rounded-full" showText={false} size="sm" variant="outline" />
+              <ProductShareButton product={product} className="h-8 w-24 p-0 rounded-full" size="sm" variant="outline" />
               <Button size="sm" className="rounded-full">
                 <ShoppingBag className="w-4 h-4 mr-2" />
                 Add to Cart
@@ -102,7 +102,7 @@ export function ProductCard({
         <div className="flex items-center justify-between">
           <span className="font-medium text-foreground">{formatPrice(product.retail_price)}</span>
           <div className="flex gap-1.5">
-            <ProductShareButton product={product} className="h-8 w-8 p-0 rounded-full" size="sm" variant="outline" />
+            <ProductShareButton product={product} showText={false} className="h-8 w-8 p-0 rounded-full" size="sm" variant="outline" />
             <Button
               size="sm"
               className="h-8 w-8 p-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
