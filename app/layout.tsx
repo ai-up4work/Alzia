@@ -39,35 +39,40 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: "Alzìa – Makeup & Cosmetics Sri Lanka",
-  description: "Shop luxury and high quality beauty products, makeup, skincare & cosmetics online in Sri Lanka at Alzìa. Premium beauty products with fast delivery across Sri Lanka",
+  title: {
+    default: "Alzìa – Makeup & Cosmetics Sri Lanka",
+    template: "%s | Alzìa Cosmetics Sri Lanka"
+  },
+  description: "Shop luxury cosmetics online Sri Lanka. Premium makeup & skincare with island wide delivery.",
   authors: [{ name: "up4work" }],
   metadataBase: new URL("https://alzia.vercel.app"),
   openGraph: {
-    title: "Alzìa – Makeup & Cosmetics Sri Lanka",
-    description: "Shop luxury and high quality beauty products, makeup, skincare & cosmetics online in Sri Lanka at Alzìa. Premium beauty products with fast delivery across Sri Lanka",
+    title: "Alzìa Cosmetics Sri Lanka – Premium Makeup Skincare",
+    description: "Shop luxury makeup & skincare online Sri Lanka. Fast island wide delivery.",
     url: "https://alzia.vercel.app",
-    siteName: "Alzìa - Makeup & Cosmetics Sri Lanka",
+    siteName: "Alzìa Cosmetics Sri Lanka",
     images: [
       {
-        url: "/og-image-v2.png",
+        url: "/og-image-v2.png",  // Web/Facebook
         width: 1200,
         height: 630,
-        alt: "Alzìa – Makeup & Cosmetics Sri Lanka",
+        alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
+      },
+      {
+        url: "/og-image-v3.png",  // WhatsApp optimized
+        width: 1200,
+        height: 630,
+        alt: "Alzìa Makeup Sri Lanka",
       },
     ],
     locale: "en_LK",
     type: "website",
   },
-  // icons: {
-  //   icon: "/icon.png",
-  //   apple: "/apple-icon.png",
-  // },
   twitter: {
     card: "summary_large_image",
-    title: "Alzìa – Makeup & Cosmetics Sri Lanka",
-    description: "Shop luxury and high quality beauty products, makeup, skincare & cosmetics online in Sri Lanka at Alzìa. Premium beauty products with fast delivery across Sri Lanka",
-    images: ["/og-image-v2.png"],
+    title: "Alzìa Cosmetics Sri Lanka",
+    description: "Premium makeup & skincare online Sri Lanka.",
+    images: ["/og-image-v3.png"],  // WhatsApp-optimized for Twitter too
     creator: "@up4work",
   },
   icons: {
@@ -83,7 +88,7 @@ export const metadata: Metadata = {
       type: "image/png",
     },
   },
-    generator: 'v0.app'
+  generator: 'v0.app'
 }
 
 export default function RootLayout({
