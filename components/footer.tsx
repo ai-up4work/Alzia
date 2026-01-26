@@ -140,7 +140,7 @@ export function Footer() {
               <p className="text-sm text-muted-foreground mb-4">
                 © 2026 Alzìa Naturals. All rights reserved. Built with care by{" "}
                 <a
-                  href="https://upwork.com"
+                  href="https://up4work.space"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-primary hover:text-primary/80 transition-colors"
@@ -169,7 +169,7 @@ export function Footer() {
                   Crafted by Freelance Team
                 </p>
                 <a
-                  href="https://upwork.com"
+                  href="https://up4work.space"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-cinzel font-semibold text-primary hover:text-primary/80 transition-colors"
