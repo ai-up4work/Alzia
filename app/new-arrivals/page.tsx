@@ -207,7 +207,7 @@ export default function NewArrivalsPage() {
       const primaryImage = product.images.find(img => img.is_primary);
       return primaryImage?.image_url || product.images[0].image_url;
     }
-    return '/placeholder.png';
+    return '/diverse-makeup-collection.png';
   };
 
   const getDaysOld = (createdAt: string): number => {
