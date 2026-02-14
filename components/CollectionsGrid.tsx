@@ -1,98 +1,219 @@
-import React from 'react';
-import { ArrowRight, Sparkles, Heart, Leaf, Gift, TrendingUp, Stars } from 'lucide-react';
+"use client";
 
-const collections = [
-  {
-    id: "skincare-essentials",
-    name: "Skincare Essentials",
-    description: "The foundation of radiant skin. Our bestselling skincare collection featuring cleansers, serums, and moisturizers.",
-    image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800&h=800&fit=crop",
-    products: 12,
-    icon: Sparkles,
-    productImages: [
-      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1570554886111-e80fcca6a029?w=400&h=400&fit=crop"
-    ]
-  },
-  {
-    id: "makeup-artistry",
-    name: "Makeup Artistry",
-    description: "Express yourself with our color and beauty collection. From everyday to evening, find your perfect shades.",
-    image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&h=800&fit=crop",
-    products: 18,
-    icon: Heart,
-    productImages: [
-      "https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1583241800698-c93b43cf3c02?w=400&h=400&fit=crop"
-    ]
-  },
-  {
-    id: "fragrance-journey",
-    name: "Fragrance Journey",
-    description: "Discover scents that tell your story. Our exclusive fragrance collection for every mood and moment.",
-    image: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&h=800&fit=crop",
-    products: 8,
-    icon: Stars,
-    productImages: [
-      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1588405748880-12d1d2a59bd9?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=400&h=400&fit=crop"
-    ]
-  },
-  {
-    id: "gift-sets",
-    name: "Gift Sets",
-    description: "Perfect gifts for the beauty lover. Thoughtfully curated sets with elegant packaging.",
-    image: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&h=800&fit=crop",
-    products: 6,
-    icon: Gift,
-    productImages: [
-      "https://images.unsplash.com/photo-1608181922522-d8f2d7e0ad1d?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1512637480062-ac8cdc18ff47?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=400&fit=crop"
-    ]
-  },
-  {
-    id: "natural-beauty",
-    name: "Natural Beauty",
-    description: "Pure, natural ingredients. Our collection of botanical and clean beauty products.",
-    image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=800&h=800&fit=crop",
-    products: 15,
-    icon: Leaf,
-    productImages: [
-      "https://images.unsplash.com/photo-1564442038901-4f9a19d3d456?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1620756726574-8e7ae6d3c0b4?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=400&fit=crop"
-    ]
-  },
-  {
-    id: "bestsellers",
-    name: "Bestsellers",
-    description: "Customer favorites that deliver results. Discover why these products are loved worldwide.",
-    image: "https://images.unsplash.com/photo-1571875257727-256c39da42af?w=800&h=800&fit=crop",
-    products: 20,
-    icon: TrendingUp,
-    productImages: [
-      "https://images.unsplash.com/photo-1505944357793-35a0e67cc990?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1491498933979-9b9714f108bc?w=400&h=400&fit=crop"
-    ]
-  },
-];
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Sparkles, Heart, Leaf, Droplets, Palette, Wind, Star, Zap, Gift, TrendingUp, Award, Shield, Clock, Users, AlertCircle, RefreshCw } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
-export default function CollectionsGrid() {
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// Icon mapping - maps icon names from database to actual icon components
+const iconMap: Record<string, React.ElementType> = {
+  'Sparkles': Sparkles,
+  'Heart': Heart,
+  'Leaf': Leaf,
+  'Droplets': Droplets,
+  'Palette': Palette,
+  'Wind': Wind,
+  'Star': Star,
+  'Zap': Zap,
+  'Gift': Gift,
+  'TrendingUp': TrendingUp,
+  'Award': Award,
+  'Shield': Shield,
+  'Clock': Clock,
+  'Users': Users,
+};
+
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  image_url?: string;
+  displayOrder?: number;
+}
+
+interface Collection {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  image: string;
+  icon: React.ElementType;
+  iconName: string;
+  isFeatured: boolean;
+  categories: Category[];
+  categoryCount: number;
+  categoryIds: number[];
+}
+
+export default function SupabaseCollectionsGrid() {
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [featuredCollection, setFeaturedCollection] = useState<Collection | null>(null);
+
+  useEffect(() => {
+    fetchCollections();
+  }, []);
+
+  const fetchCollections = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch collections with their categories in a single query using joins
+      const { data: collectionsData, error: fetchError } = await supabase
+        .from('collections')
+        .select(`
+          id,
+          name,
+          slug,
+          description,
+          image_url,
+          icon_name,
+          display_order,
+          is_featured,
+          collection_categories (
+            category_id,
+            display_order,
+            categories (
+              id,
+              name,
+              slug,
+              image_url
+            )
+          )
+        `)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (fetchError) throw fetchError;
+
+      if (!collectionsData || collectionsData.length === 0) {
+        setCollections([]);
+        setFeaturedCollection(null);
+        setLoading(false);
+        return;
+      }
+
+      // Transform the data to flatten category information
+      const transformedCollections: Collection[] = collectionsData.map(collection => {
+        // Extract categories from the nested structure
+        const categories: Category[] = (collection.collection_categories || [])
+          .map((cc: any) => ({
+            ...cc.categories,
+            displayOrder: cc.display_order
+          }))
+          .filter((cat: any) => cat && cat.id !== undefined)
+          .sort((a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+        const categoryIds = categories.map(cat => cat.id);
+
+        return {
+          id: collection.id,
+          name: collection.name,
+          slug: collection.slug,
+          description: collection.description || 'Discover our curated selection of beauty products.',
+          image: collection.image_url || 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800&h=800&fit=crop',
+          icon: iconMap[collection.icon_name] || Sparkles,
+          iconName: collection.icon_name,
+          isFeatured: collection.is_featured || false,
+          categories: categories,
+          categoryCount: categories.length,
+          categoryIds: categoryIds,
+        };
+      });
+
+      // Find featured collection
+      const featured = transformedCollections.find(c => c.isFeatured);
+      
+      setCollections(transformedCollections);
+      setFeaturedCollection(featured || transformedCollections[0] || null);
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Error fetching collections:', err);
+      setError(err.message || 'Failed to load collections');
+      setLoading(false);
+    }
+  };
+
+  // Loading State
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="animate-pulse">
+              <div className="bg-muted rounded-2xl h-96 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-8 lg:p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mb-6">
+            <AlertCircle className="w-8 h-8 text-destructive" />
+          </div>
+          <h3 className="font-serif text-2xl text-foreground font-light mb-3">
+            Oops! Something went wrong
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            {error}
+          </p>
+          <button 
+            onClick={fetchCollections}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty State
+  if (collections.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-muted/30 border border-border/50 rounded-2xl p-8 lg:p-12 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-6">
+            <Sparkles className="w-8 h-8 text-primary" />
+          </div>
+          <h3 className="font-serif text-2xl text-foreground font-light mb-3">
+            No Collections Yet
+          </h3>
+          <p className="text-muted-foreground mb-6">
+            We're currently curating our collections. Check back soon for exciting new additions!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Collections Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-24">
         {collections.map((collection) => {
           const IconComponent = collection.icon;
+          
           return (
-            <button
+            <div
               key={collection.id}
-              className="group relative bg-background rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-xl text-left"
+              className="group relative bg-background rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-xl"
             >
               {/* Main Image Section */}
               <div className="relative h-72 overflow-hidden bg-muted">
@@ -100,87 +221,115 @@ export default function CollectionsGrid() {
                   src={collection.image}
                   alt={collection.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 
                 {/* Icon Badge */}
-                <div className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-border/30">
+                <div className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-border/30 shadow-lg">
                   <IconComponent className="w-5 h-5 text-primary" />
                 </div>
 
-                {/* Collection Title & Product Count */}
+                {/* Featured Badge */}
+                {collection.isFeatured && (
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-full shadow-lg backdrop-blur-sm">
+                    Featured
+                  </div>
+                )}
+
+                {/* Collection Title & Category Count */}
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <h3 className="font-serif text-2xl font-light text-white mb-1">
                     {collection.name}
                   </h3>
-                  <span className="text-xs text-white/80 font-medium uppercase tracking-wider">
-                    {collection.products} Products
+                  <span className="text-xs text-white/90 font-medium uppercase tracking-wider">
+                    {collection.categoryCount} {collection.categoryCount === 1 ? 'Category' : 'Categories'}
                   </span>
                 </div>
               </div>
 
-              {/* Expandable Content on Hover */}
+              {/* Expandable Content */}
               <div className="p-6 bg-background">
                 <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
                   {collection.description}
                 </p>
 
-                {/* Product Image Grid - Shows on Hover */}
-                <div className="grid grid-cols-3 gap-2 mb-4 opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-32 overflow-hidden transition-all duration-500">
-                  {collection.productImages.map((img, idx) => (
-                    <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-muted border border-border/30">
-                      <img
-                        src={img}
-                        alt={`Product ${idx + 1}`}
-                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-                      />
-                    </div>
-                  ))}
-                </div>
+                {/* Category Pills - Shows on Hover */}
+                {collection.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4 opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-32 overflow-hidden transition-all duration-500">
+                    {collection.categories.slice(0, 6).map((category) => (
+                      <span
+                        key={category.id}
+                        className="px-3 py-1 bg-primary/5 text-primary text-xs rounded-full border border-primary/10 hover:bg-primary/10 transition-colors"
+                      >
+                        {category.name}
+                      </span>
+                    ))}
+                    {collection.categories.length > 6 && (
+                      <span className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full">
+                        +{collection.categories.length - 6} more
+                      </span>
+                    )}
+                  </div>
+                )}
                 
-                {/* CTA */}
-                <a href={`/shop?collections=${collection.id}`} className="absolute inset-0" aria-label={`Explore ${collection.name} Collection`} />
-                <div className="flex items-center justify-between pt-3 border-t border-border/50 opacity-60 group-hover:opacity-100 transition-opacity duration-300" >
-                  <span className="text-sm text-muted-foreground">Explore Collection</span>
+                {/* CTA Link - Updated to use category IDs */}
+                <a 
+                  href={collection.categoryIds.length > 0 ? `/shop?categories=${collection.categoryIds.join(',')}` : `/shop?collection=${collection.slug}`} 
+                  className="absolute inset-0" 
+                  aria-label={`Explore ${collection.name} Collection`}
+                />
+                <div className="flex items-center justify-between pt-3 border-t border-border/50 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                  <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                    Explore Collection
+                  </span>
                   <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
 
       {/* Featured CTA Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5 border border-border/50 rounded-3xl p-12 md:p-16 lg:p-20 mb-24">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl" />
-        
-        <div className="relative text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-8 border border-primary/20">
-            <Sparkles className="w-10 h-10 text-primary" />
+      {featuredCollection && (
+        <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5 border border-border/50 rounded-3xl p-12 md:p-16 lg:p-20 mb-24">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          
+          <div className="relative text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-8 border border-primary/20 shadow-lg">
+              {React.createElement(featuredCollection.icon, { className: "w-10 h-10 text-primary" })}
+            </div>
+            
+            <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl text-foreground font-light mb-6">
+              Not Sure Where to Start?
+            </h2>
+            
+            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
+              {featuredCollection.description}
+            </p>
+            
+            <a 
+              href={featuredCollection.categoryIds.length > 0 
+                ? `/shop?categories=${featuredCollection.categoryIds.join(',')}` 
+                : `/shop?collection=${featuredCollection.slug}`
+              } 
+              aria-label={`Explore ${featuredCollection.name}`}
+            >
+              <button className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:scale-105">
+                <span>Explore {featuredCollection.name}</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </a>
           </div>
-          
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl text-foreground font-light mb-6">
-            Not Sure Where to Start?
-          </h2>
-          
-          <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-10">
-            Our skincare essentials collection is perfect for anyone looking to build a solid beauty foundation with timeless, effective products.
-          </p>
-          
-          <a href="/shop?collections=skincare-essentials" aria-label="Explore Skincare Essentials">
-            <button className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg">
-              <span>Explore Skincare Essentials</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
-          </a>
         </div>
-      </div>
+      )}
 
       {/* Additional Info Section */}
       <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-        <div className="text-center p-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/5 rounded-full mb-6 border border-primary/10">
+        <div className="text-center p-8 group hover:bg-card rounded-2xl transition-all duration-300">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/5 rounded-full mb-6 border border-primary/10 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
             <Sparkles className="w-7 h-7 text-primary" />
           </div>
           <h4 className="font-serif text-xl font-light text-foreground mb-3">Curated Selection</h4>
@@ -189,9 +338,9 @@ export default function CollectionsGrid() {
           </p>
         </div>
         
-        <div className="text-center p-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/5 rounded-full mb-6 border border-secondary/10">
-            <Stars className="w-7 h-7 text-secondary" />
+        <div className="text-center p-8 group hover:bg-card rounded-2xl transition-all duration-300">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/5 rounded-full mb-6 border border-secondary/10 group-hover:scale-110 group-hover:bg-secondary/10 transition-all duration-300">
+            <Palette className="w-7 h-7 text-secondary" />
           </div>
           <h4 className="font-serif text-xl font-light text-foreground mb-3">Premium Quality</h4>
           <p className="text-sm text-muted-foreground leading-relaxed">
@@ -199,8 +348,8 @@ export default function CollectionsGrid() {
           </p>
         </div>
         
-        <div className="text-center p-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/5 rounded-full mb-6 border border-accent/10">
+        <div className="text-center p-8 group hover:bg-card rounded-2xl transition-all duration-300">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/5 rounded-full mb-6 border border-accent/10 group-hover:scale-110 group-hover:bg-accent/10 transition-all duration-300">
             <Heart className="w-7 h-7 text-accent" />
           </div>
           <h4 className="font-serif text-xl font-light text-foreground mb-3">Proven Results</h4>

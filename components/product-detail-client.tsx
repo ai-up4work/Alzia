@@ -5,8 +5,7 @@ import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Heart, ShoppingBag, Star, Minus, Plus, Truck, RotateCcw, Shield, ChevronRight } from "lucide-react"
+import { Heart, ShoppingBag, Star, Minus, Plus, Truck, RotateCcw, Shield, ChevronRight, Package, Sparkles } from "lucide-react"
 import { ProductShareButton } from "@/components/ProductShareButton"
 import type { Product } from "@/lib/types"
 
@@ -48,6 +47,12 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   }
 
   const inStock = product.stock_quantity > 0
+
+  // Check what information is available
+  const hasDescription = product.description && product.description.trim().length > 0
+  const hasIngredients = product.ingredients && product.ingredients.trim().length > 0
+  const hasUsageInstructions = product.usage_instructions && product.usage_instructions.trim().length > 0
+  const hasAnyProductInfo = hasDescription || hasIngredients || hasUsageInstructions
 
   return (
     <main className="min-h-screen bg-background">
@@ -132,7 +137,9 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   ))}
                 </div>
                 <span className="text-sm font-medium">{product.rating_avg}</span>
-                <span className="text-sm text-muted-foreground">({product.rating_count} reviews)</span>
+                <span className="text-sm text-muted-foreground">
+                  {product.rating_count > 0 ? `(${product.rating_count} reviews)` : '(No reviews yet)'}
+                </span>
               </div>
 
               {/* Price */}
@@ -142,9 +149,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               </div>
 
               {/* Short Description */}
-              <p className="text-muted-foreground leading-relaxed mb-8">
-                {product.short_description || product.description?.slice(0, 200)}
-              </p>
+              {(product.short_description || product.description) && (
+                <p className="text-muted-foreground leading-relaxed mb-8">
+                  {product.short_description || product.description?.slice(0, 200)}
+                </p>
+              )}
 
               {/* Stock Status */}
               <div className="mb-6">
@@ -161,7 +170,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 )}
               </div>
 
-             {/* Quantity & Add to Cart */}
+              {/* Quantity & Add to Cart */}
               <div className="flex flex-col gap-3 mb-8">
                 {/* Add to Cart Button - Full width on mobile, first line on desktop */}
                 <Button
@@ -236,65 +245,98 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </div>
           </div>
 
-          {/* Product Details Tabs */}
+          {/* Product Details Section - Only show if we have information */}
+          {hasAnyProductInfo && (
+            <div className="mt-16">
+              <h2 className="font-serif text-3xl text-foreground font-light mb-8">Product Details</h2>
+              
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Description Card */}
+                {hasDescription && (
+                  <div className="bg-card border border-border/50 rounded-2xl p-6 lg:p-8 hover:border-border transition-colors">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl text-foreground font-light">About This Product</h3>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+                  </div>
+                )}
+
+                {/* Ingredients Card */}
+                {hasIngredients && (
+                  <div className="bg-card border border-border/50 rounded-2xl p-6 lg:p-8 hover:border-border transition-colors">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                        <Package className="w-5 h-5 text-secondary" />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl text-foreground font-light">Key Ingredients</h3>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">{product.ingredients}</p>
+                  </div>
+                )}
+
+                {/* How to Use Card */}
+                {hasUsageInstructions && (
+                  <div className="bg-card border border-border/50 rounded-2xl p-6 lg:p-8 hover:border-border transition-colors lg:col-span-2">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-accent" />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl text-foreground font-light">How to Use</h3>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">{product.usage_instructions}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Reviews Section - Always show */}
           <div className="mt-16">
-            <Tabs defaultValue="description" className="w-full">
-              <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0 overflow-x-auto overflow-y-hidden flex-nowrap">
-                <TabsTrigger
-                  value="description"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
-                >
-                  Description
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ingredients"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
-                >
-                  Ingredients
-                </TabsTrigger>
-                <TabsTrigger
-                  value="how-to-use"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
-                >
-                  How to Use
-                </TabsTrigger>
-                <TabsTrigger
-                  value="reviews"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 text-sm sm:text-base whitespace-nowrap"
-                >
-                  Reviews ({product.rating_count})
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="description" className="pt-8">
-                <div className="prose prose-sm max-w-none text-muted-foreground">
-                  <p className="leading-relaxed">{product.description}</p>
+            <div className="bg-gradient-to-br from-card to-muted/20 border border-border/50 rounded-2xl p-6 lg:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="font-serif text-2xl text-foreground font-light mb-2">Customer Reviews</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-5 h-5 ${
+                            i < Math.floor(product.rating_avg) ? "fill-accent text-accent" : "fill-muted text-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-lg font-medium">{product.rating_avg}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {product.rating_count > 0 
+                        ? `Based on ${product.rating_count} ${product.rating_count === 1 ? 'review' : 'reviews'}`
+                        : 'No reviews yet'
+                      }
+                    </span>
+                  </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="ingredients" className="pt-8">
-                <div className="prose prose-sm max-w-none text-muted-foreground">
-                  <p className="leading-relaxed">{product.ingredients || "Ingredient information coming soon."}</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="how-to-use" className="pt-8">
-                <div className="prose prose-sm max-w-none text-muted-foreground">
-                  <p className="leading-relaxed">{product.usage_instructions || "Usage instructions coming soon."}</p>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="reviews" className="pt-8">
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground mb-4">
-                    Reviews will be displayed here once customers start reviewing this product.
-                  </p>
-                  <Button variant="outline" className="rounded-full">
-                    Write a Review
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
+                
+                <Button variant="outline" className="rounded-full w-full sm:w-auto">
+                  {product.rating_count > 0 ? 'Write a Review' : 'Be the First to Review'}
+                </Button>
+              </div>
+              
+              {product.rating_count === 0 && (
+                <p className="text-muted-foreground text-center py-8 border-t border-border/50">
+                  Share your experience with this product and help others make informed decisions.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Related Products */}
@@ -304,7 +346,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 {relatedProducts.map((relatedProduct) => (
                   <Link key={relatedProduct.id} href={`/product/${relatedProduct.slug}`} className="group">
-                    <div className="bg-card rounded-2xl overflow-hidden border border-border/50">
+                    <div className="bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-border transition-colors">
                       <div className="aspect-square overflow-hidden bg-muted">
                         <img
                           src={
