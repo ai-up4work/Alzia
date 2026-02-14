@@ -101,44 +101,80 @@ export default function NewArrivalsPage() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Fetch products created in the last 30 days
-      const { data, error: fetchError } = await supabase
+      // Add small delay to prevent rapid requests
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Step 1: Fetch products
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select(`
-          id,
-          sku,
-          name,
-          slug,
-          description,
-          short_description,
-          retail_price,
-          wholesale_price,
-          stock_quantity,
-          rating_avg,
-          rating_count,
-          is_featured,
-          created_at,
-          brand:brands (
-            id,
-            name,
-            slug
-          ),
-          category:categories (
-            id,
-            name,
-            slug
-          ),
-          images:product_images (
-            image_url
-          )
-        `)
+        .select('id, sku, name, slug, description, short_description, retail_price, wholesale_price, stock_quantity, rating_avg, rating_count, is_featured, created_at, brand_id, category_id')
         .eq('status', 'published')
         .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (productsError) throw productsError;
 
-      setProducts(data || []);
+      if (!productsData || productsData.length === 0) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Fetch brands
+      const brandIds = [...new Set(productsData.map(p => p.brand_id).filter(Boolean))];
+      const { data: brandsData } = await supabase
+        .from('brands')
+        .select('id, name, slug')
+        .in('id', brandIds);
+
+      // Step 3: Fetch categories
+      const categoryIds = [...new Set(productsData.map(p => p.category_id).filter(Boolean))];
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, name, slug')
+        .in('id', categoryIds);
+
+      // Step 4: Fetch product images
+      const productIds = productsData.map(p => p.id);
+      const { data: imagesData } = await supabase
+        .from('product_images')
+        .select('product_id, image_url')
+        .in('product_id', productIds)
+        .order('display_order', { ascending: true });
+
+      // Create lookups
+      const brandLookup = new Map(brandsData?.map(b => [b.id, b]) || []);
+      const categoryLookup = new Map(categoriesData?.map(c => [c.id, c]) || []);
+      const imagesLookup = new Map<string, Array<{ image_url: string }>>();
+      
+      imagesData?.forEach(img => {
+        if (!imagesLookup.has(img.product_id)) {
+          imagesLookup.set(img.product_id, []);
+        }
+        imagesLookup.get(img.product_id)!.push({ image_url: img.image_url });
+      });
+
+      // Combine data
+      const combinedProducts: Product[] = productsData.map(product => ({
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        slug: product.slug,
+        description: product.description,
+        short_description: product.short_description,
+        retail_price: product.retail_price,
+        wholesale_price: product.wholesale_price,
+        stock_quantity: product.stock_quantity,
+        rating_avg: product.rating_avg,
+        rating_count: product.rating_count,
+        is_featured: product.is_featured,
+        created_at: product.created_at,
+        brand: product.brand_id ? brandLookup.get(product.brand_id) : undefined,
+        category: product.category_id ? categoryLookup.get(product.category_id) : undefined,
+        images: imagesLookup.get(product.id) || [],
+      }));
+
+      setProducts(combinedProducts);
       setLoading(false);
     } catch (err: any) {
       console.error('Error fetching new arrivals:', err);
