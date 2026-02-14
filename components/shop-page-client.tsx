@@ -1089,7 +1089,7 @@ export default function ShopPageClient({
                       product={product}
                       viewMode={viewMode}
                       image={
-                        productImages[product.slug] || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500"
+                        productImages[product.slug] || "/placeholder.png"
                       }
                     />
                   ))}
