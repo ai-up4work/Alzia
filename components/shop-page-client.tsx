@@ -86,15 +86,10 @@ interface ShopPageClientProps {
   pageSize?: number
 }
 
-interface FilterCombination {
-  category_id: string
-  brand_id: string
-}
-
 function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-LK", {
     style: "currency",
-    currency: "INR",
+    currency: "LKR",
     maximumFractionDigits: 0,
   }).format(price)
 }
@@ -121,6 +116,7 @@ export default function ShopPageClient({
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const supabase = createClient()
 
   // Cache for storing fetched products by filter combination
@@ -197,6 +193,15 @@ export default function ShopPageClient({
     maxPrice: initialFilters.priceRange[1],
     sortBy: initialFilters.sortBy,
   })
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current)
+      }
+    }
+  }, [])
 
   // Fetch filter combinations on mount
   useEffect(() => {
@@ -282,12 +287,10 @@ export default function ShopPageClient({
   const getAvailableBrands = useCallback(() => {
     if (!filterCombinations.loaded) return allBrands
 
-    // If no categories selected, return all brands that have products
     if (selectedCategories.length === 0) {
       return allBrands.filter((brand) => filterCombinations.allBrandIds.has(brand.id))
     }
 
-    // Get brands that exist in at least one selected category
     const availableBrandIds = new Set<string>()
     selectedCategories.forEach((categoryId) => {
       const brandsInCategory = filterCombinations.categoryToBrands.get(categoryId)
@@ -303,12 +306,10 @@ export default function ShopPageClient({
   const getAvailableCategories = useCallback(() => {
     if (!filterCombinations.loaded) return allCategories
 
-    // If no brands selected, return all categories that have products
     if (selectedBrands.length === 0) {
       return allCategories.filter((category) => filterCombinations.allCategoryIds.has(category.id))
     }
 
-    // Get categories that exist in at least one selected brand
     const availableCategoryIds = new Set<string>()
     selectedBrands.forEach((brandId) => {
       const categoriesInBrand = filterCombinations.brandToCategories.get(brandId)
@@ -328,7 +329,7 @@ export default function ShopPageClient({
     return JSON.stringify({ ...filters, page })
   }
 
-  // Fetch products from Supabase
+  // Fetch products from Supabase with advanced search
   const fetchProducts = useCallback(
     async (filters: any, page: number) => {
       const cacheKey = getCacheKey(filters, page)
@@ -345,11 +346,20 @@ export default function ShopPageClient({
           .select("*, category:categories(*), brand:brands(*)", { count: "exact" })
           .eq("status", "published")
 
-        // Apply search filter
+        // Apply search filter using full-text search if available
         if (filters.search) {
-          query = query.or(
-            `name.ilike.%${filters.search}%,short_description.ilike.%${filters.search}%,tags.cs.{${filters.search}}`
-          )
+          // Try using textSearch for better results (requires search_vector column)
+          try {
+            query = query.textSearch('search_vector', filters.search, {
+              type: 'plainto',
+              config: 'english'
+            })
+          } catch {
+            // Fallback to ilike if textSearch fails (search_vector not set up yet)
+            query = query.or(
+              `name.ilike.%${filters.search}%,short_description.ilike.%${filters.search}%,tags.cs.{${filters.search}}`
+            )
+          }
         }
 
         // Apply category filter
@@ -509,18 +519,28 @@ export default function ShopPageClient({
     })
   }
 
-  // Debounced search
+  // Improved debounced search with minimum character requirement
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
+    setIsTyping(true)
 
     // Clear existing timeout
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current)
     }
 
+    // Don't search if query is too short (less than 2 characters)
+    if (value.length > 0 && value.length < 2) {
+      setIsTyping(false)
+      return
+    }
+
     // Set new timeout for debounced search
+    // 800ms delay - reasonable time to ensure user stopped typing
     searchDebounceRef.current = setTimeout(() => {
-      // Auto-apply search after 500ms of no typing
+      setIsTyping(false)
+      
+      // Auto-apply search after user stops typing
       if (value !== appliedFilters.search) {
         const params = new URLSearchParams()
         if (value) params.set("search", value)
@@ -538,7 +558,34 @@ export default function ShopPageClient({
           router.push(newURL)
         })
       }
-    }, 500)
+    }, 800) // 800ms is optimal - not too fast, not too slow
+  }
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchQuery("")
+    setIsTyping(false)
+    
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+    }
+    
+    if (appliedFilters.search) {
+      const params = new URLSearchParams()
+      if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
+      if (appliedFilters.brands.length > 0) params.set("brands", appliedFilters.brands.join(","))
+      if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
+      if (appliedFilters.maxPrice < 10000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+      if (appliedFilters.sortBy !== "newest") params.set("sortBy", appliedFilters.sortBy)
+
+      const queryString = params.toString()
+      const newURL = queryString ? `${pathname}?${queryString}` : pathname
+      
+      setAppliedFilters({ ...appliedFilters, search: "" })
+      startTransition(() => {
+        router.push(newURL)
+      })
+    }
   }
 
   // Handle sort change immediately
@@ -620,7 +667,6 @@ export default function ShopPageClient({
       const newCategories = selectedCategories.filter((c) => c !== id)
       setSelectedCategories(newCategories)
 
-      // Auto-apply
       const params = new URLSearchParams()
       if (appliedFilters.search) params.set("search", appliedFilters.search)
       if (newCategories.length > 0) params.set("categories", newCategories.join(","))
@@ -640,7 +686,6 @@ export default function ShopPageClient({
       const newBrands = selectedBrands.filter((b) => b !== id)
       setSelectedBrands(newBrands)
 
-      // Auto-apply
       const params = new URLSearchParams()
       if (appliedFilters.search) params.set("search", appliedFilters.search)
       if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
@@ -746,17 +791,46 @@ export default function ShopPageClient({
             <div className="relative max-w-2xl mx-auto">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search products... (min 2 characters)"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-12 h-12 rounded-full"
+                className="pl-12 h-12 rounded-full pr-24"
               />
-              {searchQuery && searchQuery !== appliedFilters.search && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              
+              {/* Search states */}
+              {searchQuery && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {/* Typing indicator */}
+                  {isTyping && (
+                    <span className="text-xs text-gray-400">Typing...</span>
+                  )}
+                  
+                  {/* Searching indicator */}
+                  {!isTyping && searchQuery !== appliedFilters.search && (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      <span className="text-xs text-gray-400 hidden sm:inline">Searching...</span>
+                    </>
+                  )}
+                  
+                  {/* Clear button */}
+                  <button
+                    onClick={clearSearch}
+                    className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
+            
+            {/* Helper text */}
+            {searchQuery.length > 0 && searchQuery.length < 2 && (
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Type at least 2 characters to search
+              </p>
+            )}
           </div>
 
           {/* Horizontal Filters Bar */}
