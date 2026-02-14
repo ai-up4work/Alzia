@@ -207,7 +207,7 @@ export default function NewArrivalsPage() {
       const primaryImage = product.images.find(img => img.is_primary);
       return primaryImage?.image_url || product.images[0].image_url;
     }
-    return '/diverse-makeup-collection.png';
+    return '/placeholder.png';
   };
 
   const getDaysOld = (createdAt: string): number => {
@@ -392,7 +392,7 @@ export default function NewArrivalsPage() {
                 </div>
                 <div className="hidden md:block">
                   <img
-                    src={getProductImage(products[0])}
+                    src={"/diverse-makeup-collection.png"}
                     alt="New Collection"
                     className="rounded-2xl shadow-lg object-cover w-full h-64"
                   />
