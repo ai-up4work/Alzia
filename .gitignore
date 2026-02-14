@@ -26,11 +26,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/scripts/groq_description_generator.py
-/scripts/enhanced_product_filler.py
-/scripts/enhanced_product_filler copy.py
+scripts/groq_description_generator.py
+scripts/enhanced_product_filler.py
+scripts/enhanced_product_filler copy.py
 
-/scripts
 
 /public/groq_description_generator.py
 /public/enhanced_product_filler.py
@@ -38,4 +37,9 @@ next-env.d.ts
 
 public/groq_description_generator.py
 public/enhanced_product_filler.py
+public/populate_supabase.py
+public/products.csv
+public/populate_supabase.py
+public/slug-fixer.py
+
 .env
