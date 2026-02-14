@@ -10,12 +10,14 @@ import Link from "next/link"
 import { useState } from "react"
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-LK", {
     style: "currency",
-    currency: "INR",
+    currency: "LKR",
+    currencyDisplay: "code", // 👈 forces LKR instead of symbol
     maximumFractionDigits: 0,
   }).format(price)
 }
+
 
 const productImages: Record<string, string> = {
   "radiance-renewal-serum": "/luxury-serum-bottle-vitamin-c-gold-elegant.jpg",

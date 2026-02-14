@@ -6,6 +6,16 @@ import Link from "next/link"
 import { ChevronLeft, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
+function formatPrice(price: number) {
+  return new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+    currencyDisplay: "code", // 👈 forces LKR instead of symbol
+    maximumFractionDigits: 0,
+  }).format(price)
+}
+
+
 export default async function OrdersPage() {
   const supabase = await createClient()
   const {
@@ -77,11 +87,7 @@ export default async function OrdersPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-foreground">
-                      {new Intl.NumberFormat("en-IN", {
-                        style: "currency",
-                        currency: "INR",
-                        maximumFractionDigits: 0,
-                      }).format(order.total_amount)}
+                      {formatPrice(order.total_amount)}
                     </p>
                     <Button asChild variant="outline" size="sm" className="rounded-full bg-transparent">
                       <Link href={`/account/orders/${order.id}`}>View Details</Link>

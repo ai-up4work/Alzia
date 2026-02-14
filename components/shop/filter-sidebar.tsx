@@ -22,12 +22,14 @@ interface FilterSidebarProps {
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-LK", {
     style: "currency",
-    currency: "INR",
+    currency: "LKR",
+    currencyDisplay: "code", // 👈 forces LKR instead of symbol
     maximumFractionDigits: 0,
   }).format(price)
 }
+
 
 export function FilterSidebar({
   categories,
