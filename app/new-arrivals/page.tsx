@@ -28,6 +28,24 @@ interface Category {
   slug: string;
 }
 
+interface ProductData {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  short_description: string | null;
+  retail_price: number;
+  wholesale_price: number;
+  stock_quantity: number;
+  rating_avg: number;
+  rating_count: number;
+  is_featured: boolean;
+  created_at: string;
+  brand_id: string | null;
+  category_id: string | null;
+}
+
 interface Product {
   id: string;
   sku: string;
@@ -120,34 +138,61 @@ export default function NewArrivalsPage() {
         return;
       }
 
-      // Step 2: Fetch brands
-      const brandIds = [...new Set(productsData.map(p => p.brand_id).filter(Boolean))];
-      const { data: brandsData } = await supabase
-        .from('brands')
-        .select('id, name, slug')
-        .in('id', brandIds);
+      // Step 2: Fetch brands (only if there are brand IDs)
+      const brandIds = [...new Set(productsData.map((p: ProductData) => p.brand_id).filter(Boolean))];
+      let brandsData: Brand[] = [];
+      
+      if (brandIds.length > 0) {
+        const { data, error: brandsError } = await supabase
+          .from('brands')
+          .select('id, name, slug')
+          .in('id', brandIds);
+        
+        if (!brandsError && data) {
+          brandsData = data;
+        }
+      }
 
-      // Step 3: Fetch categories
-      const categoryIds = [...new Set(productsData.map(p => p.category_id).filter(Boolean))];
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('id, name, slug')
-        .in('id', categoryIds);
+      // Step 3: Fetch categories (only if there are category IDs)
+      const categoryIds = [...new Set(productsData.map((p: ProductData) => p.category_id).filter(Boolean))];
+      let categoriesData: Category[] = [];
+      
+      if (categoryIds.length > 0) {
+        const { data, error: categoriesError } = await supabase
+          .from('categories')
+          .select('id, name, slug')
+          .in('id', categoryIds);
+        
+        if (!categoriesError && data) {
+          categoriesData = data;
+        }
+      }
 
       // Step 4: Fetch product images
-      const productIds = productsData.map(p => p.id);
-      const { data: imagesData } = await supabase
-        .from('product_images')
-        .select('product_id, image_url')
-        .in('product_id', productIds)
-        .order('display_order', { ascending: true });
+      const productIds = productsData.map((p: ProductData) => p.id);
+      let imagesData: Array<{ product_id: string; image_url: string }> = [];
+      
+      if (productIds.length > 0) {
+        const { data, error: imagesError } = await supabase
+          .from('product_images')
+          .select('product_id, image_url')
+          .in('product_id', productIds)
+          .order('display_order', { ascending: true });
+        
+        if (!imagesError && data) {
+          imagesData = data;
+        }
+      }
 
       // Create lookups
-      const brandLookup = new Map(brandsData?.map(b => [b.id, b]) || []);
-      const categoryLookup = new Map(categoriesData?.map(c => [c.id, c]) || []);
-      const imagesLookup = new Map<string, Array<{ image_url: string }>>();
+      const brandLookup = new Map<string, Brand>();
+      brandsData.forEach(b => brandLookup.set(b.id, b));
       
-      imagesData?.forEach(img => {
+      const categoryLookup = new Map<string, Category>();
+      categoriesData.forEach(c => categoryLookup.set(c.id, c));
+      
+      const imagesLookup = new Map<string, Array<{ image_url: string }>>();
+      imagesData.forEach(img => {
         if (!imagesLookup.has(img.product_id)) {
           imagesLookup.set(img.product_id, []);
         }
@@ -155,7 +200,7 @@ export default function NewArrivalsPage() {
       });
 
       // Combine data
-      const combinedProducts: Product[] = productsData.map(product => ({
+      const combinedProducts: Product[] = productsData.map((product: ProductData) => ({
         id: product.id,
         sku: product.sku,
         name: product.name,
