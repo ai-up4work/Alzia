@@ -140,6 +140,7 @@ export default function NewArrivalsPage() {
         `)
         .eq('status', 'published')
         .gte('created_at', thirtyDaysAgo.toISOString())
+        .limit(100)
         .order('created_at', { ascending: false });
 
       if (fetchError) {
