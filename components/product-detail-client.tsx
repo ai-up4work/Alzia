@@ -2,11 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
-import { Heart, ShoppingBag, Star, Minus, Plus, Truck, RotateCcw, Shield, ChevronRight, Package, Sparkles } from "lucide-react"
+import { Heart, ShoppingBag, Star, Minus, Plus, Truck, RotateCcw, Shield, ChevronRight, Package, Sparkles, Check } from "lucide-react"
 import { ProductShareButton } from "@/components/ProductShareButton"
+import { useCart } from "@/lib/cart-context"
+import { toast } from "sonner" // or use your toast library
 import type { Product } from "@/lib/types"
 
 interface ProductDetailClientProps {
@@ -34,6 +37,11 @@ const productImages: Record<string, string> = {
 export function ProductDetailClient({ product, relatedProducts }: ProductDetailClientProps) {
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const router = useRouter()
+  
+  // Get cart functions
+  const { addItem, openCart } = useCart()
 
   const mainImage =
     product.images?.[selectedImage]?.image_url || productImages[product.slug] || "/luxury-cosmetic-product.jpg"
@@ -44,6 +52,30 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
 
   const increaseQuantity = () => {
     if (quantity < product.stock_quantity) setQuantity(quantity + 1)
+  }
+
+  const handleAddToCart = () => {
+    setIsAddingToCart(true)
+    
+    // Add item to cart
+    addItem(product, quantity)
+    
+    // Show success toast
+    toast.success(`Added ${quantity} ${quantity === 1 ? 'item' : 'items'} to cart`, {
+      description: product.name,
+      action: {
+        label: "View Cart",
+        onClick: () => router.push("/account/cart"),
+      },
+    })
+    
+    // Reset adding state after animation
+    setTimeout(() => {
+      setIsAddingToCart(false)
+    }, 1000)
+    
+    // Optional: Open cart sidebar
+    // openCart()
   }
 
   const inStock = product.stock_quantity > 0
@@ -175,12 +207,22 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 {/* Add to Cart Button - Full width on mobile, first line on desktop */}
                 <Button
                   size="lg"
-                  className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={!inStock}
+                  className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                  disabled={!inStock || isAddingToCart}
+                  onClick={handleAddToCart}
                 >
-                  <ShoppingBag className="w-5 h-5 mr-2" />
-                  <span className="hidden sm:inline">Add to Cart - {formatPrice(product.retail_price * quantity)}</span>
-                  <span className="sm:hidden">Add to Cart</span>
+                  {isAddingToCart ? (
+                    <>
+                      <Check className="w-5 h-5 mr-2 animate-in zoom-in" />
+                      <span>Added to Cart!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-5 h-5 mr-2" />
+                      <span className="hidden sm:inline">Add to Cart - {formatPrice(product.retail_price * quantity)}</span>
+                      <span className="sm:hidden">Add to Cart</span>
+                    </>
+                  )}
                 </Button>
 
                 {/* Quantity, Wishlist, Share - Full width on mobile */}
@@ -211,7 +253,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     className="h-12 w-40 flex-shrink-0 rounded-full p-0"
                     aria-label="Add to wishlist"
                   >
-                    <Heart className="w-5 h-5" />
+                    <Heart className="w-5 h-5 mr-2" />
                     Wishlist
                   </Button>
 

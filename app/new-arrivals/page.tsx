@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Heart, Star, ShoppingBag, AlertCircle, RefreshCw, Filter, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, Sparkles, Heart, Star, ShoppingBag, AlertCircle, RefreshCw, Filter, SlidersHorizontal, Check } from 'lucide-react';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { createClient } from '@supabase/supabase-js';
+import { useCart } from '@/lib/cart-context';
+import { toast } from 'sonner';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -52,6 +55,10 @@ export default function NewArrivalsPage() {
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [addingToCart, setAddingToCart] = useState<string | null>(null); // Track which product is being added
+  
+  const router = useRouter();
+  const { addItem } = useCart();
 
   useEffect(() => {
     fetchNewArrivals();
@@ -60,6 +67,30 @@ export default function NewArrivalsPage() {
   useEffect(() => {
     sortProducts();
   }, [sortBy, products]);
+
+  const handleQuickAddToCart = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault(); // Prevent navigation to product page
+    e.stopPropagation();
+    
+    setAddingToCart(product.id);
+    
+    // Add to cart
+    addItem(product, 1);
+    
+    // Show success toast
+    toast.success('Added to cart!', {
+      description: product.name,
+      action: {
+        label: "View Cart",
+        onClick: () => router.push("/account/cart"),
+      },
+    });
+    
+    // Reset adding state
+    setTimeout(() => {
+      setAddingToCart(null);
+    }, 1000);
+  };
 
   const fetchNewArrivals = async () => {
     try {
@@ -372,7 +403,9 @@ export default function NewArrivalsPage() {
                         <button 
                           onClick={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             // Add to wishlist logic
+                            toast.info('Wishlist feature coming soon!');
                           }}
                           className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border border-border/30 shadow-lg"
                           aria-label="Add to wishlist"
@@ -380,14 +413,16 @@ export default function NewArrivalsPage() {
                           <Heart className="w-4 h-4 text-foreground" />
                         </button>
                         <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            // Add to cart logic
-                          }}
-                          className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border border-border/30 shadow-lg"
+                          onClick={(e) => handleQuickAddToCart(e, product)}
+                          disabled={product.stock_quantity === 0 || addingToCart === product.id}
+                          className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border border-border/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Quick add to cart"
                         >
-                          <ShoppingBag className="w-4 h-4 text-foreground" />
+                          {addingToCart === product.id ? (
+                            <Check className="w-4 h-4 text-green-600 animate-in zoom-in" />
+                          ) : (
+                            <ShoppingBag className="w-4 h-4 text-foreground" />
+                          )}
                         </button>
                       </div>
 

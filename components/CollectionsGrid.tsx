@@ -1,16 +1,29 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Sparkles, Heart, Leaf, Droplets, Palette, Wind, Star, Zap, Gift, TrendingUp, Award, Shield, Clock, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Initialize Supabase client with better error handling
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Icon mapping - maps icon names from database to actual icon components
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl!, supabaseKey!, {
+  auth: {
+    persistSession: false,
+  },
+  global: {
+    headers: {
+      'x-client-info': 'collections-grid'
+    }
+  }
+});
+
+// Icon mapping
 const iconMap: Record<string, React.ElementType> = {
   'Sparkles': Sparkles,
   'Heart': Heart,
@@ -55,61 +68,105 @@ export default function SupabaseCollectionsGrid() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [featuredCollection, setFeaturedCollection] = useState<Collection | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const fetchAttemptRef = useRef(0);
 
   useEffect(() => {
     fetchCollections();
   }, []);
 
   const fetchCollections = async () => {
+    const currentAttempt = ++fetchAttemptRef.current;
+    
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch collections with their categories in a single query using joins
-      const { data: collectionsData, error: fetchError } = await supabase
+      // Add a small delay to prevent rapid requests
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Check if this is still the latest fetch attempt
+      if (currentAttempt !== fetchAttemptRef.current) {
+        console.log('Fetch cancelled - newer request in progress');
+        return;
+      }
+
+      // Step 1: Fetch collections
+      const { data: collectionsData, error: collectionsError } = await supabase
         .from('collections')
-        .select(`
-          id,
-          name,
-          slug,
-          description,
-          image_url,
-          icon_name,
-          display_order,
-          is_featured,
-          collection_categories (
-            category_id,
-            display_order,
-            categories (
-              id,
-              name,
-              slug,
-              image_url
-            )
-          )
-        `)
+        .select('id, name, slug, description, image_url, icon_name, display_order, is_featured')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (collectionsError) {
+        throw new Error(`Collections error: ${collectionsError.message}`);
+      }
 
       if (!collectionsData || collectionsData.length === 0) {
         setCollections([]);
         setFeaturedCollection(null);
         setLoading(false);
+        setRetryCount(0);
         return;
       }
 
-      // Transform the data to flatten category information
+      // Step 2: Fetch collection_categories
+      const { data: ccData, error: ccError } = await supabase
+        .from('collection_categories')
+        .select('collection_id, category_id, display_order');
+
+      if (ccError) {
+        console.warn('Collection categories error:', ccError);
+        // Continue without categories
+      }
+
+      // Step 3: Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('id, name, slug, image_url');
+
+      if (categoriesError) {
+        console.warn('Categories error:', categoriesError);
+        // Continue without category details
+      }
+
+      // Build category lookup
+      const categoryLookup: Record<number, Category> = {};
+      if (categoriesData) {
+        categoriesData.forEach((cat: any) => {
+          categoryLookup[cat.id] = cat;
+        });
+      }
+
+      // Build collection categories lookup
+      const collectionCategoriesLookup: Record<number, Array<{categoryId: number, displayOrder: number}>> = {};
+      if (ccData) {
+        ccData.forEach((cc: any) => {
+          if (!collectionCategoriesLookup[cc.collection_id]) {
+            collectionCategoriesLookup[cc.collection_id] = [];
+          }
+          collectionCategoriesLookup[cc.collection_id].push({
+            categoryId: cc.category_id,
+            displayOrder: cc.display_order || 0
+          });
+        });
+      }
+
+      // Transform collections
       const transformedCollections: Collection[] = collectionsData.map(collection => {
-        // Extract categories from the nested structure
-        const categories: Category[] = (collection.collection_categories || [])
-          .map((cc: any) => ({
-            ...cc.categories,
-            displayOrder: cc.display_order
-          }))
-          .filter((cat: any) => cat && cat.id !== undefined)
-          .sort((a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0));
+        const collectionCats = collectionCategoriesLookup[collection.id] || [];
+        
+        const categories: Category[] = collectionCats
+          .map(cc => {
+            const cat = categoryLookup[cc.categoryId];
+            if (!cat) return null;
+            return {
+              ...cat,
+              displayOrder: cc.displayOrder
+            };
+          })
+          .filter((cat): cat is Category => cat !== null)
+          .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
 
         const categoryIds = categories.map(cat => cat.id);
 
@@ -120,7 +177,7 @@ export default function SupabaseCollectionsGrid() {
           description: collection.description || 'Discover our curated selection of beauty products.',
           image: collection.image_url || 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=800&h=800&fit=crop',
           icon: iconMap[collection.icon_name] || Sparkles,
-          iconName: collection.icon_name,
+          iconName: collection.icon_name || 'Sparkles',
           isFeatured: collection.is_featured || false,
           categories: categories,
           categoryCount: categories.length,
@@ -128,14 +185,25 @@ export default function SupabaseCollectionsGrid() {
         };
       });
 
-      // Find featured collection
       const featured = transformedCollections.find(c => c.isFeatured);
       
       setCollections(transformedCollections);
       setFeaturedCollection(featured || transformedCollections[0] || null);
+      setRetryCount(0);
       setLoading(false);
     } catch (err: any) {
       console.error('Error fetching collections:', err);
+      
+      // Auto-retry for network errors
+      if (retryCount < 3 && !err.message?.includes('Row level security')) {
+        console.log(`Retrying... Attempt ${retryCount + 1}/3`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          fetchCollections();
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+        return;
+      }
+      
       setError(err.message || 'Failed to load collections');
       setLoading(false);
     }
@@ -148,9 +216,7 @@ export default function SupabaseCollectionsGrid() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="animate-pulse">
-              <div className="bg-muted rounded-2xl h-96 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
-              </div>
+              <div className="bg-muted rounded-2xl h-96" />
             </div>
           ))}
         </div>
@@ -167,13 +233,17 @@ export default function SupabaseCollectionsGrid() {
             <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
           <h3 className="font-serif text-2xl text-foreground font-light mb-3">
-            Oops! Something went wrong
+            Unable to Load Collections
           </h3>
-          <p className="text-muted-foreground mb-6">
-            {error}
+          <p className="text-muted-foreground mb-2">{error}</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            {retryCount > 0 && `Attempted ${retryCount} ${retryCount === 1 ? 'retry' : 'retries'}`}
           </p>
           <button 
-            onClick={fetchCollections}
+            onClick={() => {
+              setRetryCount(0);
+              fetchCollections();
+            }}
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg"
           >
             <RefreshCw className="w-4 h-4" />
@@ -196,7 +266,7 @@ export default function SupabaseCollectionsGrid() {
             No Collections Yet
           </h3>
           <p className="text-muted-foreground mb-6">
-            We're currently curating our collections. Check back soon for exciting new additions!
+            We're currently curating our collections. Check back soon!
           </p>
         </div>
       </div>
@@ -215,7 +285,6 @@ export default function SupabaseCollectionsGrid() {
               key={collection.id}
               className="group relative bg-background rounded-2xl overflow-hidden border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-xl"
             >
-              {/* Main Image Section */}
               <div className="relative h-72 overflow-hidden bg-muted">
                 <img
                   src={collection.image}
@@ -225,19 +294,16 @@ export default function SupabaseCollectionsGrid() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                 
-                {/* Icon Badge */}
                 <div className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center border border-border/30 shadow-lg">
                   <IconComponent className="w-5 h-5 text-primary" />
                 </div>
 
-                {/* Featured Badge */}
                 {collection.isFeatured && (
-                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-full shadow-lg backdrop-blur-sm">
+                  <div className="absolute top-4 left-4 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-full shadow-lg">
                     Featured
                   </div>
                 )}
 
-                {/* Collection Title & Category Count */}
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <h3 className="font-serif text-2xl font-light text-white mb-1">
                     {collection.name}
@@ -248,19 +314,17 @@ export default function SupabaseCollectionsGrid() {
                 </div>
               </div>
 
-              {/* Expandable Content */}
               <div className="p-6 bg-background">
                 <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
                   {collection.description}
                 </p>
 
-                {/* Category Pills - Shows on Hover */}
                 {collection.categories.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4 opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-32 overflow-hidden transition-all duration-500">
                     {collection.categories.slice(0, 6).map((category) => (
                       <span
                         key={category.id}
-                        className="px-3 py-1 bg-primary/5 text-primary text-xs rounded-full border border-primary/10 hover:bg-primary/10 transition-colors"
+                        className="px-3 py-1 bg-primary/5 text-primary text-xs rounded-full border border-primary/10"
                       >
                         {category.name}
                       </span>
@@ -273,7 +337,6 @@ export default function SupabaseCollectionsGrid() {
                   </div>
                 )}
                 
-                {/* CTA Link - Updated to use category IDs */}
                 <a 
                   href={collection.categoryIds.length > 0 ? `/shop?categories=${collection.categoryIds.join(',')}` : `/shop?collection=${collection.slug}`} 
                   className="absolute inset-0" 
@@ -291,14 +354,11 @@ export default function SupabaseCollectionsGrid() {
         })}
       </div>
 
-      {/* Featured CTA Section */}
+      {/* Featured CTA */}
       {featuredCollection && (
         <div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5 border border-border/50 rounded-3xl p-12 md:p-16 lg:p-20 mb-24">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          
           <div className="relative text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-8 border border-primary/20 shadow-lg">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-8 border border-primary/20">
               {React.createElement(featuredCollection.icon, { className: "w-10 h-10 text-primary" })}
             </div>
             
@@ -306,7 +366,7 @@ export default function SupabaseCollectionsGrid() {
               Not Sure Where to Start?
             </h2>
             
-            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-base md:text-lg leading-relaxed mb-10">
               {featuredCollection.description}
             </p>
             
@@ -314,10 +374,9 @@ export default function SupabaseCollectionsGrid() {
               href={featuredCollection.categoryIds.length > 0 
                 ? `/shop?categories=${featuredCollection.categoryIds.join(',')}` 
                 : `/shop?collection=${featuredCollection.slug}`
-              } 
-              aria-label={`Explore ${featuredCollection.name}`}
+              }
             >
-              <button className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg hover:scale-105">
+              <button className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg">
                 <span>Explore {featuredCollection.name}</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -326,10 +385,10 @@ export default function SupabaseCollectionsGrid() {
         </div>
       )}
 
-      {/* Additional Info Section */}
+      {/* Info Section */}
       <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-        <div className="text-center p-8 group hover:bg-card rounded-2xl transition-all duration-300">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/5 rounded-full mb-6 border border-primary/10 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+        <div className="text-center p-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/5 rounded-full mb-6 border border-primary/10">
             <Sparkles className="w-7 h-7 text-primary" />
           </div>
           <h4 className="font-serif text-xl font-light text-foreground mb-3">Curated Selection</h4>
@@ -338,23 +397,23 @@ export default function SupabaseCollectionsGrid() {
           </p>
         </div>
         
-        <div className="text-center p-8 group hover:bg-card rounded-2xl transition-all duration-300">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/5 rounded-full mb-6 border border-secondary/10 group-hover:scale-110 group-hover:bg-secondary/10 transition-all duration-300">
+        <div className="text-center p-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/5 rounded-full mb-6 border border-secondary/10">
             <Palette className="w-7 h-7 text-secondary" />
           </div>
           <h4 className="font-serif text-xl font-light text-foreground mb-3">Premium Quality</h4>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Only the finest ingredients and formulations make it to our collections
+            Only the finest ingredients and formulations
           </p>
         </div>
         
-        <div className="text-center p-8 group hover:bg-card rounded-2xl transition-all duration-300">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/5 rounded-full mb-6 border border-accent/10 group-hover:scale-110 group-hover:bg-accent/10 transition-all duration-300">
+        <div className="text-center p-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/5 rounded-full mb-6 border border-accent/10">
             <Heart className="w-7 h-7 text-accent" />
           </div>
           <h4 className="font-serif text-xl font-light text-foreground mb-3">Proven Results</h4>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Customer-tested and loved by thousands worldwide
+            Customer-tested and loved worldwide
           </p>
         </div>
       </div>
