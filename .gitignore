@@ -29,6 +29,11 @@ next-env.d.ts
 scripts/groq_description_generator.py
 scripts/enhanced_product_filler.py
 scripts/enhanced_product_filler copy.py
+scripts/populate_supabase.py
+scripts/slug-fixer.py
+scripts/collection_image.py
+scripts/brand_image.py
+scripts/category_image.py
 
 
 /public/groq_description_generator.py
