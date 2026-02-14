@@ -1,20 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Heart, Star, ShoppingBag, AlertCircle, RefreshCw, Filter, SlidersHorizontal, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, Sparkles, Heart, Star, ShoppingBag, AlertCircle, RefreshCw, TrendingUp, Clock } from 'lucide-react';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { createClient } from '@supabase/supabase-js';
 import { useCart } from '@/lib/cart-context';
-import { toast } from 'sonner';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import type { Product } from '@/lib/types';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Initialize Supabase client with better error handling
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl!, supabaseKey!, {
+  auth: {
+    persistSession: false,
+  },
+  global: {
+    headers: {
+      'x-client-info': 'new-arrivals-page'
+    }
+  }
+});
 
 interface Brand {
   id: string;
@@ -28,201 +40,136 @@ interface Category {
   slug: string;
 }
 
-interface ProductData {
-  id: string;
-  sku: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  short_description: string | null;
-  retail_price: number;
-  wholesale_price: number;
-  stock_quantity: number;
-  rating_avg: number;
-  rating_count: number;
-  is_featured: boolean;
-  created_at: string;
-  brand_id: string | null;
-  category_id: string | null;
+interface ProductImage {
+  image_url: string;
+  is_primary?: boolean;
 }
 
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  short_description: string | null;
-  retail_price: number;
-  wholesale_price: number;
-  stock_quantity: number;
-  rating_avg: number;
-  rating_count: number;
-  is_featured: boolean;
-  created_at: string;
+interface ProductWithRelations extends Product {
   brand?: Brand;
   category?: Category;
-  images?: Array<{ image_url: string }>;
+  images?: ProductImage[];
 }
 
 type SortOption = 'newest' | 'price-low' | 'price-high' | 'popular';
 
 export default function NewArrivalsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [addingToCart, setAddingToCart] = useState<string | null>(null); // Track which product is being added
+  const [filteredProducts, setFilteredProducts] = useState<ProductWithRelations[]>([]);
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const { addItem, openCart } = useCart();
   
-  const router = useRouter();
-  const { addItem } = useCart();
+  // Use ref to track fetch attempts and prevent race conditions
+  const fetchAttemptRef = useRef(0);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchNewArrivals();
+
+    // Cleanup function
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
-    sortProducts();
+    if (isMountedRef.current) {
+      sortProducts();
+    }
   }, [sortBy, products]);
 
-  const handleQuickAddToCart = (e: React.MouseEvent, product: Product) => {
-    e.preventDefault(); // Prevent navigation to product page
-    e.stopPropagation();
-    
-    setAddingToCart(product.id);
-    
-    // Add to cart
-    addItem(product, 1);
-    
-    // Show success toast
-    toast.success('Added to cart!', {
-      description: product.name,
-      action: {
-        label: "View Cart",
-        onClick: () => router.push("/account/cart"),
-      },
-    });
-    
-    // Reset adding state
-    setTimeout(() => {
-      setAddingToCart(null);
-    }, 1000);
-  };
-
   const fetchNewArrivals = async () => {
+    const currentAttempt = ++fetchAttemptRef.current;
+    
     try {
+      if (!isMountedRef.current) return;
+
       setLoading(true);
       setError(null);
+
+      // Add a small delay to prevent rapid requests
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Check if this is still the latest fetch attempt
+      if (currentAttempt !== fetchAttemptRef.current) {
+        console.log('Fetch cancelled - newer request in progress');
+        return;
+      }
 
       // Calculate date 30 days ago for "new" products
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Add small delay to prevent rapid requests
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Step 1: Fetch products
-      const { data: productsData, error: productsError } = await supabase
+      // Fetch products created in the last 30 days
+      const { data, error: fetchError } = await supabase
         .from('products')
-        .select('id, sku, name, slug, description, short_description, retail_price, wholesale_price, stock_quantity, rating_avg, rating_count, is_featured, created_at, brand_id, category_id')
+        .select(`
+          id,
+          sku,
+          name,
+          slug,
+          description,
+          short_description,
+          retail_price,
+          wholesale_price,
+          stock_quantity,
+          rating_avg,
+          rating_count,
+          is_featured,
+          created_at,
+          brand:brands (
+            id,
+            name,
+            slug
+          ),
+          category:categories (
+            id,
+            name,
+            slug
+          ),
+          images:product_images (
+            image_url,
+            is_primary
+          )
+        `)
         .eq('status', 'published')
         .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false });
 
-      if (productsError) throw productsError;
+      if (fetchError) {
+        throw new Error(`Products error: ${fetchError.message}`);
+      }
 
-      if (!productsData || productsData.length === 0) {
-        setProducts([]);
+      // Only update state if component is still mounted and this is the latest attempt
+      if (isMountedRef.current && currentAttempt === fetchAttemptRef.current) {
+        setProducts(data || []);
+        setRetryCount(0);
         setLoading(false);
-        return;
       }
-
-      // Step 2: Fetch brands (only if there are brand IDs)
-      const brandIds = [...new Set(productsData.map((p: ProductData) => p.brand_id).filter(Boolean))];
-      let brandsData: Brand[] = [];
-      
-      if (brandIds.length > 0) {
-        const { data, error: brandsError } = await supabase
-          .from('brands')
-          .select('id, name, slug')
-          .in('id', brandIds);
-        
-        if (!brandsError && data) {
-          brandsData = data;
-        }
-      }
-
-      // Step 3: Fetch categories (only if there are category IDs)
-      const categoryIds = [...new Set(productsData.map((p: ProductData) => p.category_id).filter(Boolean))];
-      let categoriesData: Category[] = [];
-      
-      if (categoryIds.length > 0) {
-        const { data, error: categoriesError } = await supabase
-          .from('categories')
-          .select('id, name, slug')
-          .in('id', categoryIds);
-        
-        if (!categoriesError && data) {
-          categoriesData = data;
-        }
-      }
-
-      // Step 4: Fetch product images
-      const productIds = productsData.map((p: ProductData) => p.id);
-      let imagesData: Array<{ product_id: string; image_url: string }> = [];
-      
-      if (productIds.length > 0) {
-        const { data, error: imagesError } = await supabase
-          .from('product_images')
-          .select('product_id, image_url')
-          .in('product_id', productIds)
-          .order('display_order', { ascending: true });
-        
-        if (!imagesError && data) {
-          imagesData = data;
-        }
-      }
-
-      // Create lookups
-      const brandLookup = new Map<string, Brand>();
-      brandsData.forEach(b => brandLookup.set(b.id, b));
-      
-      const categoryLookup = new Map<string, Category>();
-      categoriesData.forEach(c => categoryLookup.set(c.id, c));
-      
-      const imagesLookup = new Map<string, Array<{ image_url: string }>>();
-      imagesData.forEach(img => {
-        if (!imagesLookup.has(img.product_id)) {
-          imagesLookup.set(img.product_id, []);
-        }
-        imagesLookup.get(img.product_id)!.push({ image_url: img.image_url });
-      });
-
-      // Combine data
-      const combinedProducts: Product[] = productsData.map((product: ProductData) => ({
-        id: product.id,
-        sku: product.sku,
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        short_description: product.short_description,
-        retail_price: product.retail_price,
-        wholesale_price: product.wholesale_price,
-        stock_quantity: product.stock_quantity,
-        rating_avg: product.rating_avg,
-        rating_count: product.rating_count,
-        is_featured: product.is_featured,
-        created_at: product.created_at,
-        brand: product.brand_id ? brandLookup.get(product.brand_id) : undefined,
-        category: product.category_id ? categoryLookup.get(product.category_id) : undefined,
-        images: imagesLookup.get(product.id) || [],
-      }));
-
-      setProducts(combinedProducts);
-      setLoading(false);
     } catch (err: any) {
       console.error('Error fetching new arrivals:', err);
+      
+      // Only update state if component is still mounted
+      if (!isMountedRef.current) return;
+
+      // Auto-retry for network errors
+      if (retryCount < 3 && !err.message?.includes('Row level security')) {
+        console.log(`Retrying... Attempt ${retryCount + 1}/3`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            fetchNewArrivals();
+          }
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+        return;
+      }
+      
       setError(err.message || 'Failed to load products');
       setLoading(false);
     }
@@ -261,9 +208,11 @@ export default function NewArrivalsPage() {
     }).format(price);
   };
 
-  const getProductImage = (product: Product): string => {
+  const getProductImage = (product: ProductWithRelations): string => {
     if (product.images && product.images.length > 0) {
-      return product.images[0].image_url;
+      // Find primary image or use first image
+      const primaryImage = product.images.find(img => img.is_primary);
+      return primaryImage?.image_url || product.images[0].image_url;
     }
     return 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop';
   };
@@ -275,13 +224,40 @@ export default function NewArrivalsPage() {
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   };
 
-  const getProductBadge = (product: Product): string => {
+  const getProductBadge = (product: ProductWithRelations): string => {
     const daysOld = getDaysOld(product.created_at);
     
     if (daysOld <= 7) return 'Just In';
     if (product.is_featured) return 'Featured';
     if (daysOld <= 14) return 'New';
     return 'Fresh';
+  };
+
+  const handleAddToCart = async (e: React.MouseEvent, product: ProductWithRelations) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (product.stock_quantity === 0) return;
+    
+    setAddingToCart(product.id);
+    
+    try {
+      // Add to cart
+      addItem(product as Product, 1);
+      
+      // Open cart drawer
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          openCart();
+          setAddingToCart(null);
+        }
+      }, 300);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      if (isMountedRef.current) {
+        setAddingToCart(null);
+      }
+    }
   };
 
   // Loading State
@@ -327,9 +303,17 @@ export default function NewArrivalsPage() {
               <h3 className="font-serif text-2xl text-foreground font-light mb-3">
                 Oops! Something went wrong
               </h3>
-              <p className="text-muted-foreground mb-6">{error}</p>
+              <p className="text-muted-foreground mb-2">{error}</p>
+              {retryCount > 0 && (
+                <p className="text-sm text-muted-foreground mb-6">
+                  Attempted {retryCount} {retryCount === 1 ? 'retry' : 'retries'}
+                </p>
+              )}
               <button 
-                onClick={fetchNewArrivals}
+                onClick={() => {
+                  setRetryCount(0);
+                  fetchNewArrivals();
+                }}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all hover:shadow-lg"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -381,6 +365,12 @@ export default function NewArrivalsPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Page Header */}
           <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center gap-2 mb-4">
+              <Clock className="w-6 h-6 text-primary" />
+              <span className="text-sm font-medium text-primary uppercase tracking-wider">
+                Fresh Launches
+              </span>
+            </div>
             <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-foreground font-light mb-4">
               New Arrivals
             </h1>
@@ -397,8 +387,9 @@ export default function NewArrivalsPage() {
               
               <div className="relative grid md:grid-cols-2 gap-8 items-center">
                 <div>
-                  <span className="inline-block text-sm font-medium text-primary bg-primary/10 px-4 py-2 rounded-full mb-4 border border-primary/20">
-                    Just Launched
+                  <span className="inline-flex items-center gap-2 text-sm font-medium text-primary bg-primary/10 px-4 py-2 rounded-full mb-4 border border-primary/20">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Just Launched</span>
                   </span>
                   <h2 className="font-serif text-3xl md:text-4xl text-foreground font-light mb-4">
                     Latest Collection
@@ -447,6 +438,7 @@ export default function NewArrivalsPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
               {filteredProducts.map((product) => {
                 const daysOld = getDaysOld(product.created_at);
+                const isAddingThisProduct = addingToCart === product.id;
                 
                 return (
                   <Link
@@ -486,7 +478,6 @@ export default function NewArrivalsPage() {
                             e.preventDefault();
                             e.stopPropagation();
                             // Add to wishlist logic
-                            toast.info('Wishlist feature coming soon!');
                           }}
                           className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border border-border/30 shadow-lg"
                           aria-label="Add to wishlist"
@@ -494,13 +485,13 @@ export default function NewArrivalsPage() {
                           <Heart className="w-4 h-4 text-foreground" />
                         </button>
                         <button 
-                          onClick={(e) => handleQuickAddToCart(e, product)}
-                          disabled={product.stock_quantity === 0 || addingToCart === product.id}
+                          onClick={(e) => handleAddToCart(e, product)}
+                          disabled={product.stock_quantity === 0 || isAddingThisProduct}
                           className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border border-border/30 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Quick add to cart"
                         >
-                          {addingToCart === product.id ? (
-                            <Check className="w-4 h-4 text-green-600 animate-in zoom-in" />
+                          {isAddingThisProduct ? (
+                            <div className="w-4 h-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
                           ) : (
                             <ShoppingBag className="w-4 h-4 text-foreground" />
                           )}
