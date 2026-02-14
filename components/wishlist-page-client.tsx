@@ -33,7 +33,7 @@ const getProductImage = (product: any): string => {
     }
   }
   // Fallback to placeholder
-  return 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop'
+  return '/placeholder.png'
 }
 
 export default function WishlistPageClient() {

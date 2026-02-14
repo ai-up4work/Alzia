@@ -207,7 +207,7 @@ export default function NewArrivalsPage() {
       const primaryImage = product.images.find(img => img.is_primary);
       return primaryImage?.image_url || product.images[0].image_url;
     }
-    return 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop';
+    return '/placeholder.png';
   };
 
   const getDaysOld = (createdAt: string): number => {
