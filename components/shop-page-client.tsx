@@ -2,16 +2,18 @@
 
 import { useState, useTransition, useEffect, useCallback, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Grid3X3, LayoutList, Loader2 } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Badge } from "@/components/ui/badge"
+import { Search, Grid3X3, LayoutList, Loader2, ChevronDown, X, Filter } from "lucide-react"
 import { ProductCard } from "@/components/shop/product-card"
 import { Footer } from "./footer"
+import { createClient } from "@/lib/supabase/client"
 
 interface Product {
   id: string
@@ -84,6 +86,11 @@ interface ShopPageClientProps {
   pageSize?: number
 }
 
+interface FilterCombination {
+  category_id: string
+  brand_id: string
+}
+
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -91,343 +98,6 @@ function formatPrice(price: number) {
     maximumFractionDigits: 0,
   }).format(price)
 }
-
-// Mock data
-const mockProducts: Product[] = [
-  {
-    id: "p1111111-1111-1111-1111-111111111111",
-    sku: "LP-SER-001",
-    name: "Radiance Renewal Serum",
-    slug: "radiance-renewal-serum",
-    description: "A luxurious vitamin C serum",
-    short_description: "Brightening vitamin C serum",
-    category_id: "a1111111-1111-1111-1111-111111111111",
-    brand_id: "b1111111-1111-1111-1111-111111111111",
-    retail_price: 2450,
-    wholesale_price: 1960,
-    cost_price: 980,
-    min_wholesale_qty: 10,
-    stock_quantity: 150,
-    low_stock_threshold: 20,
-    ingredients: null,
-    usage_instructions: null,
-    tags: ["vitamin-c", "brightening"],
-    status: "published",
-    is_featured: true,
-    rating_avg: 4.8,
-    rating_count: 124,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category: {
-      id: "a1111111-1111-1111-1111-111111111111",
-      name: "Skincare",
-      slug: "skincare",
-      description: null,
-      image_url: null,
-      parent_id: null,
-      display_order: 1,
-      is_active: true,
-    },
-    brand: {
-      id: "b1111111-1111-1111-1111-111111111111",
-      name: "Alzìa Paris",
-      slug: "lumiere-paris",
-      logo_url: null,
-      is_active: true,
-    },
-  },
-  {
-    id: "p2222222-2222-2222-2222-222222222222",
-    sku: "BN-CRM-001",
-    name: "Hydra-Silk Moisturizer",
-    slug: "hydra-silk-moisturizer",
-    description: "Ultra-rich moisturizer",
-    short_description: "72-hour hydrating cream",
-    category_id: "a1111111-1111-1111-1111-111111111111",
-    brand_id: "b2222222-2222-2222-2222-222222222222",
-    retail_price: 1850,
-    wholesale_price: 1480,
-    cost_price: 740,
-    min_wholesale_qty: 10,
-    stock_quantity: 200,
-    low_stock_threshold: 25,
-    ingredients: null,
-    usage_instructions: null,
-    tags: ["hydrating", "moisturizer"],
-    status: "published",
-    is_featured: true,
-    rating_avg: 4.6,
-    rating_count: 89,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category: {
-      id: "a1111111-1111-1111-1111-111111111111",
-      name: "Skincare",
-      slug: "skincare",
-      description: null,
-      image_url: null,
-      parent_id: null,
-      display_order: 1,
-      is_active: true,
-    },
-    brand: {
-      id: "b2222222-2222-2222-2222-222222222222",
-      name: "Belle Naturelle",
-      slug: "belle-naturelle",
-      logo_url: null,
-      is_active: true,
-    },
-  },
-  {
-    id: "p3333333-3333-3333-3333-333333333333",
-    sku: "ER-LIP-001",
-    name: "Velvet Rouge Lipstick",
-    slug: "velvet-rouge-lipstick",
-    description: "Creamy long-wearing lipstick",
-    short_description: "Long-wearing velvet finish",
-    category_id: "a2222222-2222-2222-2222-222222222222",
-    brand_id: "b3333333-3333-3333-3333-333333333333",
-    retail_price: 1200,
-    wholesale_price: 960,
-    cost_price: 480,
-    min_wholesale_qty: 15,
-    stock_quantity: 300,
-    low_stock_threshold: 30,
-    ingredients: null,
-    usage_instructions: null,
-    tags: ["lipstick", "velvet"],
-    status: "published",
-    is_featured: true,
-    rating_avg: 4.7,
-    rating_count: 156,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category: {
-      id: "a2222222-2222-2222-2222-222222222222",
-      name: "Makeup",
-      slug: "makeup",
-      description: null,
-      image_url: null,
-      parent_id: null,
-      display_order: 2,
-      is_active: true,
-    },
-    brand: {
-      id: "b3333333-3333-3333-3333-333333333333",
-      name: "Éclat Royal",
-      slug: "eclat-royal",
-      logo_url: null,
-      is_active: true,
-    },
-  },
-  {
-    id: "p4444444-4444-4444-4444-444444444444",
-    sku: "RM-PRF-001",
-    name: "Eau de Rose Parfum",
-    slug: "eau-de-rose-parfum",
-    description: "Captivating rose fragrance",
-    short_description: "Elegant rose eau de parfum",
-    category_id: "a4444444-4444-4444-4444-444444444444",
-    brand_id: "b4444444-4444-4444-4444-444444444444",
-    retail_price: 4500,
-    wholesale_price: 3600,
-    cost_price: 1800,
-    min_wholesale_qty: 5,
-    stock_quantity: 80,
-    low_stock_threshold: 10,
-    ingredients: null,
-    usage_instructions: null,
-    tags: ["perfume", "rose"],
-    status: "published",
-    is_featured: true,
-    rating_avg: 4.9,
-    rating_count: 67,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category: {
-      id: "a4444444-4444-4444-4444-444444444444",
-      name: "Fragrance",
-      slug: "fragrance",
-      description: null,
-      image_url: null,
-      parent_id: null,
-      display_order: 4,
-      is_active: true,
-    },
-    brand: {
-      id: "b4444444-4444-4444-4444-444444444444",
-      name: "Rose de Mai",
-      slug: "rose-de-mai",
-      logo_url: null,
-      is_active: true,
-    },
-  },
-  {
-    id: "p5555555-5555-5555-5555-555555555555",
-    sku: "JS-CLN-001",
-    name: "Gentle Foaming Cleanser",
-    slug: "gentle-foaming-cleanser",
-    description: "Sulfate-free foaming cleanser",
-    short_description: "Gentle daily cleanser",
-    category_id: "a1111111-1111-1111-1111-111111111111",
-    brand_id: "b5555555-5555-5555-5555-555555555555",
-    retail_price: 950,
-    wholesale_price: 760,
-    cost_price: 380,
-    min_wholesale_qty: 10,
-    stock_quantity: 250,
-    low_stock_threshold: 30,
-    ingredients: null,
-    usage_instructions: null,
-    tags: ["cleanser", "gentle"],
-    status: "published",
-    is_featured: false,
-    rating_avg: 4.5,
-    rating_count: 203,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category: {
-      id: "a1111111-1111-1111-1111-111111111111",
-      name: "Skincare",
-      slug: "skincare",
-      description: null,
-      image_url: null,
-      parent_id: null,
-      display_order: 1,
-      is_active: true,
-    },
-    brand: {
-      id: "b5555555-5555-5555-5555-555555555555",
-      name: "Jardin Secret",
-      slug: "jardin-secret",
-      logo_url: null,
-      is_active: true,
-    },
-  },
-  {
-    id: "p6666666-6666-6666-6666-666666666666",
-    sku: "LP-FND-001",
-    name: "Flawless Finish Foundation",
-    slug: "flawless-finish-foundation",
-    description: "Buildable foundation",
-    short_description: "Satin-finish foundation",
-    category_id: "a2222222-2222-2222-2222-222222222222",
-    brand_id: "b1111111-1111-1111-1111-111111111111",
-    retail_price: 2200,
-    wholesale_price: 1760,
-    cost_price: 880,
-    min_wholesale_qty: 10,
-    stock_quantity: 180,
-    low_stock_threshold: 20,
-    ingredients: null,
-    usage_instructions: null,
-    tags: ["foundation", "satin"],
-    status: "published",
-    is_featured: false,
-    rating_avg: 4.4,
-    rating_count: 178,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category: {
-      id: "a2222222-2222-2222-2222-222222222222",
-      name: "Makeup",
-      slug: "makeup",
-      description: null,
-      image_url: null,
-      parent_id: null,
-      display_order: 2,
-      is_active: true,
-    },
-    brand: {
-      id: "b1111111-1111-1111-1111-111111111111",
-      name: "Alzìa Paris",
-      slug: "lumiere-paris",
-      logo_url: null,
-      is_active: true,
-    },
-  },
-]
-
-const mockCategories: Category[] = [
-  {
-    id: "a1111111-1111-1111-1111-111111111111",
-    name: "Skincare",
-    slug: "skincare",
-    description: null,
-    image_url: null,
-    parent_id: null,
-    display_order: 1,
-    is_active: true,
-  },
-  {
-    id: "a2222222-2222-2222-2222-222222222222",
-    name: "Makeup",
-    slug: "makeup",
-    description: null,
-    image_url: null,
-    parent_id: null,
-    display_order: 2,
-    is_active: true,
-  },
-  {
-    id: "a3333333-3333-3333-3333-333333333333",
-    name: "Haircare",
-    slug: "haircare",
-    description: null,
-    image_url: null,
-    parent_id: null,
-    display_order: 3,
-    is_active: true,
-  },
-  {
-    id: "a4444444-4444-4444-4444-444444444444",
-    name: "Fragrance",
-    slug: "fragrance",
-    description: null,
-    image_url: null,
-    parent_id: null,
-    display_order: 4,
-    is_active: true,
-  },
-]
-
-const mockBrands: Brand[] = [
-  {
-    id: "b1111111-1111-1111-1111-111111111111",
-    name: "Alzìa Paris",
-    slug: "lumiere-paris",
-    logo_url: null,
-    is_active: true,
-  },
-  {
-    id: "b2222222-2222-2222-2222-222222222222",
-    name: "Belle Naturelle",
-    slug: "belle-naturelle",
-    logo_url: null,
-    is_active: true,
-  },
-  {
-    id: "b3333333-3333-3333-3333-333333333333",
-    name: "Éclat Royal",
-    slug: "eclat-royal",
-    logo_url: null,
-    is_active: true,
-  },
-  {
-    id: "b4444444-4444-4444-4444-444444444444",
-    name: "Rose de Mai",
-    slug: "rose-de-mai",
-    logo_url: null,
-    is_active: true,
-  },
-  {
-    id: "b5555555-5555-5555-5555-555555555555",
-    name: "Jardin Secret",
-    slug: "jardin-secret",
-    logo_url: null,
-    is_active: true,
-  },
-]
 
 const productImages: Record<string, string> = {
   "radiance-renewal-serum": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500",
@@ -438,36 +108,54 @@ const productImages: Record<string, string> = {
   "flawless-finish-foundation": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500",
 }
 
-export default function ShopPageClient({ 
-  initialProducts = [], 
-  categories = [], 
+export default function ShopPageClient({
+  initialProducts = [],
+  categories = [],
   brands = [],
   totalCount = 0,
   currentPage = 1,
-  pageSize = 24
+  pageSize = 24,
 }: ShopPageClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-
-  const allCategories = categories.length > 0 ? categories : mockCategories
-  const allBrands = brands.length > 0 ? brands : mockBrands
+  const supabase = createClient()
 
   // Cache for storing fetched products by filter combination
-  const cacheRef = useRef<Map<string, { products: Product[], totalCount: number }>>(new Map())
-  
+  const cacheRef = useRef<Map<string, { products: Product[]; totalCount: number }>>(new Map())
+
+  // Cache for filter combinations (category -> brands, brand -> categories)
+  const [filterCombinations, setFilterCombinations] = useState<{
+    categoryToBrands: Map<string, Set<string>>
+    brandToCategories: Map<string, Set<string>>
+    allCategoryIds: Set<string>
+    allBrandIds: Set<string>
+    loaded: boolean
+  }>({
+    categoryToBrands: new Map(),
+    brandToCategories: new Map(),
+    allCategoryIds: new Set(),
+    allBrandIds: new Set(),
+    loaded: false,
+  })
+
   // Debounce timer for search
   const searchDebounceRef = useRef<NodeJS.Timeout>()
 
+  // Popover states
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const [isBrandOpen, setIsBrandOpen] = useState(false)
+  const [isPriceOpen, setIsPriceOpen] = useState(false)
+
   // Parse URL params for initial state
-  const getInitialFiltersFromURL = () => {
+  const getInitialFiltersFromURL = useCallback(() => {
     const search = searchParams.get("search") || ""
     const categoriesParam = searchParams.get("categories")
     const brandsParam = searchParams.get("brands")
     const minPrice = parseInt(searchParams.get("minPrice") || "0")
-    const maxPrice = parseInt(searchParams.get("maxPrice") || "5000")
+    const maxPrice = parseInt(searchParams.get("maxPrice") || "10000")
     const sortBy = searchParams.get("sortBy") || "newest"
     const page = parseInt(searchParams.get("page") || "1")
 
@@ -479,13 +167,13 @@ export default function ShopPageClient({
       sortBy,
       page,
     }
-  }
+  }, [searchParams])
 
   const initialFilters = getInitialFiltersFromURL()
 
   // Products state with pagination support
-  const [products, setProducts] = useState<Product[]>(initialProducts.length > 0 ? initialProducts : mockProducts)
-  const [totalProductCount, setTotalProductCount] = useState(totalCount || mockProducts.length)
+  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [totalProductCount, setTotalProductCount] = useState(totalCount)
   const [currentPageNum, setCurrentPageNum] = useState(currentPage)
 
   // Filter states (local, not yet applied)
@@ -495,6 +183,10 @@ export default function ShopPageClient({
   const [priceRange, setPriceRange] = useState<[number, number]>(initialFilters.priceRange)
   const [sortBy, setSortBy] = useState(initialFilters.sortBy)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+
+  // All categories and brands
+  const [allCategories, setAllCategories] = useState<Category[]>(categories)
+  const [allBrands, setAllBrands] = useState<Brand[]>(brands)
 
   // Applied filter states (what's currently in the URL)
   const [appliedFilters, setAppliedFilters] = useState({
@@ -506,87 +198,224 @@ export default function ShopPageClient({
     sortBy: initialFilters.sortBy,
   })
 
+  // Fetch filter combinations on mount
+  useEffect(() => {
+    const fetchFilterCombinations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("category_id, brand_id")
+          .eq("status", "published")
+          .not("category_id", "is", null)
+          .not("brand_id", "is", null)
+
+        if (error) {
+          console.error("Error fetching filter combinations:", error)
+          return
+        }
+
+        const categoryToBrands = new Map<string, Set<string>>()
+        const brandToCategories = new Map<string, Set<string>>()
+        const allCategoryIds = new Set<string>()
+        const allBrandIds = new Set<string>()
+
+        data.forEach((product) => {
+          if (product.category_id && product.brand_id) {
+            allCategoryIds.add(product.category_id)
+            allBrandIds.add(product.brand_id)
+
+            // Category -> Brands mapping
+            if (!categoryToBrands.has(product.category_id)) {
+              categoryToBrands.set(product.category_id, new Set())
+            }
+            categoryToBrands.get(product.category_id)!.add(product.brand_id)
+
+            // Brand -> Categories mapping
+            if (!brandToCategories.has(product.brand_id)) {
+              brandToCategories.set(product.brand_id, new Set())
+            }
+            brandToCategories.get(product.brand_id)!.add(product.category_id)
+          }
+        })
+
+        setFilterCombinations({
+          categoryToBrands,
+          brandToCategories,
+          allCategoryIds,
+          allBrandIds,
+          loaded: true,
+        })
+      } catch (error) {
+        console.error("Error fetching filter combinations:", error)
+      }
+    }
+
+    fetchFilterCombinations()
+  }, [supabase])
+
+  // Fetch categories and brands on mount if not provided
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (allCategories.length === 0) {
+        const { data: categoriesData } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("display_order")
+        if (categoriesData) setAllCategories(categoriesData)
+      }
+
+      if (allBrands.length === 0) {
+        const { data: brandsData } = await supabase
+          .from("brands")
+          .select("*")
+          .eq("is_active", true)
+          .order("name")
+        if (brandsData) setAllBrands(brandsData)
+      }
+    }
+
+    fetchMetadata()
+  }, [supabase, allCategories.length, allBrands.length])
+
+  // Get available brands based on selected categories
+  const getAvailableBrands = useCallback(() => {
+    if (!filterCombinations.loaded) return allBrands
+
+    // If no categories selected, return all brands that have products
+    if (selectedCategories.length === 0) {
+      return allBrands.filter((brand) => filterCombinations.allBrandIds.has(brand.id))
+    }
+
+    // Get brands that exist in at least one selected category
+    const availableBrandIds = new Set<string>()
+    selectedCategories.forEach((categoryId) => {
+      const brandsInCategory = filterCombinations.categoryToBrands.get(categoryId)
+      if (brandsInCategory) {
+        brandsInCategory.forEach((brandId) => availableBrandIds.add(brandId))
+      }
+    })
+
+    return allBrands.filter((brand) => availableBrandIds.has(brand.id))
+  }, [selectedCategories, filterCombinations, allBrands])
+
+  // Get available categories based on selected brands
+  const getAvailableCategories = useCallback(() => {
+    if (!filterCombinations.loaded) return allCategories
+
+    // If no brands selected, return all categories that have products
+    if (selectedBrands.length === 0) {
+      return allCategories.filter((category) => filterCombinations.allCategoryIds.has(category.id))
+    }
+
+    // Get categories that exist in at least one selected brand
+    const availableCategoryIds = new Set<string>()
+    selectedBrands.forEach((brandId) => {
+      const categoriesInBrand = filterCombinations.brandToCategories.get(brandId)
+      if (categoriesInBrand) {
+        categoriesInBrand.forEach((categoryId) => availableCategoryIds.add(categoryId))
+      }
+    })
+
+    return allCategories.filter((category) => availableCategoryIds.has(category.id))
+  }, [selectedBrands, filterCombinations, allCategories])
+
+  const availableBrands = getAvailableBrands()
+  const availableCategories = getAvailableCategories()
+
   // Generate cache key from filters
   const getCacheKey = (filters: any, page: number) => {
     return JSON.stringify({ ...filters, page })
   }
 
-  // Fetch products from API (replace with your actual API call)
-  const fetchProducts = useCallback(async (filters: any, page: number) => {
-    const cacheKey = getCacheKey(filters, page)
-    
-    // Check cache first
-    if (cacheRef.current.has(cacheKey)) {
-      const cached = cacheRef.current.get(cacheKey)!
-      return cached
-    }
+  // Fetch products from Supabase
+  const fetchProducts = useCallback(
+    async (filters: any, page: number) => {
+      const cacheKey = getCacheKey(filters, page)
 
-    // TODO: Replace with actual API call
-    // Example: const response = await fetch(`/api/products?${new URLSearchParams({...filters, page: page.toString()})}`)
-    // const data = await response.json()
-    
-    // For now, simulate API call with mock data
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    let filtered = [...mockProducts]
+      // Check cache first
+      if (cacheRef.current.has(cacheKey)) {
+        const cached = cacheRef.current.get(cacheKey)!
+        return cached
+      }
 
-    // Apply filters (client-side simulation - this would be server-side in production)
-    if (filters.search) {
-      const search = filters.search.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(search) ||
-          p.short_description?.toLowerCase().includes(search) ||
-          p.category?.name.toLowerCase().includes(search) ||
-          p.brand?.name.toLowerCase().includes(search)
-      )
-    }
+      try {
+        let query = supabase
+          .from("products")
+          .select("*, category:categories(*), brand:brands(*)", { count: "exact" })
+          .eq("status", "published")
 
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter((p) => filters.categories.includes(p.category_id))
-    }
+        // Apply search filter
+        if (filters.search) {
+          query = query.or(
+            `name.ilike.%${filters.search}%,short_description.ilike.%${filters.search}%,tags.cs.{${filters.search}}`
+          )
+        }
 
-    if (filters.brands.length > 0) {
-      filtered = filtered.filter((p) => filters.brands.includes(p.brand_id))
-    }
+        // Apply category filter
+        if (filters.categories.length > 0) {
+          query = query.in("category_id", filters.categories)
+        }
 
-    filtered = filtered.filter(
-      (p) => p.retail_price >= filters.minPrice && p.retail_price <= filters.maxPrice
-    )
+        // Apply brand filter
+        if (filters.brands.length > 0) {
+          query = query.in("brand_id", filters.brands)
+        }
 
-    // Apply sorting
-    switch (filters.sortBy) {
-      case "price-low":
-        filtered.sort((a, b) => a.retail_price - b.retail_price)
-        break
-      case "price-high":
-        filtered.sort((a, b) => b.retail_price - a.retail_price)
-        break
-      case "rating":
-        filtered.sort((a, b) => b.rating_avg - a.rating_avg)
-        break
-      case "newest":
-      default:
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        break
-    }
+        // Apply price range filter
+        query = query.gte("retail_price", filters.minPrice).lte("retail_price", filters.maxPrice)
 
-    const result = {
-      products: filtered.slice((page - 1) * pageSize, page * pageSize),
-      totalCount: filtered.length
-    }
+        // Apply sorting
+        switch (filters.sortBy) {
+          case "price-low":
+            query = query.order("retail_price", { ascending: true })
+            break
+          case "price-high":
+            query = query.order("retail_price", { ascending: false })
+            break
+          case "rating":
+            query = query.order("rating_avg", { ascending: false })
+            break
+          case "newest":
+          default:
+            query = query.order("created_at", { ascending: false })
+            break
+        }
 
-    // Cache the result
-    cacheRef.current.set(cacheKey, result)
+        // Apply pagination
+        const from = (page - 1) * pageSize
+        const to = from + pageSize - 1
+        query = query.range(from, to)
 
-    return result
-  }, [pageSize])
+        const { data, error, count } = await query
+
+        if (error) {
+          console.error("Error fetching products:", error)
+          return { products: [], totalCount: 0 }
+        }
+
+        const result = {
+          products: (data as Product[]) || [],
+          totalCount: count || 0,
+        }
+
+        // Cache the result
+        cacheRef.current.set(cacheKey, result)
+
+        return result
+      } catch (error) {
+        console.error("Error fetching products:", error)
+        return { products: [], totalCount: 0 }
+      }
+    },
+    [supabase, pageSize]
+  )
 
   // Update products when initialProducts change from server
   useEffect(() => {
     if (initialProducts.length > 0) {
       setProducts(initialProducts)
-      setTotalProductCount(totalCount || initialProducts.length)
+      setTotalProductCount(totalCount)
       setCurrentPageNum(currentPage)
     }
   }, [initialProducts, totalCount, currentPage])
@@ -611,15 +440,18 @@ export default function ShopPageClient({
 
     // Fetch products with current filters
     const loadProducts = async () => {
-      const result = await fetchProducts({
-        search: filters.search,
-        categories: filters.selectedCategories,
-        brands: filters.selectedBrands,
-        minPrice: filters.priceRange[0],
-        maxPrice: filters.priceRange[1],
-        sortBy: filters.sortBy,
-      }, filters.page)
-      
+      const result = await fetchProducts(
+        {
+          search: filters.search,
+          categories: filters.selectedCategories,
+          brands: filters.selectedBrands,
+          minPrice: filters.priceRange[0],
+          maxPrice: filters.priceRange[1],
+          sortBy: filters.sortBy,
+        },
+        filters.page
+      )
+
       setProducts(result.products)
       setTotalProductCount(result.totalCount)
     }
@@ -627,7 +459,7 @@ export default function ShopPageClient({
     if (initialProducts.length === 0) {
       loadProducts()
     }
-  }, [searchParams, fetchProducts, initialProducts])
+  }, [searchParams, fetchProducts, initialProducts.length, getInitialFiltersFromURL])
 
   // Check if filters have changed
   const hasFilterChanges = () => {
@@ -649,7 +481,7 @@ export default function ShopPageClient({
     if (selectedCategories.length > 0) params.set("categories", selectedCategories.join(","))
     if (selectedBrands.length > 0) params.set("brands", selectedBrands.join(","))
     if (priceRange[0] > 0) params.set("minPrice", priceRange[0].toString())
-    if (priceRange[1] < 5000) params.set("maxPrice", priceRange[1].toString())
+    if (priceRange[1] < 10000) params.set("maxPrice", priceRange[1].toString())
     if (sortBy !== "newest") params.set("sortBy", sortBy)
     if (page > 1) params.set("page", page.toString())
 
@@ -666,6 +498,11 @@ export default function ShopPageClient({
       sortBy: sortBy,
     })
 
+    // Close all popovers
+    setIsCategoryOpen(false)
+    setIsBrandOpen(false)
+    setIsPriceOpen(false)
+
     // Navigate to new URL with filters
     startTransition(() => {
       router.push(newURL)
@@ -675,7 +512,7 @@ export default function ShopPageClient({
   // Debounced search
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
-    
+
     // Clear existing timeout
     if (searchDebounceRef.current) {
       clearTimeout(searchDebounceRef.current)
@@ -690,7 +527,7 @@ export default function ShopPageClient({
         if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
         if (appliedFilters.brands.length > 0) params.set("brands", appliedFilters.brands.join(","))
         if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
-        if (appliedFilters.maxPrice < 5000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+        if (appliedFilters.maxPrice < 10000) params.set("maxPrice", appliedFilters.maxPrice.toString())
         if (appliedFilters.sortBy !== "newest") params.set("sortBy", appliedFilters.sortBy)
 
         const queryString = params.toString()
@@ -713,7 +550,7 @@ export default function ShopPageClient({
     if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
     if (appliedFilters.brands.length > 0) params.set("brands", appliedFilters.brands.join(","))
     if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
-    if (appliedFilters.maxPrice < 5000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+    if (appliedFilters.maxPrice < 10000) params.set("maxPrice", appliedFilters.maxPrice.toString())
     if (value !== "newest") params.set("sortBy", value)
 
     const queryString = params.toString()
@@ -730,17 +567,17 @@ export default function ShopPageClient({
   const loadMoreProducts = async () => {
     setIsLoadingMore(true)
     const nextPage = currentPageNum + 1
-    
+
     try {
       const result = await fetchProducts(appliedFilters, nextPage)
-      setProducts(prev => [...prev, ...result.products])
+      setProducts((prev) => [...prev, ...result.products])
       setCurrentPageNum(nextPage)
-      
+
       // Update URL with new page
       const params = new URLSearchParams(window.location.search)
       params.set("page", nextPage.toString())
       const newURL = `${pathname}?${params.toString()}`
-      window.history.pushState({}, '', newURL)
+      window.history.pushState({}, "", newURL)
     } catch (error) {
       console.error("Error loading more products:", error)
     } finally {
@@ -762,14 +599,14 @@ export default function ShopPageClient({
     setSearchQuery("")
     setSelectedCategories([])
     setSelectedBrands([])
-    setPriceRange([0, 5000])
+    setPriceRange([0, 10000])
     setSortBy("newest")
     setAppliedFilters({
       search: "",
       categories: [],
       brands: [],
       minPrice: 0,
-      maxPrice: 5000,
+      maxPrice: 10000,
       sortBy: "newest",
     })
 
@@ -778,21 +615,68 @@ export default function ShopPageClient({
     })
   }
 
+  const removeFilter = (type: "category" | "brand", id: string) => {
+    if (type === "category") {
+      const newCategories = selectedCategories.filter((c) => c !== id)
+      setSelectedCategories(newCategories)
+
+      // Auto-apply
+      const params = new URLSearchParams()
+      if (appliedFilters.search) params.set("search", appliedFilters.search)
+      if (newCategories.length > 0) params.set("categories", newCategories.join(","))
+      if (appliedFilters.brands.length > 0) params.set("brands", appliedFilters.brands.join(","))
+      if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
+      if (appliedFilters.maxPrice < 10000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+      if (appliedFilters.sortBy !== "newest") params.set("sortBy", appliedFilters.sortBy)
+
+      const queryString = params.toString()
+      const newURL = queryString ? `${pathname}?${queryString}` : pathname
+
+      setAppliedFilters({ ...appliedFilters, categories: newCategories })
+      startTransition(() => {
+        router.push(newURL)
+      })
+    } else {
+      const newBrands = selectedBrands.filter((b) => b !== id)
+      setSelectedBrands(newBrands)
+
+      // Auto-apply
+      const params = new URLSearchParams()
+      if (appliedFilters.search) params.set("search", appliedFilters.search)
+      if (appliedFilters.categories.length > 0) params.set("categories", appliedFilters.categories.join(","))
+      if (newBrands.length > 0) params.set("brands", newBrands.join(","))
+      if (appliedFilters.minPrice > 0) params.set("minPrice", appliedFilters.minPrice.toString())
+      if (appliedFilters.maxPrice < 10000) params.set("maxPrice", appliedFilters.maxPrice.toString())
+      if (appliedFilters.sortBy !== "newest") params.set("sortBy", appliedFilters.sortBy)
+
+      const queryString = params.toString()
+      const newURL = queryString ? `${pathname}?${queryString}` : pathname
+
+      setAppliedFilters({ ...appliedFilters, brands: newBrands })
+      startTransition(() => {
+        router.push(newURL)
+      })
+    }
+  }
+
   const totalPages = Math.ceil(totalProductCount / pageSize)
   const hasMoreProducts = currentPageNum < totalPages
 
+  const activeFilterCount =
+    appliedFilters.categories.length +
+    appliedFilters.brands.length +
+    (appliedFilters.minPrice > 0 || appliedFilters.maxPrice < 10000 ? 1 : 0)
+
+  // Mobile Filter Sidebar
   const FilterSidebar = () => (
     <div className="space-y-8">
       {/* Categories */}
       <div>
         <h3 className="font-medium text-gray-900 mb-4">Categories</h3>
         <div className="space-y-3">
-          {allCategories.map((category) => (
+          {availableCategories.map((category) => (
             <label key={category.id} className="flex items-center gap-3 cursor-pointer">
-              <Checkbox
-                checked={selectedCategories.includes(category.id)}
-                onCheckedChange={() => toggleCategory(category.id)}
-              />
+              <Checkbox checked={selectedCategories.includes(category.id)} onCheckedChange={() => toggleCategory(category.id)} />
               <span className="text-sm text-gray-600">{category.name}</span>
             </label>
           ))}
@@ -802,8 +686,8 @@ export default function ShopPageClient({
       {/* Brands */}
       <div>
         <h3 className="font-medium text-gray-900 mb-4">Brands</h3>
-        <div className="space-y-3">
-          {allBrands.map((brand) => (
+        <div className="space-y-3 max-h-[300px] overflow-y-auto">
+          {availableBrands.map((brand) => (
             <label key={brand.id} className="flex items-center gap-3 cursor-pointer">
               <Checkbox checked={selectedBrands.includes(brand.id)} onCheckedChange={() => toggleBrand(brand.id)} />
               <span className="text-sm text-gray-600">{brand.name}</span>
@@ -815,7 +699,7 @@ export default function ShopPageClient({
       {/* Price Range */}
       <div>
         <h3 className="font-medium text-gray-900 mb-4">Price Range</h3>
-        <Slider value={priceRange} onValueChange={setPriceRange} max={5000} step={100} className="mb-4" />
+        <Slider value={priceRange} onValueChange={setPriceRange} max={10000} step={100} className="mb-4" />
         <div className="flex items-center justify-between text-sm text-gray-600">
           <span>{formatPrice(priceRange[0])}</span>
           <span>{formatPrice(priceRange[1])}</span>
@@ -849,15 +733,17 @@ export default function ShopPageClient({
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Page Header */}
           <div className="text-center mb-12">
-            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-gray-900 font-light mb-4">Shop Our Products</h1>
+            <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl text-gray-900 font-light mb-4">
+              Shop Our Products
+            </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Discover our complete collection of luxury cosmetics crafted in Paris
             </p>
           </div>
 
-          {/* Search & Controls */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
-            <div className="relative flex-1">
+          {/* Search Bar */}
+          <div className="mb-6">
+            <div className="relative max-w-2xl mx-auto">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 placeholder="Search products..."
@@ -871,22 +757,147 @@ export default function ShopPageClient({
                 </div>
               )}
             </div>
+          </div>
 
-            <div className="flex gap-3">
-              {/* Mobile Filter Button */}
+          {/* Horizontal Filters Bar */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Category Filter */}
+              <Popover open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-10 rounded-full border-gray-300">
+                    Category
+                    {selectedCategories.length > 0 && (
+                      <Badge variant="secondary" className="ml-2 rounded-full px-2 py-0.5 text-xs">
+                        {selectedCategories.length}
+                      </Badge>
+                    )}
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4" side="bottom" align="start">
+                  <div className="space-y-3">
+                    <div className="font-medium text-sm text-gray-900 mb-3">Select Categories</div>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {availableCategories.map((category) => {
+                        const isDisabled = selectedBrands.length > 0 && !availableCategories.find((c) => c.id === category.id)
+                        return (
+                          <label
+                            key={category.id}
+                            className={`flex items-center gap-2 cursor-pointer py-1 ${
+                              isDisabled ? "opacity-50" : ""
+                            }`}
+                          >
+                            <Checkbox
+                              checked={selectedCategories.includes(category.id)}
+                              onCheckedChange={() => toggleCategory(category.id)}
+                              disabled={isDisabled}
+                            />
+                            <span className="text-sm text-gray-700">{category.name}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {hasFilterChanges() && (
+                      <Button onClick={() => applyFilters(1)} disabled={isPending} size="sm" className="w-full mt-3">
+                        {isPending ? "Applying..." : "Apply"}
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Brand Filter */}
+              <Popover open={isBrandOpen} onOpenChange={setIsBrandOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-10 rounded-full border-gray-300">
+                    Brand
+                    {selectedBrands.length > 0 && (
+                      <Badge variant="secondary" className="ml-2 rounded-full px-2 py-0.5 text-xs">
+                        {selectedBrands.length}
+                      </Badge>
+                    )}
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-4" side="bottom" align="start">
+                  <div className="space-y-3">
+                    <div className="font-medium text-sm text-gray-900 mb-3">Select Brands</div>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {availableBrands.map((brand) => {
+                        const isDisabled = selectedCategories.length > 0 && !availableBrands.find((b) => b.id === brand.id)
+                        return (
+                          <label
+                            key={brand.id}
+                            className={`flex items-center gap-2 cursor-pointer py-1 ${
+                              isDisabled ? "opacity-50" : ""
+                            }`}
+                          >
+                            <Checkbox
+                              checked={selectedBrands.includes(brand.id)}
+                              onCheckedChange={() => toggleBrand(brand.id)}
+                              disabled={isDisabled}
+                            />
+                            <span className="text-sm text-gray-700">{brand.name}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {hasFilterChanges() && (
+                      <Button onClick={() => applyFilters(1)} disabled={isPending} size="sm" className="w-full mt-3">
+                        {isPending ? "Applying..." : "Apply"}
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Price Filter */}
+              <Popover open={isPriceOpen} onOpenChange={setIsPriceOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-10 rounded-full border-gray-300">
+                    Price
+                    {(priceRange[0] > 0 || priceRange[1] < 10000) && (
+                      <Badge variant="secondary" className="ml-2 rounded-full px-2 py-0.5 text-xs">
+                        ✓
+                      </Badge>
+                    )}
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4" side="bottom" align="start">
+                  <div className="space-y-4">
+                    <div className="font-medium text-sm text-gray-900">Price Range</div>
+                    <Slider value={priceRange} onValueChange={setPriceRange} max={10000} step={100} />
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>{formatPrice(priceRange[0])}</span>
+                      <span>{formatPrice(priceRange[1])}</span>
+                    </div>
+                    {hasFilterChanges() && (
+                      <Button onClick={() => applyFilters(1)} disabled={isPending} size="sm" className="w-full">
+                        {isPending ? "Applying..." : "Apply"}
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Mobile All Filters Button */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="lg:hidden h-12 px-4 rounded-full">
-                    <SlidersHorizontal className="w-5 h-5 mr-2" />
-                    Filters
-                    {hasFilterChanges() && (
-                      <span className="ml-2 w-2 h-2 bg-blue-600 rounded-full" aria-label="Unsaved changes" />
+                  <Button variant="outline" className="lg:hidden h-10 rounded-full border-gray-300">
+                    <Filter className="w-4 h-4 mr-2" />
+                    All Filters
+                    {activeFilterCount > 0 && (
+                      <Badge variant="secondary" className="ml-2 rounded-full px-2 py-0.5 text-xs">
+                        {activeFilterCount}
+                      </Badge>
                     )}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-80">
                   <SheetHeader>
-                    <SheetTitle>Filters</SheetTitle>
+                    <SheetTitle>All Filters</SheetTitle>
                   </SheetHeader>
                   <div className="mt-6">
                     <FilterSidebar />
@@ -894,8 +905,19 @@ export default function ShopPageClient({
                 </SheetContent>
               </Sheet>
 
+              {/* Clear All */}
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" onClick={clearFilters} className="h-10 rounded-full text-gray-600">
+                  Clear all
+                </Button>
+              )}
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Sort Dropdown */}
               <Select value={sortBy} onValueChange={handleSortChange} disabled={isPending}>
-                <SelectTrigger className="w-[180px] h-12 rounded-full">
+                <SelectTrigger className="w-[180px] h-10 rounded-full">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -906,92 +928,121 @@ export default function ShopPageClient({
                 </SelectContent>
               </Select>
 
+              {/* View Toggle */}
               <div className="hidden md:flex border rounded-full overflow-hidden">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-3 ${viewMode === "grid" ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:text-gray-900"}`}
+                  className={`p-2.5 ${
+                    viewMode === "grid" ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:text-gray-900"
+                  }`}
                   aria-label="Grid view"
                 >
-                  <Grid3X3 className="w-5 h-5" />
+                  <Grid3X3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-3 ${viewMode === "list" ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:text-gray-900"}`}
+                  className={`p-2.5 ${
+                    viewMode === "list" ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:text-gray-900"
+                  }`}
                   aria-label="List view"
                 >
-                  <LayoutList className="w-5 h-5" />
+                  <LayoutList className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-8">
-            {/* Desktop Sidebar */}
-            <aside className="hidden lg:block w-64 flex-shrink-0">
-              <FilterSidebar />
-            </aside>
+          {/* Active Filter Pills */}
+          {(appliedFilters.categories.length > 0 || appliedFilters.brands.length > 0) && (
+            <div className="mb-6 flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {appliedFilters.categories.map((categoryId) => {
+                const category = allCategories.find((c) => c.id === categoryId)
+                return category ? (
+                  <Badge key={categoryId} variant="secondary" className="rounded-full pl-3 pr-2 py-1">
+                    {category.name}
+                    <button
+                      onClick={() => removeFilter("category", categoryId)}
+                      className="ml-1.5 hover:bg-gray-300 rounded-full p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ) : null
+              })}
+              {appliedFilters.brands.map((brandId) => {
+                const brand = allBrands.find((b) => b.id === brandId)
+                return brand ? (
+                  <Badge key={brandId} variant="secondary" className="rounded-full pl-3 pr-2 py-1">
+                    {brand.name}
+                    <button
+                      onClick={() => removeFilter("brand", brandId)}
+                      className="ml-1.5 hover:bg-gray-300 rounded-full p-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ) : null
+              })}
+            </div>
+          )}
 
-            {/* Products Grid */}
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-6">
-                <p className="text-sm text-gray-600">
-                  Showing {products.length} of {totalProductCount} product{totalProductCount !== 1 ? "s" : ""}
-                </p>
-                {isPending && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Loading...</span>
-                  </div>
-                )}
-              </div>
-
-              {products.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-lg text-gray-600 mb-4">No products found</p>
-                  <Button onClick={clearFilters}>Clear filters</Button>
+          {/* Products Grid */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-gray-600">
+                Showing {products.length} of {totalProductCount} product{totalProductCount !== 1 ? "s" : ""}
+              </p>
+              {isPending && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Loading...</span>
                 </div>
-              ) : (
-                <>
-                  <div className={viewMode === "grid" ? "grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6" : "space-y-4"}>
-                    {products.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        viewMode={viewMode}
-                        image={productImages[product.slug] || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500"}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Load More / Pagination */}
-                  {hasMoreProducts && (
-                    <div className="mt-12 text-center">
-                      <Button 
-                        onClick={loadMoreProducts} 
-                        disabled={isLoadingMore}
-                        size="lg"
-                        variant="outline"
-                        className="rounded-full"
-                      >
-                        {isLoadingMore ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Loading more...
-                          </>
-                        ) : (
-                          `Load More (${totalProductCount - products.length} remaining)`
-                        )}
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Pagination Info */}
-                  <div className="mt-8 text-center text-sm text-gray-500">
-                    Page {currentPageNum} of {totalPages}
-                  </div>
-                </>
               )}
             </div>
+
+            {products.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-lg text-gray-600 mb-4">No products found</p>
+                <Button onClick={clearFilters}>Clear filters</Button>
+              </div>
+            ) : (
+              <>
+                <div className={viewMode === "grid" ? "grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6" : "space-y-4"}>
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      viewMode={viewMode}
+                      image={
+                        productImages[product.slug] || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500"
+                      }
+                    />
+                  ))}
+                </div>
+
+                {/* Load More / Pagination */}
+                {hasMoreProducts && (
+                  <div className="mt-12 text-center">
+                    <Button onClick={loadMoreProducts} disabled={isLoadingMore} size="lg" variant="outline" className="rounded-full">
+                      {isLoadingMore ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Loading more...
+                        </>
+                      ) : (
+                        `Load More (${totalProductCount - products.length} remaining)`
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Pagination Info */}
+                <div className="mt-8 text-center text-sm text-gray-500">
+                  Page {currentPageNum} of {totalPages}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
