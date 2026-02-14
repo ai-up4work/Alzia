@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Heart, ShoppingBag, Star, Check } from "lucide-react"
 import { ProductShareButton } from "@/components/ProductShareButton"
 import { useCart } from "@/lib/cart-context"
+import { useWishlist } from "@/lib/wishlist-context"
 import { toast } from "sonner"
 import type { Product } from "@/lib/types"
 
@@ -28,9 +29,11 @@ export function ProductCard({
   image: string
 }) {
   const [isAddingToCart, setIsAddingToCart] = useState(false)
-  const [isWishlistHovered, setIsWishlistHovered] = useState(false)
   const router = useRouter()
   const { addItem } = useCart()
+  const { toggleItem, isInWishlist } = useWishlist()
+  
+  const inWishlist = isInWishlist(product.id)
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -67,10 +70,17 @@ export function ProductCard({
     e.preventDefault()
     e.stopPropagation()
     
-    // Placeholder for wishlist functionality
-    toast.info('Wishlist feature coming soon!', {
-      description: 'We are working on adding this feature'
-    })
+    toggleItem(product)
+    
+    if (inWishlist) {
+      toast.success('Removed from wishlist', {
+        description: product.name
+      })
+    } else {
+      toast.success('Added to wishlist!', {
+        description: product.name
+      })
+    }
   }
 
   if (viewMode === "list") {
@@ -133,10 +143,10 @@ export function ProductCard({
                 size="sm" 
                 variant="outline" 
                 className="rounded-full bg-transparent" 
-                aria-label="Add to wishlist"
+                aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                 onClick={handleWishlist}
               >
-                <Heart className="w-4 h-4" />
+                <Heart className={`w-4 h-4 ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
               <ProductShareButton 
                 product={product} 
@@ -197,12 +207,10 @@ export function ProductCard({
         )}
         <button
           onClick={handleWishlist}
-          onMouseEnter={() => setIsWishlistHovered(true)}
-          onMouseLeave={() => setIsWishlistHovered(false)}
           className="absolute top-3 right-3 w-8 h-8 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-background hover:scale-110 shadow-lg"
-          aria-label="Add to wishlist"
+          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
         >
-          <Heart className={`w-4 h-4 transition-colors ${isWishlistHovered ? 'text-red-500' : 'text-foreground'}`} />
+          <Heart className={`w-4 h-4 transition-colors ${inWishlist ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
         </button>
       </Link>
 

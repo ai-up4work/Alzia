@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Heart, ShoppingBag, Star, Minus, Plus, Truck, RotateCcw, Shield, ChevronRight, Package, Sparkles, Check } from "lucide-react"
 import { ProductShareButton } from "@/components/ProductShareButton"
 import { useCart } from "@/lib/cart-context"
-import { toast } from "sonner" // or use your toast library
+import { useWishlist } from "@/lib/wishlist-context"
+import { toast } from "sonner"
 import type { Product } from "@/lib/types"
 
 interface ProductDetailClientProps {
@@ -18,9 +19,9 @@ interface ProductDetailClientProps {
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-LK", {
     style: "currency",
-    currency: "INR",
+    currency: "LKR",
     maximumFractionDigits: 0,
   }).format(price)
 }
@@ -40,8 +41,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const router = useRouter()
   
-  // Get cart functions
+  // Get cart and wishlist functions
   const { addItem, openCart } = useCart()
+  const { toggleItem, isInWishlist } = useWishlist()
+  
+  const inWishlist = isInWishlist(product.id)
 
   const mainImage =
     product.images?.[selectedImage]?.image_url || productImages[product.slug] || "/luxury-cosmetic-product.jpg"
@@ -76,6 +80,20 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     
     // Optional: Open cart sidebar
     // openCart()
+  }
+
+  const handleWishlist = () => {
+    toggleItem(product)
+    
+    if (inWishlist) {
+      toast.success('Removed from wishlist', {
+        description: product.name
+      })
+    } else {
+      toast.success('Added to wishlist!', {
+        description: product.name
+      })
+    }
   }
 
   const inStock = product.stock_quantity > 0
@@ -251,10 +269,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     size="lg"
                     variant="outline"
                     className="h-12 w-40 flex-shrink-0 rounded-full p-0"
-                    aria-label="Add to wishlist"
+                    onClick={handleWishlist}
+                    aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                   >
-                    <Heart className="w-5 h-5 mr-2" />
-                    Wishlist
+                    <Heart className={`w-5 h-5 mr-2 transition-colors ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                    {inWishlist ? 'In Wishlist' : 'Wishlist'}
                   </Button>
 
                   <ProductShareButton product={product} className="h-12 w-32 flex-shrink-0 rounded-full p-0" />
@@ -266,7 +285,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 <div className="text-center">
                   <Truck className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-xs text-muted-foreground">Free Delivery</p>
-                  <p className="text-xs text-muted-foreground">Orders over ₹999</p>
+                  <p className="text-xs text-muted-foreground">Orders over LKR 2,999</p>
                 </div>
                 <div className="text-center">
                   <RotateCcw className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, Heart, ShoppingBag, Star, Check, AlertCircle, TrendingUp, Flame } from "lucide-react"
 import { ScrollBlurText } from "@/components/scroll-blur-text"
 import { useCart } from "@/lib/cart-context"
+import { useWishlist } from "@/lib/wishlist-context"
 import { toast } from "sonner"
 import Link from "next/link"
 import type { Product } from "@/lib/types"
@@ -79,6 +80,7 @@ export function FeaturedProducts() {
   const [useMatView, setUseMatView] = useState(true)
   const router = useRouter()
   const { addItem } = useCart()
+  const { toggleItem, isInWishlist } = useWishlist()
 
   useEffect(() => {
     fetchFeaturedProducts()
@@ -129,9 +131,6 @@ export function FeaturedProducts() {
     }
   }
 
-  /**
-   * APPROACH 1: Use materialized view (FASTEST - after running migration)
-   */
   const fetchWithMaterializedView = async () => {
     const { data, error } = await supabase
       .from('products')
@@ -181,9 +180,6 @@ export function FeaturedProducts() {
     setProducts(processedProducts.slice(0, 8))
   }
 
-  /**
-   * APPROACH 2: Direct query (FALLBACK - works without migration)
-   */
   const fetchWithDirectQuery = async () => {
     const { data: productsData, error: productsError } = await supabase
       .from('products')
@@ -226,10 +222,8 @@ export function FeaturedProducts() {
       .select('product_id, quantity')
       .not('product_id', 'is', null)
 
-
     if (orderError) throw orderError
 
-    // Calculate stats manually
     const statsMap = new Map<string, any>()
     orderItems?.forEach(item => {
       if (!item.product_id) return
@@ -250,9 +244,6 @@ export function FeaturedProducts() {
     setProducts(processedProducts.slice(0, 8))
   }
 
-  /**
-   * Common processing logic for both approaches
-   */
   const processProducts = (
     productsData: any[], 
     statsData: any[]
@@ -284,14 +275,12 @@ export function FeaturedProducts() {
       } as ProductWithRelations
     })
 
-    // Sort by sales, then featured, then rating, then recency
     return processed.sort((a, b) => {
       const aSales = a.orderStats?.total_quantity_sold || 0
       const bSales = b.orderStats?.total_quantity_sold || 0
       
       if (bSales !== aSales) return bSales - aSales
       
-      // If no sales data, use featured status
       if (aSales === 0 && bSales === 0) {
         if (a.is_featured !== b.is_featured) return a.is_featured ? -1 : 1
       }
@@ -313,7 +302,6 @@ export function FeaturedProducts() {
     e.preventDefault()
     e.stopPropagation()
 
-    // Check stock
     if (product.stock_quantity === 0) {
       toast.error('Out of stock', {
         description: 'This product is currently unavailable'
@@ -322,11 +310,8 @@ export function FeaturedProducts() {
     }
 
     setAddingToCart(product.id)
-
-    // Add to cart
     addItem(product as Product, 1)
 
-    // Show success toast
     toast.success('Added to cart!', {
       description: product.name,
       action: {
@@ -335,24 +320,31 @@ export function FeaturedProducts() {
       },
     })
 
-    // Reset adding state
     setTimeout(() => {
       setAddingToCart(null)
     }, 1000)
   }
 
-  const handleWishlist = (e: React.MouseEvent, productName: string) => {
+  const handleWishlist = (e: React.MouseEvent, product: ProductWithRelations) => {
     e.preventDefault()
     e.stopPropagation()
-    toast.info('Wishlist feature coming soon!', {
-      description: productName,
-    })
+    
+    const inWishlist = isInWishlist(product.id)
+    toggleItem(product as Product)
+    
+    if (inWishlist) {
+      toast.success('Removed from wishlist', {
+        description: product.name
+      })
+    } else {
+      toast.success('Added to wishlist!', {
+        description: product.name
+      })
+    }
   }
 
-  // Check if we have bestsellers
   const hasBestsellers = products.some(p => p.orderStats && p.orderStats.total_quantity_sold > 0)
 
-  // Loading skeleton
   if (loading) {
     return (
       <section className="py-24 lg:py-32 bg-muted/30">
@@ -386,7 +378,6 @@ export function FeaturedProducts() {
     )
   }
 
-  // Error state
   if (error) {
     return (
       <section className="py-24 lg:py-32 bg-muted/30">
@@ -406,7 +397,6 @@ export function FeaturedProducts() {
     )
   }
 
-  // No products state
   if (products.length === 0) {
     return (
       <section className="py-24 lg:py-32 bg-muted/30">
@@ -428,7 +418,6 @@ export function FeaturedProducts() {
   return (
     <section ref={sectionRef} id="featured" className="py-24 lg:py-32 bg-muted/30">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 lg:mb-20 gap-6">
           <div>
             <p className="reveal opacity-0 text-sm uppercase tracking-[0.25em] text-secondary font-medium mb-4 flex items-center gap-2">
@@ -452,11 +441,11 @@ export function FeaturedProducts() {
           </Button>
         </div>
 
-        {/* Products Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {products.slice(0, 4).map((product, index) => {
             const isBestseller = product.orderStats && product.orderStats.total_quantity_sold > 10
             const soldCount = product.orderStats?.total_quantity_sold || 0
+            const inWishlist = isInWishlist(product.id)
 
             return (
               <div
@@ -464,7 +453,6 @@ export function FeaturedProducts() {
                 className={`reveal opacity-0 ${index === 1 ? "animation-delay-200" : index === 2 ? "animation-delay-400" : index === 3 ? "animation-delay-600" : ""} group`}
               >
                 <div className="bg-card rounded-2xl lg:rounded-3xl overflow-hidden border border-border/50 shadow-sm hover:shadow-lg transition-all duration-500">
-                  {/* Image */}
                   <Link
                     href={`/product/${product.slug}`}
                     className="relative block aspect-square overflow-hidden bg-muted"
@@ -475,7 +463,6 @@ export function FeaturedProducts() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                     
-                    {/* Badges - Priority: Bestseller > New > Featured */}
                     {isBestseller ? (
                       <span className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
                         <Flame className="w-3 h-3" />
@@ -491,16 +478,14 @@ export function FeaturedProducts() {
                       </span>
                     ) : null}
 
-                    {/* Wishlist Button */}
                     <button
-                      onClick={(e) => handleWishlist(e, product.name)}
+                      onClick={(e) => handleWishlist(e, product)}
                       className="absolute top-3 right-3 w-8 h-8 bg-background/90 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background border border-border/30 shadow-lg"
-                      aria-label="Add to wishlist"
+                      aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                     >
-                      <Heart className="w-4 h-4 text-foreground" />
+                      <Heart className={`w-4 h-4 transition-colors ${inWishlist ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
                     </button>
 
-                    {/* Stock indicator for low stock */}
                     {product.stock_quantity <= 10 && product.stock_quantity > 0 && (
                       <span className="absolute bottom-3 left-3 bg-orange-500/90 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
                         Only {product.stock_quantity} left
@@ -508,7 +493,6 @@ export function FeaturedProducts() {
                     )}
                   </Link>
 
-                  {/* Content */}
                   <div className="p-4 lg:p-5">
                     {product.category && (
                       <p className="text-xs text-muted-foreground mb-1">{product.category.name}</p>
@@ -524,7 +508,6 @@ export function FeaturedProducts() {
                       </p>
                     )}
 
-                    {/* Rating */}
                     {product.rating_count > 0 && (
                       <div className="flex items-center gap-1 mb-3">
                         <Star className="w-3.5 h-3.5 fill-accent text-accent" />
@@ -533,7 +516,6 @@ export function FeaturedProducts() {
                       </div>
                     )}
 
-                    {/* Sales Count */}
                     {soldCount > 5 && (
                       <div className="flex items-center gap-1 mb-3">
                         <span className="text-xs font-medium text-orange-600 dark:text-orange-400">
@@ -542,7 +524,6 @@ export function FeaturedProducts() {
                       </div>
                     )}
 
-                    {/* Price & Add to Cart */}
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-foreground">{formatPrice(product.retail_price)}</span>
                       <Button

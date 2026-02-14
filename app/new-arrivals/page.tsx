@@ -6,10 +6,11 @@ import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { createClient } from '@supabase/supabase-js';
 import { useCart } from '@/lib/cart-context';
+import { useWishlist } from '@/lib/wishlist-context';
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
 
-// Initialize Supabase client with better error handling
+// Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -63,8 +64,8 @@ export default function NewArrivalsPage() {
   const [retryCount, setRetryCount] = useState(0);
 
   const { addItem, openCart } = useCart();
+  const { toggleItem, isInWishlist } = useWishlist();
   
-  // Use ref to track fetch attempts and prevent race conditions
   const fetchAttemptRef = useRef(0);
   const isMountedRef = useRef(true);
 
@@ -72,7 +73,6 @@ export default function NewArrivalsPage() {
     isMountedRef.current = true;
     fetchNewArrivals();
 
-    // Cleanup function
     return () => {
       isMountedRef.current = false;
     };
@@ -93,20 +93,16 @@ export default function NewArrivalsPage() {
       setLoading(true);
       setError(null);
 
-      // Add a small delay to prevent rapid requests
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Check if this is still the latest fetch attempt
       if (currentAttempt !== fetchAttemptRef.current) {
         console.log('Fetch cancelled - newer request in progress');
         return;
       }
 
-      // Calculate date 30 days ago for "new" products
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Fetch products created in the last 30 days
       const { data, error: fetchError } = await supabase
         .from('products')
         .select(`
@@ -147,7 +143,6 @@ export default function NewArrivalsPage() {
         throw new Error(`Products error: ${fetchError.message}`);
       }
 
-      // Only update state if component is still mounted and this is the latest attempt
       if (isMountedRef.current && currentAttempt === fetchAttemptRef.current) {
         setProducts(data || []);
         setRetryCount(0);
@@ -156,10 +151,8 @@ export default function NewArrivalsPage() {
     } catch (err: any) {
       console.error('Error fetching new arrivals:', err);
       
-      // Only update state if component is still mounted
       if (!isMountedRef.current) return;
 
-      // Auto-retry for network errors
       if (retryCount < 3 && !err.message?.includes('Row level security')) {
         console.log(`Retrying... Attempt ${retryCount + 1}/3`);
         setRetryCount(prev => prev + 1);
@@ -167,7 +160,7 @@ export default function NewArrivalsPage() {
           if (isMountedRef.current) {
             fetchNewArrivals();
           }
-        }, 1000 * (retryCount + 1)); // Exponential backoff
+        }, 1000 * (retryCount + 1));
         return;
       }
       
@@ -211,7 +204,6 @@ export default function NewArrivalsPage() {
 
   const getProductImage = (product: ProductWithRelations): string => {
     if (product.images && product.images.length > 0) {
-      // Find primary image or use first image
       const primaryImage = product.images.find(img => img.is_primary);
       return primaryImage?.image_url || product.images[0].image_url;
     }
@@ -243,10 +235,8 @@ export default function NewArrivalsPage() {
     setAddingToCart(product.id);
     
     try {
-      // Add to cart
       addItem(product as Product, 1);
       
-      // Open cart drawer
       setTimeout(() => {
         if (isMountedRef.current) {
           openCart();
@@ -261,23 +251,23 @@ export default function NewArrivalsPage() {
     }
   };
 
-  // Loading State
+  const handleWishlistToggle = (e: React.MouseEvent, product: ProductWithRelations) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleItem(product as Product);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="pt-32 pb-24">
           <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            {/* Page Header Skeleton */}
             <div className="text-center mb-12">
               <div className="h-12 bg-muted rounded-lg w-64 mx-auto mb-4 animate-pulse" />
               <div className="h-4 bg-muted rounded w-96 mx-auto animate-pulse" />
             </div>
-
-            {/* Banner Skeleton */}
             <div className="h-64 bg-muted rounded-3xl mb-12 animate-pulse" />
-
-            {/* Grid Skeleton */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="bg-muted rounded-2xl h-80 animate-pulse" />
@@ -290,7 +280,6 @@ export default function NewArrivalsPage() {
     );
   }
 
-  // Error State
   if (error) {
     return (
       <div className="min-h-screen bg-background">
@@ -328,7 +317,6 @@ export default function NewArrivalsPage() {
     );
   }
 
-  // Empty State
   if (products.length === 0) {
     return (
       <div className="min-h-screen bg-background">
@@ -440,6 +428,7 @@ export default function NewArrivalsPage() {
               {filteredProducts.map((product) => {
                 const daysOld = getDaysOld(product.created_at);
                 const isAddingThisProduct = addingToCart === product.id;
+                const inWishlist = isInWishlist(product.id);
                 
                 return (
                   <Link
@@ -475,15 +464,21 @@ export default function NewArrivalsPage() {
                       {/* Quick Actions */}
                       <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // Add to wishlist logic
-                          }}
-                          className="w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border border-border/30 shadow-lg"
-                          aria-label="Add to wishlist"
+                          onClick={(e) => handleWishlistToggle(e, product)}
+                          className={`w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors border shadow-lg ${
+                            inWishlist 
+                              ? 'border-primary/50' 
+                              : 'border-border/30'
+                          }`}
+                          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                         >
-                          <Heart className="w-4 h-4 text-foreground" />
+                          <Heart 
+                            className={`w-4 h-4 transition-colors ${
+                              inWishlist 
+                                ? 'text-primary fill-primary' 
+                                : 'text-foreground'
+                            }`} 
+                          />
                         </button>
                         <button 
                           onClick={(e) => handleAddToCart(e, product)}

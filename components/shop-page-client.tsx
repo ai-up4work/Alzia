@@ -536,7 +536,7 @@ export default function ShopPageClient({
     }
 
     // Set new timeout for debounced search
-    // 800ms delay - reasonable time to ensure user stopped typing
+    // 1000ms delay - reasonable time to ensure user stopped typing
     searchDebounceRef.current = setTimeout(() => {
       setIsTyping(false)
       
@@ -558,7 +558,7 @@ export default function ShopPageClient({
           router.push(newURL)
         })
       }
-    }, 800) // 800ms is optimal - not too fast, not too slow
+    }, 1000) // 1000ms is optimal - not too fast, not too slow
   }
 
   // Clear search

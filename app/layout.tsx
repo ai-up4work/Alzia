@@ -4,7 +4,10 @@ import { Cormorant_Garamond, Montserrat, Cinzel, Fraunces } from "next/font/goog
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
 import { CartProvider } from "@/lib/cart-context"
+import { WishlistProvider } from "@/lib/wishlist-context"
 import { CartDrawer } from "@/components/cart-drawer"
+import { WishlistDrawer } from "@/components/wishlist-drawer"
+import { Toaster } from "sonner"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -58,12 +61,6 @@ export const metadata: Metadata = {
         height: 630,
         alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
       },
-      // {
-      //   url: "/og-image-v2.png",  // WhatsApp optimized
-      //   width: 1200,
-      //   height: 630,
-      //   alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
-      // },
     ],
     locale: "en_LK",
     type: "website",
@@ -72,7 +69,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Alzìa Cosmetics Sri Lanka",
     description: "Premium makeup & skincare online Sri Lanka.",
-    images: ["/og-image-v3.png"],  // WhatsApp-optimized for Twitter too
+    images: ["/og-image-v3.png"],
     creator: "@up4work",
   },
   icons: {
@@ -101,9 +98,13 @@ export default function RootLayout({
       <body className={montserrat.className}>
         <AuthProvider>
           <CartProvider>
-            {children}
-            <CartDrawer />
-            <Analytics />
+            <WishlistProvider>
+              {children}
+              <CartDrawer />
+              <WishlistDrawer />
+              <Toaster position="top-right" richColors />
+              <Analytics />
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>
