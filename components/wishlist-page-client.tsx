@@ -8,119 +8,85 @@ import { Heart, ShoppingBag, Trash2, Star, Search, Grid3X3, LayoutList, Loader2,
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useCart } from "@/lib/cart-context"
-import { createClient } from "@/lib/supabase/client"
+import { useWishlist } from "@/lib/wishlist-context"
 import { toast } from "sonner"
 
-interface WishlistItem {
-  id: string
-  customer_id: string
-  product_id: string
-  created_at: string
-  product: {
-    id: string
-    name: string
-    slug: string
-    retail_price: number
-    stock_quantity: number
-    rating_avg?: number
-    rating_count?: number
-    images: string[]
-    category?: {
-      id: string
-      name: string
-      slug: string
-    }
-    brand?: {
-      id: string
-      name: string
-      slug: string
-    }
-  }
-}
-
-interface WishlistPageClientProps {
-  wishlists: WishlistItem[]
-  userId: string
-}
-
 function formatPrice(price: number) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-LK", {
     style: "currency",
-    currency: "INR",
+    currency: "LKR",
     maximumFractionDigits: 0,
   }).format(price)
 }
 
-const productImages: Record<string, string> = {
-  "radiance-renewal-serum": "/luxury-serum-bottle-vitamin-c-gold-elegant.jpg",
-  "hydra-silk-moisturizer": "/luxury-moisturizer-cream-jar-elegant-rose.jpg",
-  "velvet-rouge-lipstick": "/luxury-lipstick-red-velvet-elegant-gold-case.jpg",
-  "eau-de-rose-parfum": "/luxury-perfume-bottle-rose-elegant-parisian.jpg",
-  "gentle-foaming-cleanser": "/luxury-skincare-products-serum-cream-elegant.jpg",
-  "flawless-finish-foundation": "/luxury-makeup-lipstick-foundation-elegant.jpg",
+// Helper function to get product image
+const getProductImage = (product: any): string => {
+  if (product.images && product.images.length > 0) {
+    // If images is an array of objects with image_url
+    if (typeof product.images[0] === 'object' && product.images[0].image_url) {
+      const primaryImage = product.images.find((img: any) => img.is_primary)
+      return primaryImage?.image_url || product.images[0].image_url
+    }
+    // If images is an array of strings
+    if (typeof product.images[0] === 'string') {
+      return product.images[0]
+    }
+  }
+  // Fallback to placeholder
+  return 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=600&h=600&fit=crop'
 }
 
-export default function WishlistPageClient({ wishlists: initialWishlists, userId }: WishlistPageClientProps) {
-  const [wishlists, setWishlists] = useState(initialWishlists)
+export default function WishlistPageClient() {
+  // Use wishlist context
+  const { items, removeItem } = useWishlist()
+  const { addItem: addToCart } = useCart()
+  const router = useRouter()
+  
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set())
   const [addingToCartIds, setAddingToCartIds] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("newest")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  
-  const router = useRouter()
-  const { addItem } = useCart()
 
-  const removeFromWishlist = async (wishlistId: string, productName: string) => {
-    setRemovingIds(prev => new Set(prev).add(wishlistId))
+  const removeFromWishlist = async (productId: string, productName: string) => {
+    setRemovingIds(prev => new Set(prev).add(productId))
     
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from("wishlists")
-        .delete()
-        .eq("id", wishlistId)
-        .eq("customer_id", userId)
-
-      if (error) throw error
-
-      setWishlists(prev => prev.filter(item => item.id !== wishlistId))
+      removeItem(productId)
       toast.success("Removed from wishlist", {
         description: productName
       })
     } catch (error) {
       console.error("Error removing from wishlist:", error)
-      toast.error("Failed to remove item", {
-        description: "Please try again"
-      })
+      toast.error("Failed to remove item")
     } finally {
       setRemovingIds(prev => {
         const next = new Set(prev)
-        next.delete(wishlistId)
+        next.delete(productId)
         return next
       })
     }
   }
 
-  const addToCartOnly = async (wishlist: WishlistItem) => {
-    setAddingToCartIds(prev => new Set(prev).add(wishlist.id))
+  const addToCartOnly = async (wishlistItem: any) => {
+    const productId = wishlistItem.product.id
+    setAddingToCartIds(prev => new Set(prev).add(productId))
     
     try {
-      addItem(wishlist.product, 1)
+      addToCart(wishlistItem.product, 1)
       
       toast.success("Added to cart!", {
-        description: wishlist.product.name,
+        description: wishlistItem.product.name,
         action: {
           label: "View Cart",
           onClick: () => router.push("/account/cart"),
         },
       })
       
-      // Keep item in wishlist, just add to cart
       setTimeout(() => {
         setAddingToCartIds(prev => {
           const next = new Set(prev)
-          next.delete(wishlist.id)
+          next.delete(productId)
           return next
         })
       }, 1000)
@@ -129,49 +95,24 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
       toast.error("Failed to add to cart")
       setAddingToCartIds(prev => {
         const next = new Set(prev)
-        next.delete(wishlist.id)
-        return next
-      })
-    }
-  }
-
-  const moveToCart = async (wishlist: WishlistItem) => {
-    setAddingToCartIds(prev => new Set(prev).add(wishlist.id))
-    
-    try {
-      addItem(wishlist.product, 1)
-      
-      // Remove from wishlist after adding to cart
-      await removeFromWishlist(wishlist.id, wishlist.product.name)
-      
-      toast.success("Moved to cart!", {
-        description: wishlist.product.name,
-        action: {
-          label: "View Cart",
-          onClick: () => router.push("/account/cart"),
-        },
-      })
-    } catch (error) {
-      console.error("Error moving to cart:", error)
-      toast.error("Failed to move to cart")
-    } finally {
-      setAddingToCartIds(prev => {
-        const next = new Set(prev)
-        next.delete(wishlist.id)
+        next.delete(productId)
         return next
       })
     }
   }
 
   // Filter and sort wishlists
-  const filteredWishlists = wishlists
+  const filteredWishlists = items
     .filter(item => {
       if (!searchQuery) return true
       const search = searchQuery.toLowerCase()
+      const brand = item.product.brand
+      const category = item.product.category
+      
       return (
         item.product.name.toLowerCase().includes(search) ||
-        item.product.category?.name.toLowerCase().includes(search) ||
-        item.product.brand?.name.toLowerCase().includes(search)
+        (category && (typeof category === 'object' ? category.name : category).toLowerCase().includes(search)) ||
+        (brand && (typeof brand === 'object' ? brand.name : brand).toLowerCase().includes(search))
       )
     })
     .sort((a, b) => {
@@ -184,12 +125,12 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
           return a.product.name.localeCompare(b.product.name)
         case "newest":
         default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          return new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
       }
     })
 
   // Empty State
-  if (wishlists.length === 0) {
+  if (items.length === 0) {
     return (
       <main className="min-h-screen bg-background">
         <div className="pt-32 pb-24">
@@ -224,7 +165,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
               My Wishlist
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              {wishlists.length} {wishlists.length === 1 ? "item" : "items"} saved for later
+              {items.length} {items.length === 1 ? "item" : "items"} saved for later
             </p>
           </div>
 
@@ -283,16 +224,16 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
           {/* Products Count */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredWishlists.length} of {wishlists.length} item{wishlists.length !== 1 ? "s" : ""}
+              Showing {filteredWishlists.length} of {items.length} item{items.length !== 1 ? "s" : ""}
             </p>
-            {wishlists.length > 0 && (
+            {items.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
                 className="rounded-full"
                 onClick={() => {
-                  filteredWishlists.forEach(wishlist => {
-                    addToCartOnly(wishlist)
+                  filteredWishlists.forEach(item => {
+                    addToCartOnly(item)
                   })
                 }}
               >
@@ -313,16 +254,16 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
             </div>
           ) : (
             <div className={viewMode === "grid" ? "grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6" : "space-y-4"}>
-              {filteredWishlists.map((wishlist) => {
-                const product = wishlist.product
-                const image = productImages[product.slug] || product.images?.[0] || "/luxury-cosmetic-product.jpg"
-                const isRemoving = removingIds.has(wishlist.id)
-                const isAddingToCart = addingToCartIds.has(wishlist.id)
+              {filteredWishlists.map((wishlistItem) => {
+                const product = wishlistItem.product
+                const image = getProductImage(product)
+                const isRemoving = removingIds.has(product.id)
+                const isAddingToCart = addingToCartIds.has(product.id)
 
                 if (viewMode === "list") {
                   return (
                     <div
-                      key={wishlist.id}
+                      key={product.id}
                       className="flex gap-6 p-6 bg-card rounded-2xl border border-border/50 hover:border-border hover:shadow-lg transition-all"
                     >
                       <Link
@@ -340,7 +281,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                         <div>
                           {product.brand && (
                             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                              {product.brand.name}
+                              {typeof product.brand === 'object' ? product.brand.name : product.brand}
                             </p>
                           )}
                           <Link
@@ -349,7 +290,9 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                           >
                             {product.name}
                           </Link>
-                          <p className="text-sm text-muted-foreground mt-1">{product.category?.name}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {product.category && (typeof product.category === 'object' ? product.category.name : product.category)}
+                          </p>
                           {product.rating_avg && product.rating_count && product.rating_count > 0 && (
                             <div className="flex items-center gap-1 mt-2">
                               <div className="flex gap-0.5">
@@ -383,7 +326,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                           </div>
                           <div className="flex gap-2">
                             <Button
-                              onClick={() => addToCartOnly(wishlist)}
+                              onClick={() => addToCartOnly(wishlistItem)}
                               disabled={product.stock_quantity === 0 || isAddingToCart || isRemoving}
                               className="rounded-full"
                             >
@@ -400,7 +343,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                               )}
                             </Button>
                             <Button
-                              onClick={() => removeFromWishlist(wishlist.id, product.name)}
+                              onClick={() => removeFromWishlist(product.id, product.name)}
                               disabled={isRemoving}
                               variant="outline"
                               className="rounded-full"
@@ -422,7 +365,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                 // Grid View
                 return (
                   <div
-                    key={wishlist.id}
+                    key={product.id}
                     className="group bg-card rounded-2xl border border-border/50 overflow-hidden hover:border-border hover:shadow-xl transition-all duration-500"
                   >
                     <Link
@@ -449,7 +392,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                       <button
                         onClick={(e) => {
                           e.preventDefault()
-                          removeFromWishlist(wishlist.id, product.name)
+                          removeFromWishlist(product.id, product.name)
                         }}
                         disabled={isRemoving}
                         className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-colors disabled:opacity-50"
@@ -467,7 +410,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                       <div>
                         {product.brand && (
                           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                            {product.brand.name}
+                            {typeof product.brand === 'object' ? product.brand.name : product.brand}
                           </p>
                         )}
                         <Link
@@ -477,7 +420,9 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                           {product.name}
                         </Link>
                         {product.category && (
-                          <p className="text-sm text-muted-foreground mt-1">{product.category.name}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {typeof product.category === 'object' ? product.category.name : product.category}
+                          </p>
                         )}
                       </div>
 
@@ -505,7 +450,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                       </div>
 
                       <Button
-                        onClick={() => addToCartOnly(wishlist)}
+                        onClick={() => addToCartOnly(wishlistItem)}
                         disabled={product.stock_quantity === 0 || isAddingToCart || isRemoving}
                         className="w-full rounded-full"
                       >
@@ -523,7 +468,7 @@ export default function WishlistPageClient({ wishlists: initialWishlists, userId
                       </Button>
 
                       <p className="text-xs text-muted-foreground text-center pt-2 border-t border-border">
-                        Added {new Date(wishlist.created_at).toLocaleDateString("en-IN", {
+                        Added {new Date(wishlistItem.addedAt).toLocaleDateString("en-LK", {
                           month: "short",
                           day: "numeric",
                           year: "numeric"
