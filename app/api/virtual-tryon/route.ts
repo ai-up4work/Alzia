@@ -1,15 +1,9 @@
-// app/api/virtual-tryon/route.ts
-// Working version that mimics Python gradio_client behavior
+// app/api/virtual-tryon/route-weshop-array.ts
+// Last attempt at WeShopAI - using array parameters instead of object
 import { NextRequest, NextResponse } from 'next/server';
-import { client as gradioClient, handle_file } from '@gradio/client';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import { Client } from '@gradio/client';
 
 export async function POST(request: NextRequest) {
-  let tempGarmentPath: string | null = null;
-  let tempPersonPath: string | null = null;
-
   try {
     const formData = await request.formData();
     const garmentFile = formData.get('garment') as File;
@@ -22,116 +16,131 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Saving files temporarily...');
-    const tempDir = os.tmpdir();
-    tempGarmentPath = path.join(tempDir, `garment-${Date.now()}.png`);
-    tempPersonPath = path.join(tempDir, `person-${Date.now()}.png`);
-
-    const garmentBuffer = Buffer.from(await garmentFile.arrayBuffer());
-    const personBuffer = Buffer.from(await personFile.arrayBuffer());
-
-    fs.writeFileSync(tempGarmentPath, garmentBuffer);
-    fs.writeFileSync(tempPersonPath, personBuffer);
-
-    console.log('Files saved:', {
-      garment: tempGarmentPath,
-      person: tempPersonPath
+    console.log('Received files:', {
+      garment: garmentFile.name,
+      person: personFile.name,
     });
 
-    console.log('Connecting to Gradio Space...');
-    const app = await gradioClient("WeShopAI/WeShopAI-Virtual-Try-On");
+    // Convert Files to Blobs
+    const garmentBlob = new Blob([await garmentFile.arrayBuffer()], { 
+      type: garmentFile.type || 'image/png' 
+    });
+    const personBlob = new Blob([await personFile.arrayBuffer()], { 
+      type: personFile.type || 'image/png' 
+    });
 
-    console.log('Making prediction (using predict() like Python)...');
+    console.log('Connecting to WeShopAI Space...');
+    const client = await Client.connect("WeShopAI/WeShopAI-Virtual-Try-On");
+
+    console.log('Trying with ARRAY parameters...');
     
-    // Use predict() method with handle_file() like Python does
-    const result = await app.predict("/generate_image", [
-      handle_file(tempGarmentPath),      // main_image
-      handle_file(tempPersonPath),       // background_image  
+    // Try 1: Array with garment first
+    console.log('Attempt 1: [garment, person]');
+    let job = client.submit("/generate_image", [
+      garmentBlob,
+      personBlob,
     ]);
 
-    console.log('Result received:', result);
-
-    // Clean up temp files
-    if (tempGarmentPath && fs.existsSync(tempGarmentPath)) {
-      fs.unlinkSync(tempGarmentPath);
-    }
-    if (tempPersonPath && fs.existsSync(tempPersonPath)) {
-      fs.unlinkSync(tempPersonPath);
-    }
-
-    // Extract result - it should be in result.data
-    if (!result || !result.data) {
-      throw new Error('No data in result');
-    }
-
-    console.log('Result data:', result.data);
-
-    // The result.data should be an array [image, did_string]
-    const imageData = result.data[0];
-    
-    if (!imageData || imageData === null) {
-      throw new Error('Image data is null - Space failed to process. Try different images.');
-    }
-
-    let imageUrl: string;
-
-    // Handle different formats
-    if (typeof imageData === 'string') {
-      imageUrl = imageData;
-    } else if (typeof imageData === 'object' && imageData !== null) {
-      if ('url' in imageData) {
-        imageUrl = (imageData as any).url;
-      } else if ('path' in imageData) {
-        imageUrl = (imageData as any).path;
-      } else {
-        throw new Error(`Unknown image data format: ${JSON.stringify(imageData)}`);
+    let result;
+    for await (const message of job) {
+      console.log('Message type:', message.type);
+      if (message.type === 'data') {
+        console.log('Data:', JSON.stringify(message.data, null, 2));
+        if (message.data && message.data[0] !== null) {
+          result = message;
+          console.log('✅ Success with [garment, person]');
+          break;
+        } else {
+          console.log('❌ Got null with [garment, person], trying reversed...');
+        }
       }
-    } else {
-      throw new Error(`Cannot extract URL from: ${typeof imageData}`);
     }
 
-    console.log('Downloading from:', imageUrl);
+    // Try 2: If first attempt gave null, try reversed
+    if (!result || !result.data || result.data[0] === null) {
+      console.log('Attempt 2: [person, garment]');
+      job = client.submit("/generate_image", [
+        personBlob,
+        garmentBlob,
+      ]);
 
-    // Download the result
+      for await (const message of job) {
+        console.log('Message type:', message.type);
+        if (message.type === 'data') {
+          console.log('Data:', JSON.stringify(message.data, null, 2));
+          if (message.data && message.data[0] !== null) {
+            result = message;
+            console.log('✅ Success with [person, garment]');
+            break;
+          } else {
+            console.log('❌ Got null with [person, garment] too');
+          }
+        }
+      }
+    }
+
+    if (!result || !result.data || result.data[0] === null) {
+      throw new Error(
+        'WeShopAI returned null for both parameter orders. ' +
+        'This Space appears to be broken or incompatible with these images. ' +
+        'Recommendation: Use IDM-VTON instead (route-final-idm-vton.ts)'
+      );
+    }
+
+    const resultData = result.data[0];
+    
+    let imageUrl: string | null = null;
+
+    if (typeof resultData === 'string') {
+      imageUrl = resultData;
+    } else if (resultData && typeof resultData === 'object') {
+      if ('url' in resultData) {
+        imageUrl = (resultData as any).url;
+      } else if ('path' in resultData) {
+        imageUrl = (resultData as any).path;
+      } else {
+        for (const [key, value] of Object.entries(resultData)) {
+          if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
+            imageUrl = value;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!imageUrl) {
+      throw new Error(`Cannot extract image URL from: ${JSON.stringify(resultData)}`);
+    }
+
+    console.log('Downloading result from:', imageUrl);
+
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
       throw new Error(`Download failed: ${imageResponse.status}`);
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
-    const base64 = Buffer.from(imageBuffer).toString('base64');
-    const dataUrl = `data:image/png;base64,${base64}`;
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    const dataUrl = `data:image/png;base64,${base64Image}`;
 
-    console.log('Success!');
+    console.log('🎉 Success!');
 
     return NextResponse.json({
       success: true,
       image: dataUrl,
     });
 
-  } catch (error: any) {
-    console.error('Virtual try-on error:', error);
+  } catch (error) {
+    console.error('Error:', error);
     
-    // Clean up on error
-    try {
-      if (tempGarmentPath && fs.existsSync(tempGarmentPath)) {
-        fs.unlinkSync(tempGarmentPath);
-      }
-      if (tempPersonPath && fs.existsSync(tempPersonPath)) {
-        fs.unlinkSync(tempPersonPath);
-      }
-    } catch (cleanupError) {
-      console.error('Cleanup error:', cleanupError);
-    }
-
     return NextResponse.json(
       { 
         error: 'Failed to process virtual try-on',
-        details: error?.message || String(error)
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );
   }
 }
 
-export const maxDuration = 300; // 5 minutes timeout
+export const maxDuration = 300;
