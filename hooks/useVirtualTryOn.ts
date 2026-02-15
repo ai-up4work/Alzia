@@ -22,6 +22,48 @@ interface UseVirtualTryOnReturn {
   reset: () => void;
 }
 
+// Helper to upload directly to Cloudinary from client
+async function uploadToCloudinary(
+  file: string | File,
+  folder: string,
+  publicId: string
+): Promise<string> {
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error('Cloudinary not configured');
+  }
+
+  const formData = new FormData();
+  
+  if (typeof file === 'string') {
+    formData.append('file', file);
+  } else {
+    formData.append('file', file);
+  }
+  
+  formData.append('upload_preset', uploadPreset);
+  formData.append('folder', folder);
+  formData.append('public_id', publicId);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    {
+      method: 'POST',
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Upload failed: ${error.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  return data.secure_url;
+}
+
 export function useVirtualTryOn(): UseVirtualTryOnReturn {
   const [result, setResult] = useState<VirtualTryOnResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -60,38 +102,59 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         data.image
       );
 
-      // Step 3: Save all images to Cloudinary
+      // Step 3: Upload directly to Cloudinary from client
       setCurrentStep(3);
-      const saveResponse = await fetch('/api/save-tryon-results', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          garmentFile: await fileToBase64(garmentFile),
-          personFile: await fileToBase64(personFile),
-          outputImage: data.image,
-          combinedImage: combinedImageBase64,
-          model: data.model,
-          isLowQuality: data.isLowQuality,
-        }),
-      });
+      const jobId = `job-${Date.now()}`;
+      const folderPath = `Alzia/${jobId}`;
 
-      const saveData = await saveResponse.json();
+      console.log('☁️ Uploading to Cloudinary (client-side)...');
 
-      if (!saveResponse.ok) {
-        throw new Error(saveData.error || 'Failed to save results');
+      // Upload all 4 images in parallel directly to Cloudinary
+      const [garmentUrl, personUrl, outputUrl, combinedUrl] = await Promise.all([
+        uploadToCloudinary(garmentFile, folderPath, 'garment'),
+        uploadToCloudinary(personFile, folderPath, 'person'),
+        uploadToCloudinary(data.image, folderPath, 'output'),
+        uploadToCloudinary(combinedImageBase64, folderPath, 'combined'),
+      ]);
+
+      const cloudinaryUrls = {
+        garment: garmentUrl,
+        person: personUrl,
+        output: outputUrl,
+        combined: combinedUrl,
+      };
+
+      console.log('✅ All images uploaded to Cloudinary');
+
+      // Step 4: Save metadata to database (small payload)
+      setCurrentStep(4);
+      try {
+        await fetch('/api/save-tryon-metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jobId,
+            cloudinaryUrls,
+            model: data.model,
+            isLowQuality: data.isLowQuality || false,
+          }),
+        });
+      } catch (metadataError) {
+        console.warn('Failed to save metadata:', metadataError);
+        // Don't fail - images are already uploaded
       }
 
       setResult({
         image: data.image,
         model: data.model,
-        isLowQuality: data.isLowQuality,
-        jobId: saveData.jobId,
-        cloudinaryUrls: saveData.cloudinaryUrls,
+        isLowQuality: data.isLowQuality || false,
+        jobId,
+        cloudinaryUrls,
       });
 
-      setCurrentStep(4);
+      setCurrentStep(5);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Virtual try-on error:', err);
