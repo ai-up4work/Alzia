@@ -1,10 +1,11 @@
 // app/api/virtual-tryon/route.ts
-// WeShopAI first (preferred), fallback to IDM-VTON if null - no reversal
+// WeShopAI first (preferred), fallback to IDM-VTON if null
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@gradio/client';
 
 export async function POST(request: NextRequest) {
   try {
+    // IMPORTANT: This must use formData(), not json()
     const formData = await request.formData();
     const garmentFile = formData.get('garment') as File;
     const personFile = formData.get('person') as File;
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
         } else {
           console.log('⚠️ WeShopAI returned null, switching to IDM-VTON...');
         }
-        break; // Exit after first data message
+        break;
       }
     }
 
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
       success: true,
       image: dataUrl,
       model: modelUsed,
-      isLowQuality: isLowQuality, // Flag to show quality warning
+      isLowQuality: isLowQuality,
     });
 
   } catch (error) {
