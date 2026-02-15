@@ -102,54 +102,67 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         data.image
       );
 
-      // Step 3: Upload to Cloudinary (client-side)
+      // Step 3: Try to upload to Cloudinary (optional - don't fail if it doesn't work)
       setCurrentStep(3);
       const jobId = `job-${Date.now()}`;
       const folderPath = `Alzia/${jobId}`;
 
-      console.log('☁️ Uploading to Cloudinary...');
-
-      const [garmentUrl, personUrl, outputUrl, combinedUrl] = await Promise.all([
-        uploadToCloudinary(garmentFile, folderPath, 'garment'),
-        uploadToCloudinary(personFile, folderPath, 'person'),
-        uploadToCloudinary(data.image, folderPath, 'output'),
-        uploadToCloudinary(combinedImageBase64, folderPath, 'combined'),
-      ]);
-
-      const cloudinaryUrls = {
-        garment: garmentUrl,
-        person: personUrl,
-        output: outputUrl,
-        combined: combinedUrl,
+      let cloudinaryUrls = {
+        garment: '',
+        person: '',
+        output: '',
+        combined: '',
       };
 
-      console.log('✅ Images uploaded');
-
-      // Step 4: Save metadata to Supabase
-      setCurrentStep(4);
       try {
-        console.log('💾 Saving metadata...');
-        
-        const metadataResponse = await fetch('/api/save-tryon-metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jobId,
-            cloudinaryUrls,
-            model: data.model,
-            isLowQuality: data.isLowQuality || false,
-          }),
-        });
+        console.log('☁️ Uploading to Cloudinary...');
 
-        if (metadataResponse.ok) {
-          console.log('✅ Metadata saved');
-        } else {
-          console.warn('⚠️ Metadata save failed');
+        const [garmentUrl, personUrl, outputUrl, combinedUrl] = await Promise.all([
+          uploadToCloudinary(garmentFile, folderPath, 'garment'),
+          uploadToCloudinary(personFile, folderPath, 'person'),
+          uploadToCloudinary(data.image, folderPath, 'output'),
+          uploadToCloudinary(combinedImageBase64, folderPath, 'combined'),
+        ]);
+
+        cloudinaryUrls = {
+          garment: garmentUrl,
+          person: personUrl,
+          output: outputUrl,
+          combined: combinedUrl,
+        };
+
+        console.log('✅ Images uploaded to Cloudinary');
+
+        // Step 4: Save metadata to Supabase (only if upload succeeded)
+        setCurrentStep(4);
+        try {
+          console.log('💾 Saving metadata...');
+          
+          const metadataResponse = await fetch('/api/save-tryon-metadata', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              jobId,
+              cloudinaryUrls,
+              model: data.model,
+              isLowQuality: data.isLowQuality || false,
+            }),
+          });
+
+          if (metadataResponse.ok) {
+            console.log('✅ Metadata saved');
+          } else {
+            console.warn('⚠️ Metadata save failed');
+          }
+        } catch (metadataError) {
+          console.warn('⚠️ Metadata error:', metadataError);
         }
-      } catch (metadataError) {
-        console.warn('⚠️ Metadata error:', metadataError);
+      } catch (uploadError) {
+        console.warn('⚠️ Cloudinary upload failed:', uploadError);
+        console.log('✅ Showing result anyway (image generated successfully)');
+        // Continue anyway - we have the image!
       }
 
       setResult({
@@ -157,7 +170,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         model: data.model,
         isLowQuality: data.isLowQuality || false,
         jobId,
-        cloudinaryUrls,
+        cloudinaryUrls: cloudinaryUrls.output ? cloudinaryUrls : undefined as any, // Only include if upload succeeded
       });
 
       setCurrentStep(5);
