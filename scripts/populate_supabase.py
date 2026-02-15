@@ -2,6 +2,12 @@
 """
 Supabase Product Import Script - RLS Compatible
 Uses SERVICE ROLE key to bypass RLS policies during import
+
+Features:
+- Generates mock SKUs for products missing SKU field
+- Two modes: SKIP existing products or UPDATE them
+- In UPDATE mode: Preserves existing data - only overwrites fields that have values in CSV
+  (e.g., if description is empty in CSV but exists in DB, it won't be erased)
 """
 
 import csv
@@ -26,11 +32,33 @@ def slugify(text: str) -> str:
     return text
 
 class SupabaseImporter:
-    def __init__(self, url: str, service_key: str):
+    def __init__(self, url: str, service_key: str, skip_existing: bool = False):
         # Use service_role key to bypass RLS
         self.client: Client = create_client(url, service_key)
         self.categories_cache: Dict[str, str] = {}
         self.brands_cache: Dict[str, str] = {}
+        self.mock_sku_counter: int = 1
+        self.generated_skus: List[str] = []
+        self.skip_existing: bool = skip_existing  # Whether to skip or update existing products
+        
+    def generate_mock_sku(self, product_name: str) -> str:
+        """Generate a unique mock SKU for products without one"""
+        base_sku = f"MOCK-{self.mock_sku_counter:04d}"
+        
+        # Try to add product name prefix if available
+        if product_name:
+            name_prefix = re.sub(r'[^A-Z0-9]', '', product_name.upper()[:4])
+            if name_prefix:
+                base_sku = f"{name_prefix}-{self.mock_sku_counter:04d}"
+        
+        # Ensure uniqueness
+        while base_sku in self.generated_skus:
+            self.mock_sku_counter += 1
+            base_sku = f"MOCK-{self.mock_sku_counter:04d}"
+        
+        self.mock_sku_counter += 1
+        self.generated_skus.append(base_sku)
+        return base_sku
         
     def get_or_create_category(self, name: str) -> Optional[str]:
         """Get existing category or create new one, return UUID"""
@@ -133,15 +161,31 @@ class SupabaseImporter:
     def import_product(self, row: Dict[str, str]) -> bool:
         """Import a single product from CSV row"""
         try:
+            # Get SKU or generate mock SKU if missing
+            original_sku = row.get('sku', '').strip()
+            product_name = row.get('name', '').strip()
+            
+            # Check if product has required non-null fields
+            if not product_name:
+                print(f"⚠️  Skipping product: Missing required 'name' field")
+                return False
+            
+            # Generate mock SKU if missing
+            if not original_sku:
+                sku = self.generate_mock_sku(product_name)
+                print(f"ℹ️  Generated mock SKU '{sku}' for product '{product_name}'")
+            else:
+                sku = original_sku
+            
             # Get or create category and brand
             category_id = self.get_or_create_category(row.get('category', '').strip())
             brand_id = self.get_or_create_brand(row.get('brand', '').strip())
             
             # Prepare product data
             product_data = {
-                'sku': row.get('sku', '').strip(),
-                'name': row.get('name', '').strip(),
-                'slug': row.get('slug', '').strip() or slugify(row.get('name', '')),
+                'sku': sku,
+                'name': product_name,
+                'slug': row.get('slug', '').strip() or slugify(product_name),
                 'description': row.get('description', '').strip() or None,
                 'short_description': row.get('short description', '').strip() or None,
                 'category_id': category_id,
@@ -163,21 +207,37 @@ class SupabaseImporter:
             if product_data['status'].lower() == 'available':
                 product_data['status'] = 'published'
             
-            # Check if product already exists
+            # Check if product already exists (by SKU)
             try:
-                existing = self.client.table('products').select('id').eq('sku', product_data['sku']).execute()
+                existing = self.client.table('products').select('id').eq('sku', sku).execute()
                 
                 if existing.data:
-                    # Update existing product
-                    product_id = existing.data[0]['id']
-                    self.client.table('products').update(product_data).eq('id', product_id).execute()
-                    print(f"✓ Updated product: {product_data['name']} (SKU: {product_data['sku']})")
+                    if self.skip_existing:
+                        # Skip existing product
+                        print(f"⊘ Skipped existing product: {product_data['name']} (SKU: {sku})")
+                        return True  # Return True since it's not an error, just skipped
+                    else:
+                        # Update existing product - only update fields with non-null values
+                        product_id = existing.data[0]['id']
+                        
+                        # Build update dict with only non-null values to preserve existing data
+                        update_data = {}
+                        for key, value in product_data.items():
+                            # Only include fields that have actual values
+                            if value is not None and value != '' and value != []:
+                                update_data[key] = value
+                            # Always update these key fields even if empty
+                            elif key in ['sku', 'name', 'slug', 'retail_price', 'wholesale_price', 'status']:
+                                update_data[key] = value
+                        
+                        self.client.table('products').update(update_data).eq('id', product_id).execute()
+                        print(f"✓ Updated product: {product_data['name']} (SKU: {sku})")
                 else:
                     # Insert new product
                     result = self.client.table('products').insert(product_data).execute()
                     if result.data:
                         product_id = result.data[0]['id']
-                        print(f"✓ Created product: {product_data['name']} (SKU: {product_data['sku']})")
+                        print(f"✓ Created product: {product_data['name']} (SKU: {sku})")
                     else:
                         print(f"✗ Failed to create product: {product_data['name']}")
                         return False
@@ -219,26 +279,54 @@ class SupabaseImporter:
         """Import all products from CSV file"""
         print(f"\n{'='*60}")
         print(f"Starting import from: {csv_file}")
+        if self.skip_existing:
+            print(f"Mode: SKIP existing products")
+        else:
+            print(f"Mode: UPDATE existing products")
         print(f"{'='*60}\n")
         
         success_count = 0
         error_count = 0
+        mock_sku_count = 0
+        skipped_count = 0
+        updated_count = 0
+        created_count = 0
         
         with open(csv_file, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             
+            # Strip whitespace from headers
+            reader.fieldnames = [field.strip() if field else field for field in reader.fieldnames]
+            
             for row in reader:
-                if self.import_product(row):
+                # Create a new row dict with stripped keys
+                cleaned_row = {k.strip() if k else k: v for k, v in row.items()}
+                
+                # Track if this row has no SKU
+                had_no_sku = not cleaned_row.get('sku', '').strip()
+                
+                if self.import_product(cleaned_row):
                     success_count += 1
+                    if had_no_sku:
+                        mock_sku_count += 1
                 else:
                     error_count += 1
         
         print(f"\n{'='*60}")
         print(f"Import completed!")
         print(f"{'='*60}")
-        print(f"✓ Successfully imported: {success_count} products")
+        print(f"✓ Successfully processed: {success_count} products")
+        if mock_sku_count > 0:
+            print(f"ℹ️  Products with generated mock SKUs: {mock_sku_count}")
         print(f"✗ Errors: {error_count} products")
         print(f"{'='*60}\n")
+        
+        if self.generated_skus:
+            print("Generated SKUs:")
+            print("-" * 60)
+            for sku in self.generated_skus:
+                print(f"  • {sku}")
+            print()
 
 def main():
     """Main execution function"""
@@ -269,8 +357,12 @@ def main():
         print("Please ensure the CSV file is in the same directory as this script.\n")
         return
     
+    # Set skip_existing=True to only import NEW products (skip existing ones)
+    # Set skip_existing=False to UPDATE existing products with new data
+    skip_existing = True  # Change this to False if you want to update existing products
+    
     try:
-        importer = SupabaseImporter(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        importer = SupabaseImporter(SUPABASE_URL, SUPABASE_SERVICE_KEY, skip_existing=skip_existing)
         importer.import_csv(csv_file)
     except Exception as e:
         print(f"\n✗ Fatal error: {str(e)}\n")

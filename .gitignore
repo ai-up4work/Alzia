@@ -34,6 +34,7 @@ scripts/slug-fixer.py
 scripts/collection_image.py
 scripts/brand_image.py
 scripts/category_image.py
+scripts/gradio.py
 
 
 /public/groq_description_generator.py
