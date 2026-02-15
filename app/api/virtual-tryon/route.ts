@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     let result;
     let modelUsed = '';
+    let isLowQuality = false;
 
     for await (const message of job) {
       console.log('Message type:', message.type);
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
     // Fallback to IDM-VTON if WeShopAI returned null
     if (!result || !result.data || result.data[0] === null) {
       console.log('🔄 Using IDM-VTON as fallback...');
+      isLowQuality = true;
       
       const idmClient = await Client.connect("yisol/IDM-VTON");
       
@@ -135,7 +137,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       image: dataUrl,
-      model: modelUsed, // Include which model was used
+      model: modelUsed,
+      isLowQuality: isLowQuality, // Flag to show quality warning
     });
 
   } catch (error) {

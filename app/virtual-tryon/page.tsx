@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload, X, Download, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Clock, Sparkles, CheckCircle2, Info } from 'lucide-react';
+import { Upload, X, Download, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Clock, Sparkles, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { Progress } from '@/components/ui/progress';
@@ -170,6 +170,8 @@ export default function VirtualTryOn() {
   const [currentStep, setCurrentStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showExamples, setShowExamples] = useState(true);
+  const [modelUsed, setModelUsed] = useState<string>('');
+  const [showQualityWarning, setShowQualityWarning] = useState(false);
 
   // Timer for elapsed time during processing
   useEffect(() => {
@@ -197,6 +199,7 @@ export default function VirtualTryOn() {
     setResultImage(null);
     setCurrentStep(0);
     setElapsedTime(0);
+    setShowQualityWarning(false);
 
     // Simulate processing steps based on actual durations
     const stepTimings = [2500, 4000, 12000, 17000, 30000, 7000];
@@ -228,6 +231,8 @@ export default function VirtualTryOn() {
       }
 
       setResultImage(data.image);
+      setModelUsed(data.model || '');
+      setShowQualityWarning(data.isLowQuality || false);
       setCurrentStep(processingSteps.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -305,6 +310,114 @@ export default function VirtualTryOn() {
     setResultImage(null);
     setError(null);
     setShowExamples(true);
+    setShowQualityWarning(false);
+    setModelUsed('');
+  };
+
+  const downloadCombinedImage = async () => {
+    if (!garmentPreview || !personPreview || !resultImage) return;
+
+    try {
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Load all images
+      const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new window.Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      };
+
+      const [garment, person, result] = await Promise.all([
+        loadImage(garmentPreview),
+        loadImage(personPreview),
+        loadImage(resultImage),
+      ]);
+
+      // Calculate dimensions (3 images side by side with padding)
+      const padding = 40;
+      const gap = 30;
+      const imageHeight = 600;
+      
+      // Scale images to same height while maintaining aspect ratio
+      const getScaledWidth = (img: HTMLImageElement) => {
+        return (imageHeight / img.height) * img.width;
+      };
+
+      const garmentWidth = getScaledWidth(garment);
+      const personWidth = getScaledWidth(person);
+      const resultWidth = getScaledWidth(result);
+
+      const totalWidth = garmentWidth + personWidth + resultWidth + (2 * gap) + (2 * padding);
+      const totalHeight = imageHeight + (2 * padding) + 120; // Extra space for labels and watermark
+
+      canvas.width = totalWidth;
+      canvas.height = totalHeight;
+
+      // White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw labels
+      ctx.fillStyle = '#1f2937';
+      ctx.font = 'bold 28px Arial';
+      ctx.textAlign = 'center';
+
+      let currentX = padding;
+
+      // Garment
+      ctx.fillText('Garment', currentX + garmentWidth / 2, padding - 15);
+      ctx.drawImage(garment, currentX, padding, garmentWidth, imageHeight);
+      currentX += garmentWidth + gap;
+
+      // Person
+      ctx.fillText('Original', currentX + personWidth / 2, padding - 15);
+      ctx.drawImage(person, currentX, padding, personWidth, imageHeight);
+      currentX += personWidth + gap;
+
+      // Result
+      ctx.fillText('Virtual Try-On Result', currentX + resultWidth / 2, padding - 15);
+      ctx.drawImage(result, currentX, padding, resultWidth, imageHeight);
+
+      // Add watermark/branding at bottom
+      ctx.font = '20px Arial';
+      ctx.fillStyle = '#6b7280';
+      ctx.textAlign = 'center';
+      ctx.fillText('Powered by AI Virtual Try-On', canvas.width / 2, totalHeight - 40);
+
+      // Add timestamp
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#9ca3af';
+      const date = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      ctx.fillText(date, canvas.width / 2, totalHeight - 20);
+
+      // Convert to blob and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `virtual-tryon-combined-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+    } catch (err) {
+      console.error('Error creating combined image:', err);
+      setError('Failed to create combined image');
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -564,6 +677,50 @@ export default function VirtualTryOn() {
               </div>
             )}
 
+            {/* Quality Warning for IDM-VTON */}
+            {showQualityWarning && resultImage && !loading && (
+              <div className="mt-8 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg p-6">
+                <div className="flex items-start gap-4">
+                  <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-amber-900 mb-2">
+                      Lower Quality Result - Backup Model Used
+                    </h3>
+                    <p className="text-sm text-amber-800 mb-3">
+                      Our premium AI model is currently unavailable, so we used a backup model. The result may not be as accurate. For the best quality results, please:
+                    </p>
+                    <ul className="space-y-2 text-sm text-amber-800">
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span>
+                        <span><strong>Upload a clear, high-resolution photo</strong> with good lighting (avoid dark or blurry images)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span>
+                        <span><strong>Use a straight, frontal posture</strong> - face the camera directly with arms at your sides</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span>
+                        <span><strong>Show your full upper body</strong> in the frame (from head to waist or below)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span>
+                        <span><strong>Use a plain, uncluttered background</strong> - avoid busy backgrounds or multiple people</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold">•</span>
+                        <span><strong>Try again in a few minutes</strong> when our premium model may be available</span>
+                      </li>
+                    </ul>
+                    <div className="mt-4 pt-4 border-t border-amber-200">
+                      <p className="text-xs text-amber-700 italic">
+                        💡 Tip: The premium model produces much more realistic and accurate virtual try-on results. We recommend waiting a moment and trying again for the best experience.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Loading State with Progress */}
             {loading && (
               <div className="mt-12">
@@ -647,9 +804,14 @@ export default function VirtualTryOn() {
                   <h2 className="text-2xl font-serif font-light text-gray-900 mb-2">
                     Your Virtual Try-On Result
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mb-2">
                     Here's how the garment looks on you
                   </p>
+                  {modelUsed && (
+                    <p className="text-xs text-gray-500">
+                      Generated using: <span className="font-medium">{modelUsed}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="max-w-2xl mx-auto">
@@ -663,7 +825,16 @@ export default function VirtualTryOn() {
 
                   <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
                     <Button
+                      onClick={downloadCombinedImage}
+                      size="lg"
+                      className="rounded-full px-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Combined Image
+                    </Button>
+                    <Button
                       asChild
+                      variant="outline"
                       size="lg"
                       className="rounded-full px-8"
                     >
@@ -672,7 +843,7 @@ export default function VirtualTryOn() {
                         download="virtual-tryon-result.png"
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        Download Result
+                        Download Result Only
                       </a>
                     </Button>
                     <Button
@@ -684,6 +855,10 @@ export default function VirtualTryOn() {
                       Try Another
                     </Button>
                   </div>
+
+                  <p className="text-center text-xs text-gray-500 mt-4">
+                    💡 The combined image includes garment, original photo, and result - perfect for sharing!
+                  </p>
                 </div>
               </div>
             )}
