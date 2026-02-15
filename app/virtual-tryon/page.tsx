@@ -389,7 +389,7 @@ export default function VirtualTryOn() {
       ctx.font = '20px Arial';
       ctx.fillStyle = '#6b7280';
       ctx.textAlign = 'center';
-      ctx.fillText('Powered by AI Virtual Try-On', canvas.width / 2, totalHeight - 40);
+      ctx.fillText('Powered by Alzia Virtual Try-On', canvas.width / 2, totalHeight - 40);
 
       // Add timestamp
       ctx.font = '14px Arial';
