@@ -126,26 +126,6 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       console.log('✅ All images uploaded to Cloudinary');
 
-      // Step 4: Save metadata to database (small payload)
-      setCurrentStep(4);
-      try {
-        await fetch('/api/save-tryon-metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jobId,
-            cloudinaryUrls,
-            model: data.model,
-            isLowQuality: data.isLowQuality || false,
-          }),
-        });
-      } catch (metadataError) {
-        console.warn('Failed to save metadata:', metadataError);
-        // Don't fail - images are already uploaded
-      }
-
       setResult({
         image: data.image,
         model: data.model,
