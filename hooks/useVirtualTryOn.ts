@@ -166,7 +166,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
       }
 
       setResult({
-        image: data.image,
+        image: cloudinaryUrls.output || data.image, // Use Cloudinary URL if available, else base64
         model: data.model,
         isLowQuality: data.isLowQuality || false,
         jobId,
