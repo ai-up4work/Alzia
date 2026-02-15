@@ -1,5 +1,5 @@
-// app/api/virtual-tryon/route-weshop-array.ts
-// Last attempt at WeShopAI - using array parameters instead of object
+// app/api/virtual-tryon/route.ts
+// WeShopAI first (preferred), fallback to IDM-VTON if null - no reversal
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@gradio/client';
 
@@ -32,60 +32,67 @@ export async function POST(request: NextRequest) {
     console.log('Connecting to WeShopAI Space...');
     const client = await Client.connect("WeShopAI/WeShopAI-Virtual-Try-On");
 
-    console.log('Trying with ARRAY parameters...');
+    console.log('Trying WeShopAI...');
     
-    // Try 1: Array with garment first
-    console.log('Attempt 1: [garment, person]');
-    let job = client.submit("/generate_image", [
+    const job = client.submit("/generate_image", [
       garmentBlob,
       personBlob,
     ]);
 
     let result;
+    let modelUsed = '';
+
     for await (const message of job) {
       console.log('Message type:', message.type);
       if (message.type === 'data') {
         console.log('Data:', JSON.stringify(message.data, null, 2));
         if (message.data && message.data[0] !== null) {
           result = message;
-          console.log('✅ Success with [garment, person]');
+          modelUsed = 'WeShopAI';
+          console.log('✅ WeShopAI Success!');
           break;
         } else {
-          console.log('❌ Got null with [garment, person], trying reversed...');
+          console.log('⚠️ WeShopAI returned null, switching to IDM-VTON...');
         }
+        break; // Exit after first data message
       }
     }
 
-    // Try 2: If first attempt gave null, try reversed
+    // Fallback to IDM-VTON if WeShopAI returned null
     if (!result || !result.data || result.data[0] === null) {
-      console.log('Attempt 2: [person, garment]');
-      job = client.submit("/generate_image", [
-        personBlob,
+      console.log('🔄 Using IDM-VTON as fallback...');
+      
+      const idmClient = await Client.connect("yisol/IDM-VTON");
+      
+      const idmJob = idmClient.submit("/tryon", [
+        { background: personBlob },
         garmentBlob,
+        "A garment",
+        true,
+        false,
+        30,
+        42,
       ]);
 
-      for await (const message of job) {
-        console.log('Message type:', message.type);
+      for await (const message of idmJob) {
+        if (message.type === 'status') {
+          console.log('IDM-VTON Status:', message.stage || 'processing');
+        }
+        
         if (message.type === 'data') {
-          console.log('Data:', JSON.stringify(message.data, null, 2));
-          if (message.data && message.data[0] !== null) {
-            result = message;
-            console.log('✅ Success with [person, garment]');
-            break;
-          } else {
-            console.log('❌ Got null with [person, garment] too');
-          }
+          result = message;
+          modelUsed = 'IDM-VTON';
+          console.log('✅ IDM-VTON Success!');
+          break;
         }
       }
     }
 
     if (!result || !result.data || result.data[0] === null) {
-      throw new Error(
-        'WeShopAI returned null for both parameter orders. ' +
-        'This Space appears to be broken or incompatible with these images. ' +
-        'Recommendation: Use IDM-VTON instead (route-final-idm-vton.ts)'
-      );
+      throw new Error('Both WeShopAI and IDM-VTON failed to generate result');
     }
+
+    console.log(`✨ Result from: ${modelUsed}`);
 
     const resultData = result.data[0];
     
@@ -128,6 +135,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       image: dataUrl,
+      model: modelUsed, // Include which model was used
     });
 
   } catch (error) {
