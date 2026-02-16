@@ -263,7 +263,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
       setCurrentStep(9);
       
       try {
-        console.log('💾 Saving metadata...');
+        // console.log('💾 Saving metadata...');
         
         await fetch('/api/save-tryon-metadata', {
           method: 'POST',
@@ -283,7 +283,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
           }),
         });
 
-        console.log('✅ Metadata saved');
+        // console.log('✅ Metadata saved');
       } catch (metadataError) {
         console.error('❌ Metadata save error:', metadataError);
       }
