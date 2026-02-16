@@ -143,8 +143,8 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
             jobId,
             cloudinaryUrls: {
               output: result?.image,
-              garment: result.garmentURL, // Store filename as reference
-              person: personFile.personURL,
+              garment: garmentFile.name, // Store filename as reference
+              person: personFile.name,
               combined: result?.combinedImageUrl,
             },
             model: data.model,
