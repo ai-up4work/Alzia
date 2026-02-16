@@ -709,11 +709,7 @@ export default function VirtualTryOn() {
 
                 <div className="max-w-2xl mx-auto">
                   <div className="rounded-xl overflow-hidden border-2 border-gray-200 shadow-2xl bg-white">
-                    <img
-                      src={result.image}
-                      alt="Virtual try-on result"
-                      className="w-full h-auto"
-                    />
+                    <img src={result.imageBase64} alt="Virtual try-on result" className="w-full h-auto" />
                   </div>
 
                   <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
