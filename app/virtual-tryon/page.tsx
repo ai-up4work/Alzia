@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload, X, Download, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Clock, Sparkles, CheckCircle2, Info, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Upload, X, Download, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Clock, Sparkles, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { Progress } from '@/components/ui/progress';
@@ -62,15 +62,15 @@ const examplePersons = [
   },
 ];
 
-// Processing steps with Cloudinary upload
+// Processing steps without emojis
 const processingSteps = [
-  { label: 'Uploading images', time: '2-3s', icon: '💾', duration: 2500 },
-  { label: 'Connecting to AI engine', time: '3-5s', icon: '🔗', duration: 4000 },
-  { label: 'Analyzing garment details', time: '10-15s', icon: '👔', duration: 12000 },
-  { label: 'Detecting body pose', time: '15-20s', icon: '🎯', duration: 17000 },
-  { label: 'Generating virtual try-on', time: '25-35s', icon: '✨', duration: 30000 },
-  { label: 'Saving to cloud storage', time: '5-10s', icon: '☁️', duration: 7000 },
-  { label: 'Finalizing result', time: '2-3s', icon: '🎨', duration: 2500 },
+  { label: 'Processing images', time: '8-10s', duration: 10000 },
+  { label: 'Connecting to AI engine', time: '7-8s', duration: 8000 },
+  { label: 'Analyzing garment details', time: '14-17s', duration: 16000 },
+  { label: 'Detecting body pose', time: '18-20s', duration: 20000 },
+  { label: 'Generating virtual try-on', time: '25-35s', duration: 30000 },
+  { label: 'Processing final image', time: '5-10s', duration: 7000 },
+  { label: 'Finalizing result', time: '2-3s', duration: 2500 },
 ];
 
 interface CarouselProps {
@@ -188,7 +188,7 @@ export default function VirtualTryOn() {
   // Simulate processing steps
   useEffect(() => {
     if (loading) {
-      const stepTimings = [2500, 4000, 12000, 17000, 30000, 7000, 2500];
+      const stepTimings = [10000, 8000, 16000, 20000, 30000, 7000, 2500];
       let totalElapsed = 0;
       
       stepTimings.forEach((duration, index) => {
@@ -217,7 +217,6 @@ export default function VirtualTryOn() {
     if (file) {
       setGarmentFile(file);
       setGarmentPreview(URL.createObjectURL(file));
-      setShowExamples(false);
     }
   };
 
@@ -226,7 +225,6 @@ export default function VirtualTryOn() {
     if (file) {
       setPersonFile(file);
       setPersonPreview(URL.createObjectURL(file));
-      setShowExamples(false);
     }
   };
 
@@ -237,7 +235,6 @@ export default function VirtualTryOn() {
       const file = new File([blob], 'example-garment.jpg', { type: 'image/jpeg' });
       setGarmentFile(file);
       setGarmentPreview(url);
-      setShowExamples(false);
     } catch (err) {
       console.error('Failed to load example image');
     }
@@ -250,7 +247,6 @@ export default function VirtualTryOn() {
       const file = new File([blob], 'example-person.jpg', { type: 'image/jpeg' });
       setPersonFile(file);
       setPersonPreview(url);
-      setShowExamples(false);
     } catch (err) {
       console.error('Failed to load example image');
     }
@@ -284,6 +280,41 @@ export default function VirtualTryOn() {
 
   const progressPercentage = loading ? ((currentStepIndex / processingSteps.length) * 100) : 0;
 
+  // Show examples if neither file is selected, or keep them visible if only one is selected
+  const shouldShowExamples = showExamples && (!garmentFile || !personFile);
+
+  // Download handler that works with any URL type (blob, data, or proxy)
+  const handleDownload = async () => {
+    if (!result?.image) return;
+    
+    try {
+      // If it's a blob URL or data URL, download directly
+      if (result.image.startsWith('blob:') || result.image.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = result.image;
+        link.download = 'virtual-tryon-result.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // Otherwise, fetch the image and create a blob
+      const response = await fetch(result.image);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'virtual-tryon-result.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background">
       <div className="pt-32 pb-24">
@@ -308,10 +339,10 @@ export default function VirtualTryOn() {
               <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-blue-900 mb-1">
-                  Average Processing Time: 60-80 seconds
+                  Average Processing Time: 2-3 minutes
                 </p>
                 <p className="text-xs text-blue-700">
-                  Our AI technology analyzes both images and generates a realistic try-on result. All images are automatically saved to cloud storage! ✨
+                  Our AI technology analyzes both images and generates a realistic try-on result. Your images are processed securely and not stored on our servers.
                 </p>
               </div>
             </div>
@@ -321,7 +352,7 @@ export default function VirtualTryOn() {
           <div className="max-w-6xl mx-auto">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Examples Section */}
-              {showExamples && !garmentFile && !personFile && (
+              {shouldShowExamples && (
                 <div className="mb-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8">
                   <div className="text-center mb-8">
                     <h2 className="text-2xl font-serif font-light text-gray-900 mb-2">
@@ -368,7 +399,7 @@ export default function VirtualTryOn() {
                     <label className="block text-sm font-medium text-gray-900">
                       Garment Image
                     </label>
-                    {!garmentPreview && (
+                    {!garmentPreview && !shouldShowExamples && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -430,7 +461,7 @@ export default function VirtualTryOn() {
                     <label className="block text-sm font-medium text-gray-900">
                       Your Photo
                     </label>
-                    {!personPreview && (
+                    {!personPreview && !shouldShowExamples && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -569,7 +600,7 @@ export default function VirtualTryOn() {
                     </ul>
                     <div className="mt-4 pt-4 border-t border-amber-200">
                       <p className="text-xs text-amber-700 italic">
-                        💡 Tip: The premium model produces much more realistic and accurate virtual try-on results. We recommend waiting a moment and trying again for the best experience.
+                        Note: The premium model produces much more realistic and accurate virtual try-on results. We recommend waiting a moment and trying again for the best experience.
                       </p>
                     </div>
                   </div>
@@ -590,7 +621,7 @@ export default function VirtualTryOn() {
                       Creating Your Virtual Try-On
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Elapsed time: {formatTime(elapsedTime)} • Estimated: 70-90 seconds
+                      Elapsed time: {formatTime(elapsedTime)} • Estimated: 2-3 minutes
                     </p>
                   </div>
 
@@ -615,14 +646,18 @@ export default function VirtualTryOn() {
                             : 'bg-gray-50 border border-gray-200'
                         }`}
                       >
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
                           index < currentStepIndex
-                            ? 'bg-green-100'
+                            ? 'bg-green-100 text-green-600'
                             : index === currentStepIndex
-                            ? 'bg-purple-100 animate-pulse'
-                            : 'bg-gray-100'
+                            ? 'bg-purple-100 text-purple-600 animate-pulse'
+                            : 'bg-gray-100 text-gray-400'
                         }`}>
-                          {index < currentStepIndex ? '✓' : step.icon}
+                          {index < currentStepIndex ? (
+                            <CheckCircle2 className="w-5 h-5" />
+                          ) : (
+                            <div className="w-2 h-2 rounded-full bg-current" />
+                          )}
                         </div>
                         <div className="flex-1">
                           <p className={`text-sm font-medium ${
@@ -639,10 +674,10 @@ export default function VirtualTryOn() {
                     ))}
                   </div>
 
-                  {/* Tips while waiting */}
+                  {/* Privacy notice while waiting */}
                   <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
                     <p className="text-xs text-blue-900">
-                      <strong>💡 Did you know?</strong> All your images are automatically saved to cloud storage for easy access later!
+                      <strong>Privacy Note:</strong> We don't store your images. Make sure to download your result before leaving this page.
                     </p>
                   </div>
                 </div>
@@ -663,14 +698,6 @@ export default function VirtualTryOn() {
                   <p className="text-sm text-gray-600 mb-2">
                     Here's how the garment looks on you
                   </p>
-                  <div className="flex items-center justify-center gap-4 text-xs text-gray-500">
-                    {result.model && (
-                      <span>Model: <span className="font-medium">{result.model}</span></span>
-                    )}
-                    {result.jobId && (
-                      <span>Job ID: <span className="font-mono">{result.jobId.slice(0, 8)}</span></span>
-                    )}
-                  </div>
                 </div>
 
                 <div className="max-w-2xl mx-auto">
@@ -682,69 +709,14 @@ export default function VirtualTryOn() {
                     />
                   </div>
 
-                  {/* Cloud Storage Info */}
-                  {result.cloudinaryUrls && (
-                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          ☁️
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 mb-2">
-                            ✨ Saved to Cloud Storage
-                          </p>
-                          <p className="text-xs text-gray-600 mb-3">
-                            All images have been saved to your cloud storage at: <span className="font-mono">Alzia/{result.jobId.slice(0, 8)}</span>
-                          </p>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <a href={result.cloudinaryUrls.garment} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-700">
-                              <ExternalLink className="w-3 h-3" />
-                              View Garment
-                            </a>
-                            <a href={result.cloudinaryUrls.person} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-700">
-                              <ExternalLink className="w-3 h-3" />
-                              View Original
-                            </a>
-                            <a href={result.cloudinaryUrls.output} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-700">
-                              <ExternalLink className="w-3 h-3" />
-                              View Output
-                            </a>
-                            <a href={result.cloudinaryUrls.combined} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-700">
-                              <ExternalLink className="w-3 h-3" />
-                              View Combined
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-                    {result.cloudinaryUrls?.combined && (
-                      <Button
-                        asChild
-                        size="lg"
-                        className="rounded-full px-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                      >
-                        <a href={result.cloudinaryUrls.combined} download target="_blank" rel="noopener noreferrer">
-                          <Download className="w-4 h-4 mr-2" />
-                          Download Combined Image
-                        </a>
-                      </Button>
-                    )}
                     <Button
-                      asChild
-                      variant="outline"
+                      onClick={handleDownload}
                       size="lg"
                       className="rounded-full px-8"
                     >
-                      <a
-                        href={result.image}
-                        download="virtual-tryon-result.png"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Result Only
-                      </a>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Result
                     </Button>
                     <Button
                       variant="outline"
@@ -756,9 +728,19 @@ export default function VirtualTryOn() {
                     </Button>
                   </div>
 
-                  <p className="text-center text-xs text-gray-500 mt-4">
-                    💡 All images are saved to cloud storage and can be accessed anytime!
-                  </p>
+                  <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-amber-900 mb-1">
+                          Important: Download Your Result
+                        </p>
+                        <p className="text-xs text-amber-700">
+                          We don't store your images for privacy. Please download your result before leaving this page or starting a new try-on.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -803,8 +785,8 @@ export default function VirtualTryOn() {
                       4
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Cloud Storage</p>
-                      <p className="text-xs text-gray-600">All images are automatically saved for future access</p>
+                      <p className="text-sm font-medium text-gray-900">Privacy First</p>
+                      <p className="text-xs text-gray-600">Your images are processed securely and not stored</p>
                     </div>
                   </div>
                 </div>
@@ -812,7 +794,7 @@ export default function VirtualTryOn() {
             )}
 
             {/* How It Works Section */}
-            {!loading && !result && !garmentFile && !personFile && !showExamples && (
+            {!loading && !result && !garmentFile && !personFile && !shouldShowExamples && (
               <div className="mt-16 bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
                 <h3 className="text-2xl font-serif font-light text-gray-900 mb-6 text-center">
                   How It Works
@@ -833,16 +815,16 @@ export default function VirtualTryOn() {
                     </div>
                     <h4 className="font-medium text-gray-900 mb-2">2. AI Processing</h4>
                     <p className="text-sm text-gray-600">
-                      Our AI analyzes both images and creates a realistic virtual try-on (70-90s)
+                      Our AI analyzes both images and creates a realistic virtual try-on in 2-3 minutes
                     </p>
                   </div>
                   <div className="text-center">
                     <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                       <Download className="w-8 h-8 text-green-600" />
                     </div>
-                    <h4 className="font-medium text-gray-900 mb-2">3. Download & Save</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">3. Download Result</h4>
                     <p className="text-sm text-gray-600">
-                      View your result and all images are automatically saved to cloud storage
+                      View and download your result. Images are processed securely and not stored.
                     </p>
                   </div>
                 </div>

@@ -115,7 +115,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
       };
 
       try {
-        console.log('☁️ Uploading to Cloudinary...');
+        // console.log('☁️ Uploading to Cloudinary...');
 
         const [garmentUrl, personUrl, outputUrl, combinedUrl] = await Promise.all([
           uploadToCloudinary(garmentFile, folderPath, 'garment'),
@@ -131,12 +131,12 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
           combined: combinedUrl,
         };
 
-        console.log('✅ Images uploaded to Cloudinary');
+        // console.log('✅ Images uploaded to Cloudinary');
 
         // Step 4: Save metadata to Supabase (only if upload succeeded)
         setCurrentStep(4);
         try {
-          console.log('💾 Saving metadata...');
+          // console.log('💾 Saving metadata...');
           
           const metadataResponse = await fetch('/api/save-tryon-metadata', {
             method: 'POST',
@@ -151,11 +151,11 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
             }),
           });
 
-          if (metadataResponse.ok) {
-            console.log('✅ Metadata saved');
-          } else {
-            console.warn('⚠️ Metadata save failed');
-          }
+          // if (metadataResponse.ok) {
+          //   console.log('✅ Metadata saved');
+          // } else {
+          //   console.warn('⚠️ Metadata save failed');
+          // }
         } catch (metadataError) {
           console.warn('⚠️ Metadata error:', metadataError);
         }
