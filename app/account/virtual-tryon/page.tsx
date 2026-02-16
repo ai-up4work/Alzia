@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload, X, Download, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Clock, Sparkles, CheckCircle2, Info, AlertTriangle } from 'lucide-react';
+import { Upload, X, Download, Loader2, Image as ImageIcon, ChevronLeft, ChevronRight, Clock, Sparkles, CheckCircle2, Info, AlertTriangle, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { Progress } from '@/components/ui/progress';
 import { useVirtualTryOn } from '@/hooks/useVirtualTryOn';
+import { Header } from "@/components/header"
+
 
 // Example images for the carousel
 const exampleGarments = [
@@ -64,6 +66,7 @@ const examplePersons = [
 
 // Processing steps without emojis
 const processingSteps = [
+  { label: 'Checking credits', time: '1s', duration: 1000 },
   { label: 'Processing images', time: '8-10s', duration: 10000 },
   { label: 'Connecting to AI engine', time: '7-8s', duration: 8000 },
   { label: 'Analyzing garment details', time: '14-17s', duration: 16000 },
@@ -169,8 +172,53 @@ export default function VirtualTryOn() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showExamples, setShowExamples] = useState(true);
+  
+  // Credit tracking state
+  const [credits, setCredits] = useState<number | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(true);
+  const [creditsError, setCreditsError] = useState<string | null>(null);
 
   const { result, loading, error, currentStep, generateTryOn, reset } = useVirtualTryOn();
+
+  // Fetch credits on mount
+  useEffect(() => {
+    fetchCredits();
+  }, []);
+
+  // Refetch credits after successful try-on
+  useEffect(() => {
+    if (result && !loading) {
+      fetchCredits();
+    }
+  }, [result, loading]);
+
+  const fetchCredits = async () => {
+    try {
+      setCreditsLoading(true);
+      setCreditsError(null);
+      
+      const response = await fetch('/api/check-tryon-credits');
+
+      if (response.ok) {
+        const data = await response.json();
+        setCredits(data.credits);
+      } else if (response.status === 401) {
+        // User not logged in - silently ignore, don't show credits
+        setCredits(null);
+        setCreditsError(null); // Clear any previous errors
+      } else {
+        // Other errors - show to user
+        setCreditsError('Failed to load credits');
+      }
+    } catch (err) {
+      console.error('Error fetching credits:', err);
+      // Network or other errors - silently fail for non-authenticated users
+      setCredits(null);
+      setCreditsError(null);
+    } finally {
+      setCreditsLoading(false);
+    }
+  };
 
   // Timer for elapsed time during processing
   useEffect(() => {
@@ -188,7 +236,7 @@ export default function VirtualTryOn() {
   // Simulate processing steps
   useEffect(() => {
     if (loading) {
-      const stepTimings = [10000, 8000, 16000, 20000, 30000, 7000, 2500];
+      const stepTimings = [1000, 10000, 8000, 16000, 20000, 30000, 7000, 2500];
       let totalElapsed = 0;
       
       stepTimings.forEach((duration, index) => {
@@ -319,6 +367,7 @@ export default function VirtualTryOn() {
 
   return (
     <main className="min-h-screen bg-background">
+      <Header />
       <div className="pt-32 pb-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Page Header */}
@@ -333,6 +382,29 @@ export default function VirtualTryOn() {
             <p className="text-gray-600 max-w-2xl mx-auto">
               See how our garments look on you before you buy. Upload a photo and a garment image to get started.
             </p>
+            
+            {/* Credits Display */}
+            {!creditsLoading && credits !== null && (
+              <div className="mt-6 inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-3 rounded-full border border-blue-200">
+                <CreditCard className="w-5 h-5 text-blue-600" />
+                <div className="text-left">
+                  <p className="text-xs text-blue-600 font-medium">Available Credits</p>
+                  <p className="text-lg font-bold text-blue-900">{credits}</p>
+                </div>
+                {credits === 0 && (
+                  <Button size="sm" className="ml-2">
+                    Buy More Credits
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {creditsError && (
+              <div className="mt-6 inline-flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full border border-red-200">
+                <AlertTriangle className="w-4 h-4 text-red-600" />
+                <span className="text-sm text-red-700">{creditsError}</span>
+              </div>
+            )}
           </div>
 
           {/* Processing Time Info Banner */}
@@ -341,7 +413,7 @@ export default function VirtualTryOn() {
               <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-blue-900 mb-1">
-                  Average Processing Time: 2-3 minutes
+                  Average Processing Time: 2-3 minutes • Cost: 1 credit per try-on
                 </p>
                 <p className="text-xs text-blue-700">
                   Our AI technology analyzes both images and generates a realistic try-on result. Your images are processed securely and not stored on our servers.
@@ -349,6 +421,27 @@ export default function VirtualTryOn() {
               </div>
             </div>
           </div>
+
+          {/* No Credits Warning */}
+          {!creditsLoading && credits === 0 && (
+            <div className="max-w-3xl mx-auto mb-8 bg-amber-50 border border-amber-200 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-amber-900 mb-2">
+                    No Credits Remaining
+                  </h3>
+                  <p className="text-sm text-amber-800 mb-4">
+                    You've used all your virtual try-on credits. Purchase more credits to continue using this feature.
+                  </p>
+                  <Button className="bg-amber-600 hover:bg-amber-700">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Purchase Credits
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Main Content */}
           <div className="max-w-6xl mx-auto">
@@ -524,7 +617,7 @@ export default function VirtualTryOn() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Button
                   type="submit"
-                  disabled={loading || !garmentFile || !personFile}
+                  disabled={loading || !garmentFile || !personFile || credits === 0}
                   size="lg"
                   className="rounded-full px-8 min-w-[200px]"
                 >
@@ -536,7 +629,7 @@ export default function VirtualTryOn() {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Generate Try-On
+                      Generate Try-On (1 credit)
                     </>
                   )}
                 </Button>
@@ -692,7 +785,7 @@ export default function VirtualTryOn() {
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full mb-4">
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-900">Success!</span>
+                    <span className="text-sm font-medium text-green-900">Success! 1 credit used</span>
                   </div>
                   <h2 className="text-2xl font-serif font-light text-gray-900 mb-2">
                     Your Virtual Try-On Result

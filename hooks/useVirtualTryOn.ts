@@ -1,5 +1,6 @@
 // hooks/useVirtualTryOn.ts
 import { useState } from 'react';
+import { useAuth } from '@/lib/auth-context';
 
 interface VirtualTryOnResult {
   image: string;
@@ -27,6 +28,9 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  
+  // Get auth context
+  const { isAuthenticated } = useAuth();
 
   const generateTryOn = async (garmentFile: File, personFile: File) => {
     setLoading(true);
@@ -35,7 +39,36 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
     setCurrentStep(0);
 
     try {
-      // Generate jobId first
+      // Step 0: Check authentication and credits
+      setCurrentStep(0);
+      console.log('🔍 Checking authentication and credits...');
+      
+      if (!isAuthenticated) {
+        throw new Error('Please log in to use virtual try-on');
+      }
+
+      // Check credits via API
+      const creditsResponse = await fetch('/api/check-tryon-credits', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!creditsResponse.ok) {
+        if (creditsResponse.status === 401) {
+          throw new Error('Please log in to use virtual try-on');
+        }
+        throw new Error('Failed to check credits');
+      }
+
+      const creditsData = await creditsResponse.json();
+      
+      if (!creditsData.hasCredits || creditsData.credits <= 0) {
+        throw new Error('You have no credits remaining. Please purchase more credits to continue.');
+      }
+
+      console.log(`✅ Credits available: ${creditsData.credits}`);
+
+      // Generate jobId
       const jobId = `job-${Date.now()}`;
 
       // Step 1: Generate virtual try-on
@@ -58,10 +91,32 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
       }
 
       console.log('✅ Virtual try-on generated');
-      console.log('Output URL from API:', data.image);
 
-      // Step 2: Generate combined image (client-side)
+      // Step 2: Deduct credit
       setCurrentStep(2);
+      console.log('💳 Deducting credit...');
+      
+      const useCreditResponse = await fetch('/api/use-tryon-credit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jobId,
+          model: data.model,
+          isLowQuality: data.isLowQuality || false,
+        }),
+      });
+
+      if (useCreditResponse.ok) {
+        const useCreditData = await useCreditResponse.json();
+        console.log(`✅ Credit deducted. Remaining: ${useCreditData.creditsRemaining}`);
+      } else {
+        console.error('⚠️ Failed to deduct credit');
+      }
+
+      // Step 3: Generate combined image
+      setCurrentStep(3);
       console.log('🖼️ Creating combined preview...');
       
       const combinedImageBase64 = await generateCombinedImage(
@@ -72,11 +127,11 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       console.log('✅ Combined preview created');
 
-      // Step 3: Upload output image to Cloudinary
-      setCurrentStep(3);
-      console.log('☁️ Uploading output image to Cloudinary...');
+      // Step 4: Upload output image to Cloudinary
+      setCurrentStep(4);
+      // console.log('☁️ Uploading output image to Cloudinary...');
 
-      let outputCloudinaryUrl = data.image; // Fallback
+      let outputCloudinaryUrl = data.image;
 
       try {
         const outputUploadResponse = await fetch('/api/upload-output-image', {
@@ -91,20 +146,18 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         if (outputUploadResponse.ok) {
           const outputUploadData = await outputUploadResponse.json();
           outputCloudinaryUrl = outputUploadData.url;
-          console.log('✅ Output uploaded:', outputCloudinaryUrl);
-        } else {
-          console.error('⚠️ Output upload failed');
+          // console.log('✅ Output uploaded:', outputCloudinaryUrl);
         }
       } catch (outputUploadError) {
         console.error('⚠️ Output upload error:', outputUploadError);
       }
 
-      // Step 4: Upload garment and person images to Cloudinary
-      setCurrentStep(4);
-      console.log('☁️ Uploading garment and person images to Cloudinary...');
+      // Step 5: Upload garment and person images
+      setCurrentStep(5);
+      // console.log('☁️ Uploading garment and person images...');
 
-      let garmentCloudinaryUrl = garmentFile.name; // Fallback
-      let personCloudinaryUrl = personFile.name; // Fallback
+      let garmentCloudinaryUrl = garmentFile.name;
+      let personCloudinaryUrl = personFile.name;
 
       try {
         const uploadFormData = new FormData();
@@ -121,23 +174,19 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
           const uploadData = await uploadResponse.json();
           garmentCloudinaryUrl = uploadData.garmentUrl;
           personCloudinaryUrl = uploadData.personUrl;
-          console.log('✅ Garment uploaded:', garmentCloudinaryUrl);
-          console.log('✅ Person uploaded:', personCloudinaryUrl);
-        } else {
-          console.error('⚠️ Image upload failed');
+          // console.log('✅ Images uploaded');
         }
       } catch (uploadError) {
         console.error('⚠️ Image upload error:', uploadError);
       }
 
-      // Step 5: Upload combined image to Cloudinary
-      setCurrentStep(5);
-      console.log('☁️ Uploading combined image to Cloudinary...');
+      // Step 6: Upload combined image
+      setCurrentStep(6);
+      // console.log('☁️ Uploading combined image...');
 
-      let combinedCloudinaryUrl = combinedImageBase64; // Fallback to base64
+      let combinedCloudinaryUrl = combinedImageBase64;
 
       try {
-        // Convert base64 to blob
         const base64Response = await fetch(combinedImageBase64);
         const blob = await base64Response.blob();
         
@@ -153,19 +202,17 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         if (combinedUploadResponse.ok) {
           const combinedUploadData = await combinedUploadResponse.json();
           combinedCloudinaryUrl = combinedUploadData.url;
-          console.log('✅ Combined image uploaded:', combinedCloudinaryUrl);
-        } else {
-          console.error('⚠️ Combined upload failed');
+          // console.log('✅ Combined image uploaded');
         }
       } catch (combinedUploadError) {
         console.error('⚠️ Combined image upload error:', combinedUploadError);
       }
 
-      // Step 6: Generate one-time access token for the result image
-      setCurrentStep(6);
-      console.log('🔒 Generating secure access token for result image...');
+      // Step 7: Generate access token for result
+      setCurrentStep(7);
+      console.log('🔒 Generating secure access token...');
 
-      let resultProxyUrl = outputCloudinaryUrl; // Fallback to Cloudinary URL
+      let resultProxyUrl = outputCloudinaryUrl;
       let expiresAt: number | undefined;
       let expiresIn: string | undefined;
       
@@ -184,19 +231,15 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
           resultProxyUrl = tokenData.url;
           expiresAt = tokenData.expiresAt;
           expiresIn = tokenData.expiresIn;
-          console.log('✅ Secure token generated for result image');
-        } else {
-          console.warn('⚠️ Token generation failed for result');
+          console.log('✅ Token generated');
         }
       } catch (tokenError) {
-        console.warn('⚠️ Token generation error for result:', tokenError);
+        console.warn('⚠️ Token generation error:', tokenError);
       }
 
-      // Step 7: Generate one-time access token for the combined image
-      setCurrentStep(7);
-      console.log('🔒 Generating secure access token for combined image...');
-
-      let combinedProxyUrl = combinedCloudinaryUrl; // Use Cloudinary URL as fallback
+      // Step 8: Generate token for combined image
+      setCurrentStep(8);
+      let combinedProxyUrl = combinedCloudinaryUrl;
       
       try {
         const combinedTokenResponse = await fetch('/api/tryon-image', {
@@ -211,28 +254,18 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         if (combinedTokenResponse.ok) {
           const combinedTokenData = await combinedTokenResponse.json();
           combinedProxyUrl = combinedTokenData.url;
-          console.log('✅ Secure token generated for combined image');
-        } else {
-          console.warn('⚠️ Token generation failed for combined image');
         }
       } catch (combinedTokenError) {
-        console.warn('⚠️ Token generation error for combined image:', combinedTokenError);
+        console.warn('⚠️ Combined token error:', combinedTokenError);
       }
 
-      // Step 8: Save metadata to database with REAL Cloudinary URLs
-      setCurrentStep(8);
+      // Step 9: Save metadata
+      setCurrentStep(9);
       
       try {
-        console.log('💾 Saving metadata to database...');
-        console.log('📊 Metadata to save:', {
-          jobId,
-          output: outputCloudinaryUrl,
-          garment: garmentCloudinaryUrl,
-          person: personCloudinaryUrl,
-          combined: combinedCloudinaryUrl,
-        });
+        console.log('💾 Saving metadata...');
         
-        const metadataResponse = await fetch('/api/save-tryon-metadata', {
+        await fetch('/api/save-tryon-metadata', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -240,22 +273,17 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
           body: JSON.stringify({
             jobId,
             cloudinaryUrls: {
-              output: outputCloudinaryUrl,           // ✅ REAL Cloudinary URL (uploaded)
-              garment: garmentCloudinaryUrl,         // ✅ REAL Cloudinary URL (uploaded)
-              person: personCloudinaryUrl,           // ✅ REAL Cloudinary URL (uploaded)
-              combined: combinedCloudinaryUrl,       // ✅ REAL Cloudinary URL (uploaded)
+              output: outputCloudinaryUrl,
+              garment: garmentCloudinaryUrl,
+              person: personCloudinaryUrl,
+              combined: combinedCloudinaryUrl,
             },
             model: data.model,
             isLowQuality: data.isLowQuality || false,
           }),
         });
 
-        if (metadataResponse.ok) {
-          console.log('✅ Metadata saved to database');
-        } else {
-          const errorData = await metadataResponse.json();
-          console.error('❌ Metadata save failed:', errorData.error);
-        }
+        console.log('✅ Metadata saved');
       } catch (metadataError) {
         console.error('❌ Metadata save error:', metadataError);
       }
@@ -272,11 +300,11 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         expiresIn,
       });
 
-      setCurrentStep(9);
-      console.log('🎉 Process complete!');
+      setCurrentStep(10);
+      console.log('🎉 Complete!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('❌ Virtual try-on error:', err);
+      console.error('❌ Error:', err);
     } finally {
       setLoading(false);
     }
@@ -298,7 +326,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
   };
 }
 
-// Helper function to generate combined image on client side
+// Helper function to generate combined image
 async function generateCombinedImage(
   garmentFile: File,
   personFile: File,
