@@ -2,7 +2,8 @@
 import { useState } from 'react';
 
 interface VirtualTryOnResult {
-  image: string; // Proxied URL with token for result image
+  image: string; // Proxied URL with token for result image (for display)
+  imageBase64: string; // Base64 result image (for download, never expires)
   combinedImage: string; // Base64 combined image (for local preview)
   combinedImageUrl: string; // Proxied URL with token for combined image
   model: string;
@@ -127,43 +128,44 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         console.warn('⚠️ Token generation error for combined image:', combinedTokenError);
       }
 
-      // Step 5: Save metadata to database (optional - only if you want to persist)
-      // This step is now OPTIONAL and won't break if it fails
+      // Step 5: Save metadata to database
       setCurrentStep(5);
       
-      // Only save metadata if you have cloudinaryUrls from your actual implementation
-      // If you're not using Cloudinary, you can skip this or modify the endpoint
-      if (data.cloudinaryUrls) {
-        try {
-          const metadataResponse = await fetch('/api/save-tryon-metadata', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+      try {
+        console.log('💾 Attempting to save metadata...');
+        
+        const metadataResponse = await fetch('/api/save-tryon-metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jobId,
+            cloudinaryUrls: {
+              output: resultProxyUrl,
+              garment: garmentFile.name, // Store filename as reference
+              person: personFile.name,
+              combined: combinedProxyUrl,
             },
-            body: JSON.stringify({
-              jobId,
-              cloudinaryUrls: data.cloudinaryUrls, // Must include garment, person, output, combined URLs
-              model: data.model,
-              isLowQuality: data.isLowQuality || false,
-            }),
-          });
+            model: data.model,
+            isLowQuality: data.isLowQuality || false,
+          }),
+        });
 
-          if (metadataResponse.ok) {
-            console.log('✅ Metadata saved to database');
-          } else {
-            const errorData = await metadataResponse.json();
-            console.warn('⚠️ Metadata save failed:', errorData.error);
-          }
-        } catch (metadataError) {
-          console.warn('⚠️ Metadata save error:', metadataError);
-          // Don't fail the whole process if metadata save fails
+        if (metadataResponse.ok) {
+          console.log('✅ Metadata saved to database');
+        } else {
+          const errorData = await metadataResponse.json();
+          console.warn('⚠️ Metadata save failed:', errorData.error);
         }
-      } else {
-        console.log('ℹ️ Skipping metadata save (no Cloudinary URLs)');
+      } catch (metadataError) {
+        console.warn('⚠️ Metadata save error:', metadataError);
+        // Don't fail the whole process if metadata save fails
       }
 
       setResult({
-        image: resultProxyUrl, // Proxied URL with token or base64
+        image: resultProxyUrl, // Proxied URL with token or base64 (for display)
+        imageBase64: data.image, // Original base64 image (for download, never expires)
         combinedImage: combinedImageBase64, // Base64 for local preview
         combinedImageUrl: combinedProxyUrl, // Proxied URL with token or base64
         model: data.model,

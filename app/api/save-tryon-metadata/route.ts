@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('💾 Saving metadata for job:', jobId);
+    // console.log('💾 Saving metadata for job:', jobId);
 
     const { error: dbError } = await supabase
       .from('tryon_results')
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ Metadata saved successfully');
+    // console.log('✅ Metadata saved successfully');
 
     return NextResponse.json({
       success: true,

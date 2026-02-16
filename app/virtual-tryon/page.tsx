@@ -283,65 +283,35 @@ export default function VirtualTryOn() {
   // Show examples if neither file is selected, or keep them visible if only one is selected
   const shouldShowExamples = showExamples && (!garmentFile || !personFile);
 
-  // Download handler for result image
+  // Download handler for result image - uses base64 that never expires
   const handleDownload = async () => {
-    if (!result?.image) return;
+    if (!result?.imageBase64) return;
     
     try {
-      // If it's a blob URL or data URL, download directly
-      if (result.image.startsWith('blob:') || result.image.startsWith('data:')) {
-        const link = document.createElement('a');
-        link.href = result.image;
-        link.download = 'virtual-tryon-result.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      }
-
-      // Otherwise, fetch the image and create a blob
-      const response = await fetch(result.image);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      // Use the base64 image which never expires
       const link = document.createElement('a');
-      link.href = url;
+      link.href = result.imageBase64;
       link.download = 'virtual-tryon-result.png';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
     }
   };
 
-  // Download handler for combined image
+  // Download handler for combined image - uses base64 that never expires
   const handleDownloadCombined = async () => {
-    if (!result?.combinedImageUrl) return;
+    if (!result?.combinedImage) return;
     
     try {
-      // If it's a blob URL or data URL, download directly
-      if (result.combinedImageUrl.startsWith('blob:') || result.combinedImageUrl.startsWith('data:')) {
-        const link = document.createElement('a');
-        link.href = result.combinedImageUrl;
-        link.download = 'virtual-tryon-combined.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      }
-
-      // Otherwise, fetch the image and create a blob
-      const response = await fetch(result.combinedImageUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      // Use the base64 image which never expires
       const link = document.createElement('a');
-      link.href = url;
+      link.href = result.combinedImage;
       link.download = 'virtual-tryon-combined.png';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
     }
@@ -755,7 +725,7 @@ export default function VirtualTryOn() {
                       <Download className="w-4 h-4 mr-2" />
                       Download Result
                     </Button>
-                    {result.combinedImageUrl && (
+                    {result.combinedImage && (
                       <Button
                         onClick={handleDownloadCombined}
                         size="lg"
