@@ -283,7 +283,7 @@ export default function VirtualTryOn() {
   // Show examples if neither file is selected, or keep them visible if only one is selected
   const shouldShowExamples = showExamples && (!garmentFile || !personFile);
 
-  // Download handler that works with any URL type (blob, data, or proxy)
+  // Download handler for result image
   const handleDownload = async () => {
     if (!result?.image) return;
     
@@ -306,6 +306,38 @@ export default function VirtualTryOn() {
       const link = document.createElement('a');
       link.href = url;
       link.download = 'virtual-tryon-result.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
+  // Download handler for combined image
+  const handleDownloadCombined = async () => {
+    if (!result?.combinedImageUrl) return;
+    
+    try {
+      // If it's a blob URL or data URL, download directly
+      if (result.combinedImageUrl.startsWith('blob:') || result.combinedImageUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = result.combinedImageUrl;
+        link.download = 'virtual-tryon-combined.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // Otherwise, fetch the image and create a blob
+      const response = await fetch(result.combinedImageUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'virtual-tryon-combined.png';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -698,6 +730,11 @@ export default function VirtualTryOn() {
                   <p className="text-sm text-gray-600 mb-2">
                     Here's how the garment looks on you
                   </p>
+                  {result.expiresIn && (
+                    <p className="text-sm font-medium text-amber-900">
+                      Link expires in {result.expiresIn}
+                    </p>
+                  )}
                 </div>
 
                 <div className="max-w-2xl mx-auto">
@@ -718,6 +755,17 @@ export default function VirtualTryOn() {
                       <Download className="w-4 h-4 mr-2" />
                       Download Result
                     </Button>
+                    {result.combinedImageUrl && (
+                      <Button
+                        onClick={handleDownloadCombined}
+                        size="lg"
+                        variant="outline"
+                        className="rounded-full px-8"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download Comparison
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="lg"
@@ -822,11 +870,9 @@ export default function VirtualTryOn() {
                     <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                       <Download className="w-8 h-8 text-green-600" />
                     </div>
-                    <p className="text-sm font-medium text-amber-900">
-                      Link expires in {result?.expiresIn ? formatTime(result.expiresIn) : 'a few minutes'}
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      Download your result now. The secure link will expire and the image will be automatically deleted for your privacy.
+                    <h4 className="font-medium text-gray-900 mb-2">3. Download Result</h4>
+                    <p className="text-sm text-gray-600">
+                      See the result and download both the try-on image and side-by-side comparison
                     </p>
                   </div>
                 </div>

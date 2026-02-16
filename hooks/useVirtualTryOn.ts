@@ -2,8 +2,9 @@
 import { useState } from 'react';
 
 interface VirtualTryOnResult {
-  image: string; // Proxied URL with token
-  combinedImage: string; // Base64 combined image
+  image: string; // Proxied URL with token for result image
+  combinedImage: string; // Base64 combined image (for local preview)
+  combinedImageUrl: string; // Proxied URL with token for combined image
   model: string;
   isLowQuality: boolean;
   jobId: string;
@@ -68,11 +69,11 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       const jobId = data.jobId || `job-${Date.now()}`;
 
-      // Step 3: Generate one-time access token for the result
+      // Step 3: Generate one-time access token for the result image
       setCurrentStep(3);
-      console.log('🔒 Generating secure access token...');
+      console.log('🔒 Generating secure access token for result image...');
 
-      let proxyUrl = data.image; // Fallback to base64
+      let resultProxyUrl = data.image; // Fallback to base64
       let expiresAt: number | undefined;
       let expiresIn: string | undefined;
       
@@ -88,43 +89,83 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
         if (tokenResponse.ok) {
           const tokenData = await tokenResponse.json();
-          proxyUrl = tokenData.url;
+          resultProxyUrl = tokenData.url;
           expiresAt = tokenData.expiresAt;
           expiresIn = tokenData.expiresIn;
-          console.log('✅ Secure token generated');
+          console.log('✅ Secure token generated for result image');
         } else {
-          console.warn('⚠️ Token generation failed, using direct image');
+          console.warn('⚠️ Token generation failed for result, using direct image');
         }
       } catch (tokenError) {
-        console.warn('⚠️ Token generation error:', tokenError);
+        console.warn('⚠️ Token generation error for result:', tokenError);
       }
 
-      // Step 4: Optionally save metadata (without exposing URLs)
+      // Step 4: Generate one-time access token for the combined image
       setCurrentStep(4);
+      console.log('🔒 Generating secure access token for combined image...');
+
+      let combinedProxyUrl = combinedImageBase64; // Fallback to base64
+      
       try {
-        const metadataResponse = await fetch('/api/save-tryon-metadata', {
+        const combinedTokenResponse = await fetch('/api/tryon-image', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            jobId,
-            model: data.model,
-            isLowQuality: data.isLowQuality || false,
-            // Don't save the actual URLs for privacy
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            imageUrl: combinedImageBase64,
+            expiresInMinutes: 10 // Token expires in 10 minutes
           }),
         });
 
-        if (metadataResponse.ok) {
-          console.log('✅ Metadata saved');
+        if (combinedTokenResponse.ok) {
+          const combinedTokenData = await combinedTokenResponse.json();
+          combinedProxyUrl = combinedTokenData.url;
+          console.log('✅ Secure token generated for combined image');
+        } else {
+          console.warn('⚠️ Token generation failed for combined image, using base64');
         }
-      } catch (metadataError) {
-        console.warn('⚠️ Metadata save failed:', metadataError);
+      } catch (combinedTokenError) {
+        console.warn('⚠️ Token generation error for combined image:', combinedTokenError);
+      }
+
+      // Step 5: Save metadata to database (optional - only if you want to persist)
+      // This step is now OPTIONAL and won't break if it fails
+      setCurrentStep(5);
+      
+      // Only save metadata if you have cloudinaryUrls from your actual implementation
+      // If you're not using Cloudinary, you can skip this or modify the endpoint
+      if (data.cloudinaryUrls) {
+        try {
+          const metadataResponse = await fetch('/api/save-tryon-metadata', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              jobId,
+              cloudinaryUrls: data.cloudinaryUrls, // Must include garment, person, output, combined URLs
+              model: data.model,
+              isLowQuality: data.isLowQuality || false,
+            }),
+          });
+
+          if (metadataResponse.ok) {
+            console.log('✅ Metadata saved to database');
+          } else {
+            const errorData = await metadataResponse.json();
+            console.warn('⚠️ Metadata save failed:', errorData.error);
+          }
+        } catch (metadataError) {
+          console.warn('⚠️ Metadata save error:', metadataError);
+          // Don't fail the whole process if metadata save fails
+        }
+      } else {
+        console.log('ℹ️ Skipping metadata save (no Cloudinary URLs)');
       }
 
       setResult({
-        image: proxyUrl, // Proxied URL with token or base64
-        combinedImage: combinedImageBase64,
+        image: resultProxyUrl, // Proxied URL with token or base64
+        combinedImage: combinedImageBase64, // Base64 for local preview
+        combinedImageUrl: combinedProxyUrl, // Proxied URL with token or base64
         model: data.model,
         isLowQuality: data.isLowQuality || false,
         jobId,
@@ -132,7 +173,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         expiresIn,
       });
 
-      setCurrentStep(5);
+      setCurrentStep(6);
       console.log('🎉 Process complete!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
