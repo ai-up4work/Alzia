@@ -1,16 +1,14 @@
+// hooks/useVirtualTryOn.ts
 import { useState } from 'react';
 
 interface VirtualTryOnResult {
-  image: string;
+  image: string; // Proxied URL with token
+  combinedImage: string; // Base64 combined image
   model: string;
   isLowQuality: boolean;
   jobId: string;
-  cloudinaryUrls: {
-    garment: string;
-    person: string;
-    output: string;
-    combined: string;
-  };
+  expiresAt?: number;
+  expiresIn?: string;
 }
 
 interface UseVirtualTryOnReturn {
@@ -20,48 +18,6 @@ interface UseVirtualTryOnReturn {
   currentStep: number;
   generateTryOn: (garmentFile: File, personFile: File) => Promise<void>;
   reset: () => void;
-}
-
-// Helper to upload directly to Cloudinary from client
-async function uploadToCloudinary(
-  file: string | File,
-  folder: string,
-  publicId: string
-): Promise<string> {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error('Cloudinary not configured');
-  }
-
-  const formData = new FormData();
-  
-  if (typeof file === 'string') {
-    formData.append('file', file);
-  } else {
-    formData.append('file', file);
-  }
-  
-  formData.append('upload_preset', uploadPreset);
-  formData.append('folder', folder);
-  formData.append('public_id', publicId);
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: 'POST',
-      body: formData,
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Upload failed: ${error.error?.message || 'Unknown error'}`);
-  }
-
-  const data = await response.json();
-  return data.secure_url;
 }
 
 export function useVirtualTryOn(): UseVirtualTryOnReturn {
@@ -79,6 +35,8 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
     try {
       // Step 1: Generate virtual try-on
       setCurrentStep(1);
+      console.log('🎨 Generating virtual try-on...');
+      
       const formData = new FormData();
       formData.append('garment', garmentFile);
       formData.append('person', personFile);
@@ -94,89 +52,91 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         throw new Error(data.error || 'Failed to process virtual try-on');
       }
 
-      // Step 2: Generate combined image
+      console.log('✅ Virtual try-on generated');
+
+      // Step 2: Generate combined image (client-side)
       setCurrentStep(2);
+      console.log('🖼️ Creating combined preview...');
+      
       const combinedImageBase64 = await generateCombinedImage(
         garmentFile,
         personFile,
         data.image
       );
 
-      // Step 3: Try to upload to Cloudinary (optional - don't fail if it doesn't work)
+      console.log('✅ Combined preview created');
+
+      const jobId = data.jobId || `job-${Date.now()}`;
+
+      // Step 3: Generate one-time access token for the result
       setCurrentStep(3);
-      const jobId = `job-${Date.now()}`;
-      const folderPath = `Alzia/${jobId}`;
+      console.log('🔒 Generating secure access token...');
 
-      let cloudinaryUrls = {
-        garment: '',
-        person: '',
-        output: '',
-        combined: '',
-      };
-
+      let proxyUrl = data.image; // Fallback to base64
+      let expiresAt: number | undefined;
+      let expiresIn: string | undefined;
+      
       try {
-        // console.log('☁️ Uploading to Cloudinary...');
+        const tokenResponse = await fetch('/api/tryon-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            imageUrl: data.image,
+            expiresInMinutes: 10 // Token expires in 10 minutes
+          }),
+        });
 
-        const [garmentUrl, personUrl, outputUrl, combinedUrl] = await Promise.all([
-          uploadToCloudinary(garmentFile, folderPath, 'garment'),
-          uploadToCloudinary(personFile, folderPath, 'person'),
-          uploadToCloudinary(data.image, folderPath, 'output'),
-          uploadToCloudinary(combinedImageBase64, folderPath, 'combined'),
-        ]);
-
-        cloudinaryUrls = {
-          garment: garmentUrl,
-          person: personUrl,
-          output: outputUrl,
-          combined: combinedUrl,
-        };
-
-        // console.log('✅ Images uploaded to Cloudinary');
-
-        // Step 4: Save metadata to Supabase (only if upload succeeded)
-        setCurrentStep(4);
-        try {
-          // console.log('💾 Saving metadata...');
-          
-          const metadataResponse = await fetch('/api/save-tryon-metadata', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jobId,
-              cloudinaryUrls,
-              model: data.model,
-              isLowQuality: data.isLowQuality || false,
-            }),
-          });
-
-          // if (metadataResponse.ok) {
-          //   console.log('✅ Metadata saved');
-          // } else {
-          //   console.warn('⚠️ Metadata save failed');
-          // }
-        } catch (metadataError) {
-          console.warn('⚠️ Metadata error:', metadataError);
+        if (tokenResponse.ok) {
+          const tokenData = await tokenResponse.json();
+          proxyUrl = tokenData.url;
+          expiresAt = tokenData.expiresAt;
+          expiresIn = tokenData.expiresIn;
+          console.log('✅ Secure token generated');
+        } else {
+          console.warn('⚠️ Token generation failed, using direct image');
         }
-      } catch (uploadError) {
-        console.warn('⚠️ Cloudinary upload failed:', uploadError);
-        console.log('✅ Showing result anyway (image generated successfully)');
-        // Continue anyway - we have the image!
+      } catch (tokenError) {
+        console.warn('⚠️ Token generation error:', tokenError);
+      }
+
+      // Step 4: Optionally save metadata (without exposing URLs)
+      setCurrentStep(4);
+      try {
+        const metadataResponse = await fetch('/api/save-tryon-metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            jobId,
+            model: data.model,
+            isLowQuality: data.isLowQuality || false,
+            // Don't save the actual URLs for privacy
+          }),
+        });
+
+        if (metadataResponse.ok) {
+          console.log('✅ Metadata saved');
+        }
+      } catch (metadataError) {
+        console.warn('⚠️ Metadata save failed:', metadataError);
       }
 
       setResult({
-        image: cloudinaryUrls.output || data.image, // Use Cloudinary URL if available, else base64
+        image: proxyUrl, // Proxied URL with token or base64
+        combinedImage: combinedImageBase64,
         model: data.model,
         isLowQuality: data.isLowQuality || false,
         jobId,
-        cloudinaryUrls: cloudinaryUrls.output ? cloudinaryUrls : undefined as any, // Only include if upload succeeded
+        expiresAt,
+        expiresIn,
       });
 
       setCurrentStep(5);
+      console.log('🎉 Process complete!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Virtual try-on error:', err);
+      console.error('❌ Virtual try-on error:', err);
     } finally {
       setLoading(false);
     }

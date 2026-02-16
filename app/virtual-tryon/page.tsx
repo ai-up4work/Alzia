@@ -822,9 +822,11 @@ export default function VirtualTryOn() {
                     <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
                       <Download className="w-8 h-8 text-green-600" />
                     </div>
-                    <h4 className="font-medium text-gray-900 mb-2">3. Download Result</h4>
-                    <p className="text-sm text-gray-600">
-                      View and download your result. Images are processed securely and not stored.
+                    <p className="text-sm font-medium text-amber-900">
+                      Link expires in {result?.expiresIn ? formatTime(result.expiresIn) : 'a few minutes'}
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Download your result now. The secure link will expire and the image will be automatically deleted for your privacy.
                     </p>
                   </div>
                 </div>
