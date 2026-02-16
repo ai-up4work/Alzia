@@ -8,7 +8,7 @@ const tempTokens = new Map<string, {
   expiresAt: number; 
   used: boolean;
   downloads: number;
-}>();
+}>();';;;'
 
 // Cleanup expired tokens every 5 minutes
 if (typeof setInterval !== 'undefined') {

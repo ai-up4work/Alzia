@@ -11,10 +11,11 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const jobId = formData.get('jobId') as string;
 
-    if (!file) {
+    if (!file || !jobId) {
       return NextResponse.json(
-        { error: 'Combined image file is required' },
+        { error: 'Combined image file and jobId are required' },
         { status: 400 }
       );
     }
@@ -24,13 +25,13 @@ export async function POST(request: NextRequest) {
     // Convert File to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload combined image to Cloudinary
+    // Upload combined image to Cloudinary with jobId folder structure
     const upload = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
-          folder: 'virtual-tryon/combined',
+          folder: `Alzia/${jobId}`,
+          public_id: 'combined',
           resource_type: 'image',
-          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
         },
         (error, result) => {
           if (error) {

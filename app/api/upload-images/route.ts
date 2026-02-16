@@ -12,10 +12,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const garmentFile = formData.get('garment') as File;
     const personFile = formData.get('person') as File;
+    const jobId = formData.get('jobId') as string;
 
-    if (!garmentFile || !personFile) {
+    if (!garmentFile || !personFile || !jobId) {
       return NextResponse.json(
-        { error: 'Both garment and person images are required' },
+        { error: 'Garment, person images and jobId are required' },
         { status: 400 }
       );
     }
@@ -26,13 +27,13 @@ export async function POST(request: NextRequest) {
     const garmentBuffer = Buffer.from(await garmentFile.arrayBuffer());
     const personBuffer = Buffer.from(await personFile.arrayBuffer());
 
-    // Upload garment to Cloudinary
+    // Upload garment to Cloudinary with jobId folder structure
     const garmentUpload = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
-          folder: 'virtual-tryon/garments',
+          folder: `Alzia/${jobId}`,
+          public_id: 'garment',
           resource_type: 'image',
-          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
         },
         (error, result) => {
           if (error) {
@@ -47,13 +48,13 @@ export async function POST(request: NextRequest) {
       uploadStream.end(garmentBuffer);
     });
 
-    // Upload person to Cloudinary
+    // Upload person to Cloudinary with jobId folder structure
     const personUpload = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         { 
-          folder: 'virtual-tryon/persons',
+          folder: `Alzia/${jobId}`,
+          public_id: 'person',
           resource_type: 'image',
-          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
         },
         (error, result) => {
           if (error) {
