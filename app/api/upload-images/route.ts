@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
@@ -20,6 +20,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('📤 Uploading garment and person images to Cloudinary...');
+
     // Convert File to Buffer
     const garmentBuffer = Buffer.from(await garmentFile.arrayBuffer());
     const personBuffer = Buffer.from(await personFile.arrayBuffer());
@@ -30,10 +32,16 @@ export async function POST(request: NextRequest) {
         { 
           folder: 'virtual-tryon/garments',
           resource_type: 'image',
+          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error('❌ Garment upload error:', error);
+            reject(error);
+          } else {
+            console.log('✅ Garment uploaded:', result?.secure_url);
+            resolve(result);
+          }
         }
       );
       uploadStream.end(garmentBuffer);
@@ -45,23 +53,27 @@ export async function POST(request: NextRequest) {
         { 
           folder: 'virtual-tryon/persons',
           resource_type: 'image',
+          upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
         },
         (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
+          if (error) {
+            console.error('❌ Person upload error:', error);
+            reject(error);
+          } else {
+            console.log('✅ Person uploaded:', result?.secure_url);
+            resolve(result);
+          }
         }
       );
       uploadStream.end(personBuffer);
     });
-
-    console.log('✅ Images uploaded to Cloudinary');
 
     return NextResponse.json({
       garmentUrl: (garmentUpload as any).secure_url,
       personUrl: (personUpload as any).secure_url,
     });
   } catch (error) {
-    console.error('❌ Upload error:', error);
+    console.error('❌ Upload images error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to upload images',
