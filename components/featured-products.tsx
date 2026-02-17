@@ -295,7 +295,7 @@ export function FeaturedProducts() {
       const primaryImage = product.images.find(img => img.is_primary)
       return primaryImage?.image_url || product.images[0].image_url
     }
-    return '/placeholder.svg'
+    return '/placeholder.png'
   }
 
   const handleAddToCart = (e: React.MouseEvent, product: ProductWithRelations) => {
