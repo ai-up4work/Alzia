@@ -424,7 +424,7 @@ export default function NewArrivalsPage() {
 
           {/* Products Grid */}
           <div className="mb-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-4 gap-4 lg:gap-6">
               {filteredProducts.map((product) => {
                 const daysOld = getDaysOld(product.created_at);
                 const isAddingThisProduct = addingToCart === product.id;
