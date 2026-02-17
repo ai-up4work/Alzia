@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Images } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
 // ─────────────────────────────────────────────
@@ -61,7 +61,6 @@ export function PreviousRendersCarousel() {
   const next = useCallback(() => goTo(current + 1), [current, goTo]);
   const prev = useCallback(() => goTo(current - 1), [current, goTo]);
 
-  // Autoplay
   useEffect(() => {
     if (isPaused) return;
     autoplayRef.current = setInterval(next, 3000);
@@ -72,40 +71,47 @@ export function PreviousRendersCarousel() {
 
   return (
     <section className="max-w-5xl mx-auto mb-14 px-2">
-      {/* Section heading */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <Images className="w-5 h-5 text-purple-500" />
+
+      {/* ── Section heading ── */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {/* Icon pill */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 shadow-md shadow-purple-200">
+            <Sparkles className="w-4 h-4 text-white" />
+          </div>
+
           <h2 className="font-serif text-xl font-light text-gray-900 tracking-wide">
             Demo Try-Ons
           </h2>
-          <span className="ml-2 text-xs font-medium text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2.5 py-0.5">
-            {total} results
+
+          {/* Count badge */}
+          <span className="text-[11px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2.5 py-0.5 tracking-wide">
+            {total} looks
           </span>
         </div>
 
         {/* Desktop nav arrows */}
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-1.5">
           <button
             onClick={prev}
-            className="w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center shadow-sm transition-colors"
+            className="group w-9 h-9 rounded-xl border border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50 flex items-center justify-center shadow-sm transition-all duration-200"
             aria-label="Previous result"
           >
-            <ChevronLeft className="w-4 h-4 text-gray-700" />
+            <ChevronLeft className="w-4 h-4 text-gray-500 group-hover:text-purple-600 transition-colors" />
           </button>
           <button
             onClick={next}
-            className="w-9 h-9 rounded-full border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center shadow-sm transition-colors"
+            className="group w-9 h-9 rounded-xl border border-gray-200 bg-white hover:border-purple-200 hover:bg-purple-50 flex items-center justify-center shadow-sm transition-all duration-200"
             aria-label="Next result"
           >
-            <ChevronRight className="w-4 h-4 text-gray-700" />
+            <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-purple-600 transition-colors" />
           </button>
         </div>
       </div>
 
-      {/* Carousel track */}
+      {/* ── Carousel track ── */}
       <div
-        className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-lg border border-gray-200 cursor-pointer"
+        className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-xl shadow-gray-200/80 border border-gray-100 cursor-pointer ring-1 ring-black/5"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -117,34 +123,35 @@ export function PreviousRendersCarousel() {
               className={`absolute inset-0 transition-opacity duration-500 ${
                 idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'
               }`}
+            >
+              <Image
+                src={item.url}
+                alt={item.label}
+                width={800}
+                height={500}
+                className="w-full h-full object-contain"
+                loading="lazy"
+              />
 
->
-            <Image
-              src={item.url}
-              alt={item.label}
-              width={800}
-              height={500} // 16:9 ratio
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
+              {/* Multi-stop gradient for legible labels */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
 
+              {/* ── Bottom label bar ── */}
+              <div className="absolute bottom-0 left-0 right-0 z-20 px-5 py-4 flex items-end justify-between gap-3">
+                <div>
+                  {/* Tag chip */}
+                  <span className="inline-block mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/70 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-0.5">
+                    {item.tag}
+                  </span>
+                  <p className="text-white font-serif text-lg font-light leading-tight drop-shadow">
+                    {item.label}
+                  </p>
+                </div>
 
-              {/* Bottom gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-              {/* Labels */}
-              <div className="absolute bottom-4 left-4 right-16 z-20">
-                {/* <span className="inline-block text-[10px] font-semibold uppercase tracking-widest text-white/80 bg-white/20 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-0.5 mb-1.5">
-                  {item.tag}
-                </span> */}
-                <p className="text-white font-serif text-lg font-light leading-tight drop-shadow">
-                  {item.label}
-                </p>
-              </div>
-
-              {/* Slide counter badge */}
-              <div className="absolute top-3 right-3 z-20 text-xs font-medium text-white/80 bg-black/30 backdrop-blur-sm rounded-full px-2.5 py-1">
-                {idx + 1} / {total}
+                {/* Slide counter pill — bottom-right */}
+                <span className="shrink-0 text-[11px] font-medium text-white/75 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-2.5 py-1 leading-none">
+                  {idx + 1}&thinsp;/&thinsp;{total}
+                </span>
               </div>
             </div>
           ))}
@@ -153,23 +160,24 @@ export function PreviousRendersCarousel() {
         {/* Mobile touch nav */}
         <button
           onClick={prev}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-colors sm:hidden"
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/90 hover:bg-white rounded-xl shadow-md transition-all sm:hidden border border-white/60"
           aria-label="Previous"
         >
-          <ChevronLeft className="w-4 h-4 text-gray-800" />
+          <ChevronLeft className="w-4 h-4 text-gray-700" />
         </button>
         <button
           onClick={next}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-colors sm:hidden"
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-30 p-2 bg-white/90 hover:bg-white rounded-xl shadow-md transition-all sm:hidden border border-white/60"
           aria-label="Next"
         >
-          <ChevronRight className="w-4 h-4 text-gray-800" />
+          <ChevronRight className="w-4 h-4 text-gray-700" />
         </button>
       </div>
 
-      {/* Dot indicators + progress bar */}
-      <div className="flex flex-col items-center gap-3 mt-4">
-        <div className="flex items-center gap-2">
+      {/* ── Dots + progress ── */}
+      <div className="flex flex-col items-center gap-3 mt-5">
+        {/* Dot indicators */}
+        <div className="flex items-center gap-1.5">
           {previousRenders.map((_, idx) => (
             <button
               key={idx}
@@ -177,8 +185,8 @@ export function PreviousRendersCarousel() {
               aria-label={`Go to slide ${idx + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 idx === current
-                  ? 'w-7 h-2 bg-purple-500'
-                  : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+                  ? 'w-6 h-2 bg-gradient-to-r from-purple-500 to-violet-500 shadow-sm shadow-purple-300'
+                  : 'w-2 h-2 bg-gray-200 hover:bg-purple-300'
               }`}
             />
           ))}
@@ -186,19 +194,17 @@ export function PreviousRendersCarousel() {
 
         {/* Autoplay progress bar */}
         {!isPaused && (
-          <div className="w-32 h-0.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-28 h-px bg-gray-200 rounded-full overflow-hidden">
             <div
-              key={current} // reset animation on slide change
-              className="h-full bg-purple-400 rounded-full"
-              style={{
-                animation: 'progressBar 4s linear forwards',
-              }}
+              key={current}
+              className="h-full bg-gradient-to-r from-purple-400 to-violet-500 rounded-full"
+              style={{ animation: 'progressBar 3s linear forwards' }}
             />
           </div>
         )}
       </div>
 
-      {/* Inline keyframe for progress bar */}
+      {/* Inline keyframe */}
       <style jsx>{`
         @keyframes progressBar {
           from { width: 0%; }
