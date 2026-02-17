@@ -12,6 +12,7 @@ import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { toast } from "sonner"
 import type { Product } from "@/lib/types"
+import Image from "next/image"
 
 interface ProductDetailClientProps {
   product: Product
@@ -136,7 +137,14 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             {/* Images */}
             <div className="space-y-4">
               <div className="aspect-square rounded-3xl overflow-hidden bg-muted">
-                <img src={mainImage || "/placeholder.svg"} alt={product.name} className="w-full h-full object-cover" />
+                <div className="relative w-full aspect-square">
+                  <Image
+                    src={mainImage || "/placeholder.svg"}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>              
               </div>
               {product.images && product.images.length > 1 && (
                 <div className="flex gap-3">

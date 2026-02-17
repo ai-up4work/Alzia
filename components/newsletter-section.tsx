@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowRight } from "lucide-react"
 
+import Image from "next/image"
+
 export function NewsletterSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [email, setEmail] = useState("")
@@ -41,8 +43,14 @@ export function NewsletterSection() {
       <div className="relative max-w-7xl mx-auto rounded-[32px] lg:rounded-[48px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img src="/elegant-parisian-beauty-aesthetic-rose-petals-soft.jpg" alt="Elegant beauty aesthetic" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-foreground/60" />
+          <Image
+            src="/elegant-parisian-beauty-aesthetic-rose-petals-soft.jpg"
+            alt="Elegant beauty aesthetic"
+            fill
+            className="object-cover"
+            priority
+          />          
+        <div className="absolute inset-0 bg-foreground/60" />
         </div>
 
         {/* Content */}

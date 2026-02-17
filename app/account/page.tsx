@@ -5,6 +5,8 @@ import { Footer } from "@/components/footer"
 import Link from "next/link"
 import { Package, Heart, MapPin, User, CreditCard, LogOut, Sparkles, ArrowRight, Wand2 } from "lucide-react"
 
+import Image from "next/image"
+
 export default async function AccountPage() {
   const supabase = await createClient()
   const {
@@ -118,7 +120,8 @@ export default async function AccountPage() {
                     className="w-8 h-8 rounded-full border-2 border-white overflow-hidden shadow-sm"
                     style={{ zIndex: 3 - i }}
                   >
-                    <img src={src} alt="" className="w-full h-full object-cover object-top" />
+                    <Image src={src} alt="" className="w-full h-full object-cover object-top" 
+                    width={32} height={32} />
                   </div>
                 ))}
               </div>

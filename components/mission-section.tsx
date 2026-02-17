@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 
+import Image from "next/image"
+
 export function MissionSection() {
   const sectionRef = useRef<HTMLElement>(null)
 
@@ -30,7 +32,7 @@ export function MissionSection() {
       <div className="relative max-w-7xl mx-auto rounded-[48px] overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <img src="/images/mission-background.png" alt="Nature background" className="w-full h-full object-cover" />
+          <Image src="/images/mission-background.png" alt="Nature background" className="w-full h-full object-cover" />
           {/* Dark overlay for text readability */}
           <div className="absolute inset-0 bg-foreground/50" />
 

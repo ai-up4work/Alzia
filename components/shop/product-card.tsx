@@ -11,6 +11,8 @@ import { useWishlist } from "@/lib/wishlist-context"
 import { toast } from "sonner"
 import type { Product } from "@/lib/types"
 
+import Image from "next/image"
+
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-LK", {
     style: "currency",
@@ -87,10 +89,11 @@ export function ProductCard({
     return (
       <div className="bg-card rounded-2xl border border-border/50 overflow-hidden flex hover:shadow-lg transition-shadow duration-300">
         <Link href={`/product/${product.slug}`} className="w-48 aspect-square flex-shrink-0 relative overflow-hidden bg-muted">
-          <img 
+          <Image 
             src={image || "/placeholder.svg"} 
             alt={product.name} 
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
+            fill
           />
           {product.is_featured && (
             <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-medium px-2.5 py-1 rounded-full">
