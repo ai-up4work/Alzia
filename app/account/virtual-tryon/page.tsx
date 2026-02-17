@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { useVirtualTryOn } from '@/hooks/useVirtualTryOn';
 import { Header } from "@/components/header";
 import { VirtualTryOnButtons } from "@/components/VirtualTryOnButtons";
+import { PreviousRendersCarousel } from "@/components/PreviousRendersCarousel";
 
 
 // Example images for the carousel
@@ -384,21 +385,8 @@ export default function VirtualTryOn() {
               See how our garments look on you before you buy. Upload a photo and a garment image to get started.
             </p>
             
-            {/* Credits Display */}
-            {!creditsLoading && credits !== null && (
-              <div className="mt-6 inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-3 rounded-full border border-blue-200">
-                <CreditCard className="w-5 h-5 text-blue-600" />
-                <div className="text-left">
-                  <p className="text-xs text-blue-600 font-medium">Available Credits</p>
-                  <p className="text-lg font-bold text-blue-900">{credits}</p>
-                </div>
-                {credits === 0 && (
-                  <Button size="sm" className="ml-2">
-                    Buy More Credits
-                  </Button>
-                )}
-              </div>
-            )}
+            {/* ✅ Previous Renders */}
+            <PreviousRendersCarousel />
             
             {creditsError && (
               <div className="mt-6 inline-flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full border border-red-200">
@@ -406,21 +394,6 @@ export default function VirtualTryOn() {
                 <span className="text-sm text-red-700">{creditsError}</span>
               </div>
             )}
-          </div>
-
-          {/* Processing Time Info Banner */}
-          <div className="max-w-3xl mx-auto mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900 mb-1">
-                  Average Processing Time: 2-3 minutes • Cost: 1 credit per try-on
-                </p>
-                <p className="text-xs text-blue-700">
-                  Our AI technology analyzes both images and generates a realistic try-on result. Your images are processed securely and not stored on our servers.
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* No Credits Warning */}
