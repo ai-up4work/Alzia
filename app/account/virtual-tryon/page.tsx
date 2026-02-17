@@ -787,19 +787,7 @@ export default function VirtualTryOn() {
                     comparisonImageBase64={result.combinedImage}  
                   />
 
-                  <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium text-amber-900 mb-1">
-                          Important: Download Your Result
-                        </p>
-                        <p className="text-xs text-amber-700">
-                          We don't store your images for privacy. Please download your result before leaving this page or starting a new try-on.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+          
                 </div>
               </div>
             )}
