@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/footer';
 import { Progress } from '@/components/ui/progress';
 import { useVirtualTryOn } from '@/hooks/useVirtualTryOn';
-import { Header } from "@/components/header"
+import { Header } from "@/components/header";
+import { VirtualTryOnButtons } from "@/components/VirtualTryOnButtons";
 
 
 // Example images for the carousel
@@ -804,35 +805,14 @@ export default function VirtualTryOn() {
                     />
                   </div>
 
-                  <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
-                    <Button
-                      onClick={handleDownload}
-                      size="lg"
-                      className="rounded-full px-8"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download Result
-                    </Button>
-                    {result.combinedImage && (
-                      <Button
-                        onClick={handleDownloadCombined}
-                        size="lg"
-                        variant="outline"
-                        className="rounded-full px-8"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download Comparison
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={resetAll}
-                      className="rounded-full px-8"
-                    >
-                      Try Another
-                    </Button>
-                  </div>
+                  <VirtualTryOnButtons
+                    onDownloadResult={handleDownload}
+                    onDownloadComparison={handleDownloadCombined}
+                    hasComparison={!!result.combinedImage}
+                    onReset={resetAll}
+                    resultImageBase64={result.imageBase64}       
+                    comparisonImageBase64={result.combinedImage}  
+                  />
 
                   <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <div className="flex items-start gap-3">
