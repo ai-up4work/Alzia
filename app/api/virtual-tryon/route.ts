@@ -1,5 +1,5 @@
 // app/api/virtual-tryon/route.ts
-// WeShopAI first (preferred), fallback to IDM-VTON if null
+// WeShopAI only - IDM-VTON disabled (inaccurate results)
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@gradio/client';
 
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
 
     let result;
     let modelUsed = '';
-    let isLowQuality = false;
 
     for await (const message of job) {
       console.log('Message type:', message.type);
@@ -54,45 +53,50 @@ export async function POST(request: NextRequest) {
           console.log('✅ WeShopAI Success!');
           break;
         } else {
-          console.log('⚠️ WeShopAI returned null, switching to IDM-VTON...');
+          console.log('⚠️ WeShopAI returned null');
         }
         break;
       }
     }
 
-    // Fallback to IDM-VTON if WeShopAI returned null
-    if (!result || !result.data || result.data[0] === null) {
-      console.log('🔄 Using IDM-VTON as fallback...');
-      isLowQuality = true;
-      
-      const idmClient = await Client.connect("yisol/IDM-VTON");
-      
-      const idmJob = idmClient.submit("/tryon", [
-        { background: personBlob },
-        garmentBlob,
-        "A garment",
-        true,
-        false,
-        30,
-        42,
-      ]);
+    // ❌ IDM-VTON fallback disabled — results were too inaccurate
+    // if (!result || !result.data || result.data[0] === null) {
+    //   console.log('🔄 Using IDM-VTON as fallback...');
+    //   isLowQuality = true;
+    //   
+    //   const idmClient = await Client.connect("yisol/IDM-VTON");
+    //   
+    //   const idmJob = idmClient.submit("/tryon", [
+    //     { background: personBlob },
+    //     garmentBlob,
+    //     "A garment",
+    //     true,
+    //     false,
+    //     30,
+    //     42,
+    //   ]);
+    //
+    //   for await (const message of idmJob) {
+    //     if (message.type === 'status') {
+    //       console.log('IDM-VTON Status:', message.stage || 'processing');
+    //     }
+    //     if (message.type === 'data') {
+    //       result = message;
+    //       modelUsed = 'IDM-VTON';
+    //       console.log('✅ IDM-VTON Success!');
+    //       break;
+    //     }
+    //   }
+    // }
 
-      for await (const message of idmJob) {
-        if (message.type === 'status') {
-          console.log('IDM-VTON Status:', message.stage || 'processing');
-        }
-        
-        if (message.type === 'data') {
-          result = message;
-          modelUsed = 'IDM-VTON';
-          console.log('✅ IDM-VTON Success!');
-          break;
-        }
-      }
-    }
-
+    // If WeShopAI returned null or failed — model is busy
     if (!result || !result.data || result.data[0] === null) {
-      throw new Error('Both WeShopAI and IDM-VTON failed to generate result');
+      return NextResponse.json(
+        { 
+          error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again 🙏',
+        },
+        { status: 503 }
+      );
     }
 
     console.log(`✨ Result from: ${modelUsed}`);
@@ -139,7 +143,7 @@ export async function POST(request: NextRequest) {
       success: true,
       image: dataUrl,
       model: modelUsed,
-      isLowQuality: isLowQuality,
+      isLowQuality: false,
     });
 
   } catch (error) {
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: 'Failed to process virtual try-on',
+        error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again 🙏',
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }

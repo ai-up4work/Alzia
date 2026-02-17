@@ -86,10 +86,13 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       const data = await response.json();
 
+      // AFTER
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process virtual try-on');
+        throw new Error(
+          'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again. 🙏'
+        );
       }
-
+      
       console.log('✅ Virtual try-on generated');
 
       // Step 2: Deduct credit
