@@ -89,7 +89,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
       // AFTER
       if (!response.ok) {
         throw new Error(
-          'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again. 🙏'
+          'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again.'
         );
       }
       

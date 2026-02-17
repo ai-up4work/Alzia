@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     if (!result || !result.data || result.data[0] === null) {
       return NextResponse.json(
         { 
-          error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again 🙏',
+          error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again',
         },
         { status: 503 }
       );
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again 🙏',
+        error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again',
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
