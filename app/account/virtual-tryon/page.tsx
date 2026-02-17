@@ -13,54 +13,54 @@ import { Header } from "@/components/header"
 const exampleGarments = [
   {
     id: 1,
-    url: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400',
-    title: 'Floral Dress',
-    category: 'Dress'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771167102/Alzia/job-1771167097318/person.webp',
+    title: 'Brown Suit Dress',
+    category: 'Fitted Dress'
   },
   {
     id: 2,
-    url: 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400',
-    title: 'Casual T-Shirt',
-    category: 'Top'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771166285/Alzia/job-1771166282423/person.jpg',
+    title: 'Yello Saree',
+    category: 'Saree'
   },
   {
     id: 3,
-    url: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400',
-    title: 'Denim Jacket',
-    category: 'Jacket'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771171270/Alzia/job-1771171269335/garment.jpg',
+    title: 'Pink Abaya',
+    category: 'Abaya'
   },
   {
     id: 4,
-    url: 'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?w=400',
-    title: 'Summer Blouse',
-    category: 'Top'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771221259/Alzia/job-1771221255792/garment.jpg',
+    title: 'Kids Saree',
+    category: 'Saree'
   },
 ];
 
 const examplePersons = [
   {
     id: 1,
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-    title: 'Professional Shot',
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771171272/Alzia/job-1771171269335/person.jpg',
+    title: 'Studio Portrait',
     tip: 'Full body, facing forward'
   },
   {
     id: 2,
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-    title: 'Casual Portrait',
-    tip: 'Upper body, good lighting'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771167256/Alzia/job-1771167252248/garment.jpg',
+    title: 'Actress Photo',
+    tip: 'Well-lit, clear pose'
   },
   {
     id: 3,
-    url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
-    title: 'Clear Background',
-    tip: 'Plain background works best'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771217591/Alzia/job-1771217590283/person.jpg',
+    title: 'Emma Watson Red Carpet',
+    tip: 'High-quality, full body'
   },
   {
     id: 4,
-    url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-    title: 'Natural Light',
-    tip: 'Well-lit, natural pose'
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771219178/Alzia/job-1771219175138/person.jpg',
+    title: 'Abaya Model',
+    tip: 'Good lighting, clear pose'
   },
 ];
 
