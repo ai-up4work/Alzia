@@ -13,7 +13,7 @@ import { Header } from "@/components/header"
 const exampleGarments = [
   {
     id: 1,
-    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771167102/Alzia/job-1771167097318/person.webp',
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771171272/Alzia/job-1771171269335/person.jpg',
     title: 'Brown Suit Dress',
     category: 'Fitted Dress'
   },
@@ -40,7 +40,7 @@ const exampleGarments = [
 const examplePersons = [
   {
     id: 1,
-    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771171272/Alzia/job-1771171269335/person.jpg',
+    url: 'https://res.cloudinary.com/diwynktss/image/upload/v1771167102/Alzia/job-1771167097318/person.webp',
     title: 'Studio Portrait',
     tip: 'Full body, facing forward'
   },
