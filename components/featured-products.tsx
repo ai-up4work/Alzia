@@ -494,9 +494,9 @@ export function FeaturedProducts() {
                   </Link>
 
                   <div className="p-4 lg:p-5">
-                    {product.category && (
+                    {/* {product.category && (
                       <p className="text-xs text-muted-foreground mb-1">{product.category.name}</p>
-                    )}
+                    )} */}
                     <Link href={`/product/${product.slug}`}>
                       <h3 className="font-serif text-base lg:text-lg text-foreground font-medium mb-1 hover:text-primary transition-colors line-clamp-1">
                         {product.name}
