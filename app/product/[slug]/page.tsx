@@ -23,6 +23,8 @@ async function getProduct(slug: string) {
     .eq("status", "published")
     .single()
 
+    // console.log("Fetched product for slug", slug, product.images[0].image_url)
+
   return product
 }
 
@@ -31,17 +33,18 @@ async function getRelatedProducts(categoryId: string, excludeId: string) {
 
   const { data: products } = await supabase
     .from("products")
-    .select(
-      `
+    .select(`
       *,
       category:categories(*),
-      brand:brands(*)
-    `,
-    )
+      brand:brands(*),
+      images:product_images(*)   // ← add this
+    `)
     .eq("category_id", categoryId)
     .eq("status", "published")
     .neq("id", excludeId)
     .limit(4)
+
+    console.log("Fetched related products for category", categoryId, products)
 
   return products || []
 }

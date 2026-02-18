@@ -48,6 +48,8 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   
   const inWishlist = isInWishlist(product.id)
 
+  // console.log("ProductDetailClient received product",  product?.images[0].image_url)
+
   const mainImage =
     product.images?.[selectedImage]?.image_url || productImages[product.slug] || "/luxury-cosmetic-product.jpg"
 
@@ -420,6 +422,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                         <img
                           src={
                             productImages[relatedProduct.slug] ||
+                            relatedProduct.images[0]?.image_url ||
                             "/placeholder.svg?height=400&width=400&query=luxury cosmetic" ||
                             "/placeholder.svg"
                           }
