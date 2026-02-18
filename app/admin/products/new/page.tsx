@@ -136,8 +136,11 @@ export default async function NewProductPage() {
               </CardContent>
             </Card>
 
-            {/* Images — client component */}
-            <ProductImageUploader />
+            {/* Images — no productId yet; uploader handles the pending-upload state */}
+            <ProductImageUploader
+              productId={null}
+              initialImages={[]}
+            />
 
           </div>
 
@@ -158,7 +161,7 @@ export default async function NewProductPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="published">Published</SelectItem>
                       <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>

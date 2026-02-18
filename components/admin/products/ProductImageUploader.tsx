@@ -40,20 +40,48 @@ function uid() {
   return Math.random().toString(36).slice(2)
 }
 
-const PLACEHOLDER_IMAGES = [
-  "https://placehold.co/400x400/e2e8f0/94a3b8?text=Product",
-  "https://placehold.co/400x400/dbeafe/60a5fa?text=Product",
-  "https://placehold.co/400x400/dcfce7/4ade80?text=Product",
-  "https://placehold.co/400x400/fef9c3/facc15?text=Product",
-  "https://placehold.co/400x400/fce7f3/f472b6?text=Product",
-]
-let placeholderIndex = 0
-function nextPlaceholder() {
-  return PLACEHOLDER_IMAGES[placeholderIndex++ % PLACEHOLDER_IMAGES.length]
+const CLOUD_NAME    = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+
+async function uploadToCloudinary(
+  file: File,
+  productId: string,
+  onProgress: (pct: number) => void
+): Promise<string> {
+  const fd = new FormData()
+  fd.append("file", file)
+  fd.append("upload_preset", UPLOAD_PRESET)
+  fd.append("folder", `Alzia/products/${productId}`)
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`)
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 95))
+    }
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        resolve(JSON.parse(xhr.responseText).secure_url)
+      } else {
+        reject(new Error(JSON.parse(xhr.responseText)?.error?.message ?? "Upload failed"))
+      }
+    }
+
+    xhr.onerror = () => reject(new Error("Network error"))
+    xhr.send(fd)
+  })
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function ProductImageUploader({ initialImages = [] }: { initialImages?: InitialImage[] }) {
+export function ProductImageUploader({
+  initialImages = [],
+  productId,
+}: {
+  initialImages?: InitialImage[]
+  productId?: string
+}) {
   const [images, setImages] = useState<ImageEntry[]>(
     initialImages.map((img) => ({
       id:            img.id,
@@ -73,53 +101,55 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
   const [dragIndex, setDragIndex]     = useState<number | null>(null)
   const fileInputRef                  = useRef<HTMLInputElement>(null)
 
-  // ── Mock upload simulation ─────────────────────────────────────────────────
-  const simulateUpload = useCallback((filename: string) => {
-    const id          = uid()
-    const placeholder = nextPlaceholder()
+  // ── Cloudinary upload ──────────────────────────────────────────────────────
+  const handleUpload = useCallback(async (file: File) => {
+    const id           = uid()
+    const localPreview = URL.createObjectURL(file)
 
     setImages((prev) => [
       ...prev,
       {
         id,
-        url:           placeholder,
-        alt_text:      filename.replace(/\.[^.]+$/, ""),
+        url:           localPreview,
+        alt_text:      file.name.replace(/\.[^.]+$/, ""),
         display_order: prev.length,
         is_primary:    prev.length === 0,
         previewError:  false,
         status:        "uploading",
         progress:      0,
-        filename,
+        filename:      file.name,
       },
     ])
 
-    const totalMs  = 1200 + Math.random() * 800
-    const interval = 80
-    const steps    = totalMs / interval
-    let   tick     = 0
-
-    const timer = setInterval(() => {
-      tick++
-      const progress = Math.min(Math.round((tick / steps) * 100), 99)
-      setImages((prev) =>
-        prev.map((img) => img.id === id ? { ...img, progress } : img)
-      )
-      if (tick >= steps) {
-        clearInterval(timer)
+    try {
+      const folder = productId ?? "new"
+      const url    = await uploadToCloudinary(file, folder, (pct) => {
         setImages((prev) =>
-          prev.map((img) =>
-            img.id === id ? { ...img, status: "done", progress: 100 } : img
-          )
+          prev.map((img) => img.id === id ? { ...img, progress: pct } : img)
         )
-      }
-    }, interval)
-  }, [])
+      })
+
+      URL.revokeObjectURL(localPreview)
+      setImages((prev) =>
+        prev.map((img) =>
+          img.id === id ? { ...img, url, status: "done", progress: 100 } : img
+        )
+      )
+    } catch (err) {
+      console.error("Cloudinary upload error:", err)
+      setImages((prev) =>
+        prev.map((img) =>
+          img.id === id ? { ...img, status: "error", progress: 0 } : img
+        )
+      )
+    }
+  }, [productId])
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith("image/")) return
-      simulateUpload(file.name)
+      handleUpload(file)
     })
   }
 
@@ -172,6 +202,11 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
     )
   }
 
+  const retryUpload = (id: string) => {
+    // Find original file — can't retry without it, so just remove and re-add
+    removeImage(id)
+  }
+
   // ── Drag-to-reorder ────────────────────────────────────────────────────────
   const onDragStart = (index: number) => setDragIndex(index)
   const onDragEnter = (index: number) => {
@@ -202,6 +237,7 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
   )
 
   const uploadingCount = images.filter((img) => img.status === "uploading").length
+  const errorCount     = images.filter((img) => img.status === "error").length
 
   return (
     <Card>
@@ -213,6 +249,11 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
             <Badge variant="secondary" className="ml-1 gap-1">
               <Loader2 className="h-3 w-3 animate-spin" />
               Uploading {uploadingCount}…
+            </Badge>
+          )}
+          {errorCount > 0 && (
+            <Badge variant="destructive" className="ml-1">
+              {errorCount} failed
             </Badge>
           )}
         </CardTitle>
@@ -260,7 +301,7 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
           <Upload className="h-7 w-7 text-muted-foreground/50" />
           <div className="text-center">
             <p className="text-sm font-medium">Drop images here or click to browse</p>
-            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP — mock upload simulation</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP — uploads to Cloudinary</p>
           </div>
           <input
             ref={fileInputRef}
@@ -291,7 +332,8 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
                   onDragOver={(e) => e.preventDefault()}
                   className={`flex items-start gap-3 rounded-lg border bg-card p-3 transition-all ${
                     dragIndex === index ? "opacity-50 scale-[0.98]" : ""
-                  } ${img.is_primary && img.status === "done" ? "border-primary/40 bg-primary/5" : ""}`}
+                  } ${img.is_primary && img.status === "done" ? "border-primary/40 bg-primary/5" : ""}
+                  ${img.status === "error" ? "border-destructive/40 bg-destructive/5" : ""}`}
                 >
                   {/* Drag handle */}
                   <div className={`mt-3 ${img.status === "done" ? "cursor-grab text-muted-foreground/40 hover:text-muted-foreground" : "text-muted-foreground/20 cursor-not-allowed"}`}>
@@ -304,6 +346,10 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
                       <div className="flex h-full w-full flex-col items-center justify-center gap-1">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/50" />
                         <span className="text-[10px] text-muted-foreground">{img.progress}%</span>
+                      </div>
+                    ) : img.status === "error" ? (
+                      <div className="flex h-full w-full items-center justify-center bg-destructive/10">
+                        <AlertCircle className="h-5 w-5 text-destructive/60" />
                       </div>
                     ) : img.previewError ? (
                       <div className="flex h-full w-full items-center justify-center">
@@ -342,6 +388,11 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
                           Uploading…
                         </Badge>
                       )}
+                      {img.status === "error" && (
+                        <Badge variant="destructive" className="text-xs">
+                          Upload failed
+                        </Badge>
+                      )}
                       {img.status === "done" && img.is_primary && (
                         <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
                           Primary
@@ -361,19 +412,30 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
                       </div>
                     )}
 
-                    <Input
-                      value={img.alt_text}
-                      onChange={(e) => updateAlt(img.id, e.target.value)}
-                      placeholder="Alt text (for accessibility)"
-                      className="h-8 text-xs"
-                      disabled={img.status === "uploading"}
-                    />
+                    {img.status === "error" && (
+                      <p className="text-xs text-destructive">
+                        Failed to upload — remove and try again.
+                      </p>
+                    )}
+
+                    {img.status !== "error" && (
+                      <Input
+                        value={img.alt_text}
+                        onChange={(e) => updateAlt(img.id, e.target.value)}
+                        placeholder="Alt text (for accessibility)"
+                        className="h-8 text-xs"
+                        disabled={img.status === "uploading"}
+                      />
+                    )}
+
                     <p className="text-xs text-muted-foreground truncate">
                       {img.status === "uploading"
                         ? `📁 ${img.filename}`
-                        : img.url.startsWith("https://placehold.co")
-                          ? `✓ Mock upload — ${img.filename}`
-                          : img.url
+                        : img.status === "error"
+                          ? `❌ ${img.filename}`
+                          : img.url.includes("cloudinary.com")
+                            ? `☁️ ${img.filename}`
+                            : img.url
                       }
                     </p>
                   </div>
@@ -385,7 +447,7 @@ export function ProductImageUploader({ initialImages = [] }: { initialImages?: I
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7"
-                      disabled={img.status === "uploading"}
+                      disabled={img.status !== "done"}
                       onClick={() => setPrimary(img.id)}
                       title={img.is_primary ? "Primary image" : "Set as primary"}
                     >

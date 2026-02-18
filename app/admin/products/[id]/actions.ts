@@ -9,11 +9,16 @@ type PendingImage = {
   display_order: number
   is_primary: boolean
 }
-
 export async function updateProduct(id: string, formData: FormData) {
   const supabase = await createClient()
 
-  const { error: productError } = await supabase
+  // Debug — remove after fixing
+  console.log("Updating product:", id)
+  console.log("name:", formData.get("name"))
+  console.log("status:", formData.get("status"))
+  console.log("category_id:", formData.get("category_id"))
+
+  const { data, error: productError } = await supabase
     .from("products")
     .update({
       name:                formData.get("name")             as string,
@@ -31,6 +36,10 @@ export async function updateProduct(id: string, formData: FormData) {
       is_featured:         formData.get("is_featured") === "true",
     })
     .eq("id", id)
+    .select() // <-- ADD THIS to get back what was actually updated
+
+  console.log("Update result:", data, productError)
+
 
   if (productError) throw new Error(productError.message)
 

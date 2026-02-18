@@ -7,15 +7,24 @@ import Link from "next/link"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 
+// Sort product_images by display_order and return the first url, or null
+function getPrimaryImage(
+  images: { id: string; image_url: string; display_order: number }[]
+): string | null {
+  if (!images?.length) return null
+  return [...images].sort((a, b) => a.display_order - b.display_order)[0].image_url
+}
+
 export default async function AdminProductsPage() {
   const supabase = await createClient()
 
-  const { data: products } = await supabase
+  const { data: products, error } = await supabase
     .from("products")
     .select(`
       *,
-      categories (name),
-      brands (name)
+      categories(name),
+      brands(name),
+      product_images(id, image_url, display_order)
     `)
     .order("created_at", { ascending: false })
 
@@ -84,52 +93,71 @@ export default async function AdminProductsPage() {
               </thead>
               <tbody className="divide-y">
                 {products && products.length > 0 ? (
-                  products.map((product) => (
-                    <tr key={product.id} className="text-sm">
-                      <td className="py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-muted">
-                            <Image src={product.image || "/placeholder.png"} alt={product.name} fill className="object-cover" />
+                  products.map((product) => {
+                    const imgUrl = getPrimaryImage(product.product_images)
+                    return (
+                      <tr key={product.id} className="text-sm">
+                        <td className="py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-muted">
+                              {imgUrl ? (
+                                <Image
+                                  src={imgUrl}
+                                  alt={product.name}
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <Image
+                                  src="/placeholder.png"
+                                  alt={product.name}
+                                  fill
+                                  sizes="48px"
+                                  className="object-cover"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-muted-foreground">{product.brands?.name}</p>
+                            </div>
                           </div>
+                        </td>
+                        <td className="py-4 text-muted-foreground">{product.sku}</td>
+                        <td className="py-4">{product.categories?.name}</td>
+                        <td className="py-4">
                           <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-muted-foreground">{product.brands?.name}</p>
+                            <p className="font-medium">${product.retail_price?.toFixed(2)}</p>
+                            {product.wholesale_price && (
+                              <p className="text-xs text-muted-foreground">
+                                Wholesale: ${product.wholesale_price?.toFixed(2)}
+                              </p>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 text-muted-foreground">{product.sku}</td>
-                      <td className="py-4">{product.categories?.name}</td>
-                      <td className="py-4">
-                        <div>
-                          <p className="font-medium">${product.retail_price?.toFixed(2)}</p>
-                          {product.wholesale_price && (
-                            <p className="text-xs text-muted-foreground">
-                              Wholesale: ${product.wholesale_price?.toFixed(2)}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4">
-                        <span
-                          className={
-                            product.stock_quantity <= (product.low_stock_threshold || 10)
-                              ? "text-red-600 font-medium"
-                              : ""
-                          }
-                        >
-                          {product.stock_quantity}
-                        </span>
-                      </td>
-                      <td className="py-4">{getStatusBadge(product.status)}</td>
-                      <td className="py-4">
-                        <Link href={`/admin/products/${product.id}`}>
-                          <Button variant="ghost" size="sm">
-                            Edit
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="py-4">
+                          <span
+                            className={
+                              product.stock_quantity <= (product.low_stock_threshold || 10)
+                                ? "text-red-600 font-medium"
+                                : ""
+                            }
+                          >
+                            {product.stock_quantity}
+                          </span>
+                        </td>
+                        <td className="py-4">{getStatusBadge(product.status)}</td>
+                        <td className="py-4">
+                          <Link href={`/admin/products/${product.id}`}>
+                            <Button variant="ghost" size="sm">
+                              Edit
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })
                 ) : (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-muted-foreground">

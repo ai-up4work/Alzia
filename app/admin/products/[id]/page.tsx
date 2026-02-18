@@ -200,6 +200,7 @@ export default async function EditProductPage({
 
             {/* Images */}
             <ProductImageUploader
+              productId={id}
               initialImages={
                 existingImages?.map((img) => ({
                   id:            img.id,
