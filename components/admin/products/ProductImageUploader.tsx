@@ -23,8 +23,16 @@ type ImageEntry = {
   is_primary:    boolean
   previewError:  boolean
   status:        UploadStatus
-  progress:      number        // 0–100
+  progress:      number
   filename:      string
+}
+
+export type InitialImage = {
+  id:            string
+  url:           string
+  alt_text:      string
+  display_order: number
+  is_primary:    boolean
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -32,7 +40,6 @@ function uid() {
   return Math.random().toString(36).slice(2)
 }
 
-// Placeholder images cycled for mock uploads so the UI looks realistic
 const PLACEHOLDER_IMAGES = [
   "https://placehold.co/400x400/e2e8f0/94a3b8?text=Product",
   "https://placehold.co/400x400/dbeafe/60a5fa?text=Product",
@@ -46,8 +53,20 @@ function nextPlaceholder() {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export function ProductImageUploader() {
-  const [images, setImages]           = useState<ImageEntry[]>([])
+export function ProductImageUploader({ initialImages = [] }: { initialImages?: InitialImage[] }) {
+  const [images, setImages] = useState<ImageEntry[]>(
+    initialImages.map((img) => ({
+      id:            img.id,
+      url:           img.url,
+      alt_text:      img.alt_text,
+      display_order: img.display_order,
+      is_primary:    img.is_primary,
+      previewError:  false,
+      status:        "done" as const,
+      progress:      100,
+      filename:      img.url,
+    }))
+  )
   const [urlInput, setUrlInput]       = useState("")
   const [urlError, setUrlError]       = useState("")
   const [isDraggingOver, setDragOver] = useState(false)
@@ -59,7 +78,6 @@ export function ProductImageUploader() {
     const id          = uid()
     const placeholder = nextPlaceholder()
 
-    // Add entry immediately in "uploading" state
     setImages((prev) => [
       ...prev,
       {
@@ -75,8 +93,7 @@ export function ProductImageUploader() {
       },
     ])
 
-    // Simulate progress ticks
-    const totalMs  = 1200 + Math.random() * 800   // 1.2–2s per file
+    const totalMs  = 1200 + Math.random() * 800
     const interval = 80
     const steps    = totalMs / interval
     let   tick     = 0
@@ -89,7 +106,6 @@ export function ProductImageUploader() {
       )
       if (tick >= steps) {
         clearInterval(timer)
-        // Mark done — in production swap `placeholder` with the real storage URL
         setImages((prev) =>
           prev.map((img) =>
             img.id === id ? { ...img, status: "done", progress: 100 } : img
@@ -170,7 +186,6 @@ export function ProductImageUploader() {
   }
   const onDragEnd = () => setDragIndex(null)
 
-  // ── Drop zone ──────────────────────────────────────────────────────────────
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
@@ -308,7 +323,6 @@ export function ProductImageUploader() {
                         }
                       />
                     )}
-                    {/* Primary overlay */}
                     {img.is_primary && img.status === "done" && (
                       <div className="absolute bottom-0 left-0 right-0 bg-primary/80 py-0.5 text-center">
                         <span className="text-[9px] font-bold uppercase tracking-wide text-primary-foreground">Primary</span>
@@ -338,7 +352,6 @@ export function ProductImageUploader() {
                       )}
                     </div>
 
-                    {/* Progress bar */}
                     {img.status === "uploading" && (
                       <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                         <div
