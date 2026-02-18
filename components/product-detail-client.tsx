@@ -422,7 +422,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                         <img
                           src={
                             productImages[relatedProduct.slug] ||
-                            relatedProduct.images[0]?.image_url ||
+                            relatedProduct?.images[0]?.image_url ||
                             "/placeholder.svg?height=400&width=400&query=luxury cosmetic" ||
                             "/placeholder.svg"
                           }
