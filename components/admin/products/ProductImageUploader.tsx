@@ -434,7 +434,8 @@ export function ProductImageUploader({
                         : img.status === "error"
                           ? `❌ ${img.filename}`
                           : img.url.includes("cloudinary.com")
-                            ? `☁️ ${img.filename}`
+                            ? `☁️ ${img.filename?.slice(0, 30)}${img.filename?.length > 30 ? "..." : ""}`
+
                             : img.url
                       }
                     </p>

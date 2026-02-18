@@ -61,7 +61,7 @@ export default async function EditProductPage({
           </Link>
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Package className="h-6 w-6" />
+              {/* <Package className="h-6 w-6" /> */}
               Edit Product
             </h1>
             <p className="text-sm text-muted-foreground">{product.name}</p>
