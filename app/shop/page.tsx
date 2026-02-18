@@ -39,6 +39,7 @@ async function getProducts(filters: {
     `,
     )
     .eq("status", "published")
+    
 
   // Apply search filter
   if (filters.search) {
@@ -82,6 +83,8 @@ async function getProducts(filters: {
   }
 
   const { data: products } = await query
+
+  console.log("Fetched products" , products)
 
   return products || []
 }

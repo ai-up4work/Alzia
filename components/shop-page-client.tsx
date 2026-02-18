@@ -39,6 +39,7 @@ interface Product {
   rating_count: number
   created_at: string
   updated_at: string
+  images: { id: string; image_url: string; display_order: number }[]
   category?: {
     id: string
     name: string
@@ -94,13 +95,11 @@ function formatPrice(price: number) {
   }).format(price)
 }
 
-const productImages: Record<string, string> = {
-  "radiance-renewal-serum": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500",
-  "hydra-silk-moisturizer": "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?w=500",
-  "velvet-rouge-lipstick": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=500",
-  "eau-de-rose-parfum": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=500",
-  "gentle-foaming-cleanser": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500",
-  "flawless-finish-foundation": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=500",
+function getPrimaryImage(
+  images: { id: string; image_url: string; display_order: number }[] | null | undefined
+): string {
+  if (!images?.length) return "/placeholder.png"
+  return [...images].sort((a, b) => a.display_order - b.display_order)[0].image_url
 }
 
 export default function ShopPageClient({
@@ -207,15 +206,14 @@ export default function ShopPageClient({
   useEffect(() => {
     const fetchFilterCombinations = async () => {
       try {
-        const { data: products, error } = await supabase
+        // FIX 1: was `const { data: products, error }` then `data.forEach` — data was never declared.
+        // Simplified to only fetch the two columns needed for the mapping.
+        const { data: rows, error } = await supabase
           .from("products")
-          .select(`
-            *,
-            categories(name),
-            brands(name),
-            product_images(id, image_url, display_order)
-          `)
-          .order("created_at", { ascending: false })
+          .select("category_id, brand_id")
+          .eq("status", "published")
+
+          
 
         if (error) {
           console.error("Error fetching filter combinations:", error)
@@ -227,7 +225,7 @@ export default function ShopPageClient({
         const allCategoryIds = new Set<string>()
         const allBrandIds = new Set<string>()
 
-        data.forEach((product) => {
+        rows.forEach((product) => {
           if (product.category_id && product.brand_id) {
             allCategoryIds.add(product.category_id)
             allBrandIds.add(product.brand_id)
@@ -344,9 +342,10 @@ export default function ShopPageClient({
       }
 
       try {
+        // FIX 2: added product_images to the select so images are returned with each product
         let query = supabase
           .from("products")
-          .select("*, category:categories(*), brand:brands(*)", { count: "exact" })
+          .select("*, category:categories(*), brand:brands(*), product_images(id, image_url, display_order)", { count: "exact" })
           .eq("status", "published")
 
         // Apply search filter using full-text search if available
@@ -1095,9 +1094,7 @@ export default function ShopPageClient({
                       key={product.id}
                       product={product}
                       viewMode={viewMode}
-                      image={
-                        productImages[product.slug] || "/placeholder.png"
-                      }
+                      image={getPrimaryImage(product.images)}
                     />
                   ))}
                 </div>
