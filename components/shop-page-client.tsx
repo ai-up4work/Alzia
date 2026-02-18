@@ -207,12 +207,15 @@ export default function ShopPageClient({
   useEffect(() => {
     const fetchFilterCombinations = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: products, error } = await supabase
           .from("products")
-          .select("category_id, brand_id")
-          .eq("status", "published")
-          .not("category_id", "is", null)
-          .not("brand_id", "is", null)
+          .select(`
+            *,
+            categories(name),
+            brands(name),
+            product_images(id, image_url, display_order)
+          `)
+          .order("created_at", { ascending: false })
 
         if (error) {
           console.error("Error fetching filter combinations:", error)
