@@ -42,13 +42,10 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const router = useRouter()
   
-  // Get cart and wishlist functions
   const { addItem, openCart } = useCart()
   const { toggleItem, isInWishlist } = useWishlist()
   
   const inWishlist = isInWishlist(product.id)
-
-  // console.log("ProductDetailClient received product",  product?.images[0].image_url)
 
   const mainImage =
     product.images?.[selectedImage]?.image_url || productImages[product.slug] || "/luxury-cosmetic-product.jpg"
@@ -63,11 +60,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
 
   const handleAddToCart = () => {
     setIsAddingToCart(true)
-    
-    // Add item to cart
     addItem(product, quantity)
-    
-    // Show success toast
     toast.success(`Added ${quantity} ${quantity === 1 ? 'item' : 'items'} to cart`, {
       description: product.name,
       action: {
@@ -75,67 +68,61 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
         onClick: () => router.push("/account/cart"),
       },
     })
-    
-    // Reset adding state after animation
     setTimeout(() => {
       setIsAddingToCart(false)
     }, 1000)
-    
-    // Optional: Open cart sidebar
-    // openCart()
   }
 
   const handleWishlist = () => {
     toggleItem(product)
-    
     if (inWishlist) {
-      toast.success('Removed from wishlist', {
-        description: product.name
-      })
+      toast.success('Removed from wishlist', { description: product.name })
     } else {
-      toast.success('Added to wishlist!', {
-        description: product.name
-      })
+      toast.success('Added to wishlist!', { description: product.name })
     }
   }
 
   const inStock = product.stock_quantity > 0
 
-  // Check what information is available
   const hasDescription = product.description && product.description.trim().length > 0
   const hasIngredients = product.ingredients && product.ingredients.trim().length > 0
   const hasUsageInstructions = product.usage_instructions && product.usage_instructions.trim().length > 0
   const hasAnyProductInfo = hasDescription || hasIngredients || hasUsageInstructions
 
   return (
-    <main className="min-h-screen bg-background">
+    // FIX 1: Add overflow-x-hidden to prevent any child from bleeding out
+    <main className="min-h-screen bg-background overflow-x-hidden">
       <Header />
 
-      <div className="pt-32 pb-24">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-            <Link href="/" className="hover:text-foreground transition-colors">
+      {/* FIX 2: Reduce pt on mobile so content isn't pushed down too far */}
+      <div className="pt-24 md:pt-32 pb-24">
+        {/* FIX 3: Tighter px on mobile to give content more room */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* FIX 4: Breadcrumb wraps on mobile and truncates long names */}
+          <nav className="flex items-center flex-wrap gap-1 text-sm text-muted-foreground mb-8 overflow-hidden">
+            <Link href="/" className="hover:text-foreground transition-colors whitespace-nowrap">
               Home
             </Link>
-            <ChevronRight className="w-4 h-4" />
-            <Link href="/shop" className="hover:text-foreground transition-colors">
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            <Link href="/shop" className="hover:text-foreground transition-colors whitespace-nowrap">
               Shop
             </Link>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
             {product.category && (
               <>
-                <Link href={`/shop/${product.category.slug}`} className="hover:text-foreground transition-colors">
+                <Link href={`/shop/${product.category.slug}`} className="hover:text-foreground transition-colors whitespace-nowrap">
                   {product.category.name}
                 </Link>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 flex-shrink-0" />
               </>
             )}
-            <span className="text-foreground">{product.name}</span>
+            {/* FIX 5: Truncate long product names in breadcrumb */}
+            <span className="text-foreground truncate max-w-[140px] sm:max-w-none">{product.name}</span>
           </nav>
 
           {/* Product Section */}
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
             {/* Images */}
             <div className="space-y-4">
               <div className="aspect-square rounded-3xl overflow-hidden bg-muted">
@@ -149,12 +136,13 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 </div>              
               </div>
               {product.images && product.images.length > 1 && (
-                <div className="flex gap-3">
+                // FIX 6: Thumbnail row scrolls horizontally instead of overflowing
+                <div className="flex gap-3 overflow-x-auto pb-1">
                   {product.images.map((image, index) => (
                     <button
                       key={image.id}
                       onClick={() => setSelectedImage(index)}
-                      className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-colors ${
+                      className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-colors flex-shrink-0 ${
                         selectedImage === index ? "border-primary" : "border-transparent"
                       }`}
                     >
@@ -170,7 +158,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </div>
 
             {/* Product Info */}
-            <div>
+            <div className="min-w-0">
               {product.brand && (
                 <Link
                   href={`/shop?brand=${product.brand.slug}`}
@@ -180,12 +168,13 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 </Link>
               )}
 
-              <h1 className="font-serif text-3xl md:text-4xl lg:text-5xl text-foreground font-light mt-2 mb-4">
+              {/* FIX 7: Smaller base font size on mobile to prevent overflow */}
+              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-foreground font-light mt-2 mb-4">
                 {product.name}
               </h1>
 
               {/* Rating */}
-              <div className="flex items-center gap-2 mb-6">
+              <div className="flex items-center gap-2 mb-6 flex-wrap">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -232,7 +221,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
 
               {/* Quantity & Add to Cart */}
               <div className="flex flex-col gap-3 mb-8">
-                {/* Add to Cart Button - Full width on mobile, first line on desktop */}
+                {/* Add to Cart Button */}
                 <Button
                   size="lg"
                   className="w-full h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
@@ -247,18 +236,19 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   ) : (
                     <>
                       <ShoppingBag className="w-5 h-5 mr-2" />
-                      <span className="hidden sm:inline">Add to Cart - {formatPrice(product.retail_price * quantity)}</span>
+                      <span className="hidden sm:inline">Add to Cart — {formatPrice(product.retail_price * quantity)}</span>
                       <span className="sm:hidden">Add to Cart</span>
                     </>
                   )}
                 </Button>
 
-                {/* Quantity, Wishlist, Share - Full width on mobile */}
-                <div className="flex gap-3 w-full">
-                  <div className="flex items-center border rounded-full flex-1">
+                {/* FIX 8: The main overflow culprit — remove fixed widths, use icon-only on mobile */}
+                <div className="flex gap-2 w-full">
+                  {/* Quantity control — flex-1 so it takes available space */}
+                  <div className="flex items-center border rounded-full flex-1 min-w-0">
                     <button
                       onClick={decreaseQuantity}
-                      className="w-12 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-l-full"
+                      className="w-10 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-l-full flex-shrink-0"
                       disabled={quantity <= 1}
                       aria-label="Decrease quantity"
                     >
@@ -267,7 +257,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     <span className="flex-1 text-center font-medium">{quantity}</span>
                     <button
                       onClick={increaseQuantity}
-                      className="w-12 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-r-full"
+                      className="w-10 h-12 flex items-center justify-center hover:bg-muted transition-colors rounded-r-full flex-shrink-0"
                       disabled={quantity >= product.stock_quantity}
                       aria-label="Increase quantity"
                     >
@@ -275,37 +265,42 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     </button>
                   </div>
 
+                  {/* Wishlist — icon only on mobile, label on sm+ */}
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-12 w-40 flex-shrink-0 rounded-full p-0"
+                    className="h-12 px-3 sm:px-5 flex-shrink-0 rounded-full"
                     onClick={handleWishlist}
                     aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
                   >
-                    <Heart className={`w-5 h-5 mr-2 transition-colors ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
-                    {inWishlist ? 'In Wishlist' : 'Wishlist'}
+                    <Heart className={`w-5 h-5 transition-colors flex-shrink-0 ${inWishlist ? 'fill-red-500 text-red-500' : ''}`} />
+                    <span className="hidden sm:inline ml-2">{inWishlist ? 'Saved' : 'Wishlist'}</span>
                   </Button>
 
-                  <ProductShareButton product={product} className="h-12 w-32 flex-shrink-0 rounded-full p-0" />
+                  {/* Share — icon only on mobile */}
+                  <ProductShareButton
+                    product={product}
+                    className="h-12 px-3 sm:px-5 flex-shrink-0 rounded-full"
+                  />
                 </div>
               </div>
 
               {/* Benefits */}
-              <div className="grid grid-cols-3 gap-4 py-6 border-y border-border">
+              <div className="grid grid-cols-3 gap-2 py-6 border-y border-border">
                 <div className="text-center">
-                  <Truck className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Free Delivery</p>
-                  <p className="text-xs text-muted-foreground">Orders over LKR 2,999</p>
+                  <Truck className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground leading-tight">Free Delivery</p>
+                  <p className="text-xs text-muted-foreground leading-tight hidden sm:block">Orders over LKR 2,999</p>
                 </div>
                 <div className="text-center">
-                  <RotateCcw className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Easy Returns</p>
-                  <p className="text-xs text-muted-foreground">Within 30 days</p>
+                  <RotateCcw className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground leading-tight">Easy Returns</p>
+                  <p className="text-xs text-muted-foreground leading-tight hidden sm:block">Within 30 days</p>
                 </div>
                 <div className="text-center">
-                  <Shield className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">100% Authentic</p>
-                  <p className="text-xs text-muted-foreground">Guaranteed</p>
+                  <Shield className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground leading-tight">100% Authentic</p>
+                  <p className="text-xs text-muted-foreground leading-tight hidden sm:block">Guaranteed</p>
                 </div>
               </div>
 
@@ -316,13 +311,12 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </div>
           </div>
 
-          {/* Product Details Section - Only show if we have information */}
+          {/* Product Details Section */}
           {hasAnyProductInfo && (
             <div className="mt-16">
               <h2 className="font-serif text-3xl text-foreground font-light mb-8">Product Details</h2>
               
               <div className="grid gap-6 lg:grid-cols-2">
-                {/* Description Card */}
                 {hasDescription && (
                   <div className="bg-card border border-border/50 rounded-2xl p-6 lg:p-8 hover:border-border transition-colors">
                     <div className="flex items-start gap-3 mb-4">
@@ -337,7 +331,6 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   </div>
                 )}
 
-                {/* Ingredients Card */}
                 {hasIngredients && (
                   <div className="bg-card border border-border/50 rounded-2xl p-6 lg:p-8 hover:border-border transition-colors">
                     <div className="flex items-start gap-3 mb-4">
@@ -352,7 +345,6 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   </div>
                 )}
 
-                {/* How to Use Card */}
                 {hasUsageInstructions && (
                   <div className="bg-card border border-border/50 rounded-2xl p-6 lg:p-8 hover:border-border transition-colors lg:col-span-2">
                     <div className="flex items-start gap-3 mb-4">
@@ -370,13 +362,13 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </div>
           )}
 
-          {/* Reviews Section - Always show */}
+          {/* Reviews Section */}
           <div className="mt-16">
             <div className="bg-gradient-to-br from-card to-muted/20 border border-border/50 rounded-2xl p-6 lg:p-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
                   <h3 className="font-serif text-2xl text-foreground font-light mb-2">Customer Reviews</h3>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
                         <Star
@@ -416,23 +408,22 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               <h2 className="font-serif text-3xl text-foreground font-light mb-8">You May Also Like</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 {relatedProducts.map((relatedProduct) => (
-                  <Link key={relatedProduct.id} href={`/product/${relatedProduct.slug}`} className="group">
+                  <Link key={relatedProduct.id} href={`/product/${relatedProduct.slug}`} className="group min-w-0">
                     <div className="bg-card rounded-2xl overflow-hidden border border-border/50 hover:border-border transition-colors">
                       <div className="aspect-square overflow-hidden bg-muted">
                         <img
                           src={
                             productImages[relatedProduct.slug] ||
                             relatedProduct?.images[0]?.image_url ||
-                            "/placeholder.svg?height=400&width=400&query=luxury cosmetic" ||
                             "/placeholder.svg"
                           }
                           alt={relatedProduct.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-foreground mb-1 line-clamp-1">{relatedProduct.name}</h3>
-                        <p className="text-sm text-muted-foreground">{formatPrice(relatedProduct.retail_price)}</p>
+                      <div className="p-3 sm:p-4">
+                        <h3 className="font-medium text-foreground mb-1 line-clamp-1 text-sm sm:text-base">{relatedProduct.name}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{formatPrice(relatedProduct.retail_price)}</p>
                       </div>
                     </div>
                   </Link>
