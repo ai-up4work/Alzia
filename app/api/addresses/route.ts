@@ -9,8 +9,8 @@ export async function GET() {
     error: authError,
   } = await supabase.auth.getUser()
 
-  console.log("[addresses GET] authError:", authError)
-  console.log("[addresses GET] user:", user?.id, user?.email)
+  // console.log("[addresses GET] authError:", authError)
+  // console.log("[addresses GET] user:", user?.id, user?.email)
 
   if (!user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -22,8 +22,8 @@ export async function GET() {
     .eq("email", user.email)
     .single()
 
-  console.log("[addresses GET] customerError:", customerError)
-  console.log("[addresses GET] customer:", customer)
+  // console.log("[addresses GET] customerError:", customerError)
+  // console.log("[addresses GET] customer:", customer)
 
   if (!customer) {
     return NextResponse.json({ addresses: [] })
@@ -34,8 +34,8 @@ export async function GET() {
     .select("*")
     .eq("customer_id", customer.id)
 
-  console.log("[addresses GET] addressesError:", error)
-  console.log("[addresses GET] addresses count:", addresses?.length)
+  // console.log("[addresses GET] addressesError:", error)
+  // console.log("[addresses GET] addresses count:", addresses?.length)
 
   return NextResponse.json({ addresses: addresses ?? [] })
 }
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
     error: authError,
   } = await supabase.auth.getUser()
 
-  console.log("[addresses POST] authError:", authError)
-  console.log("[addresses POST] user:", user?.id, user?.email)
+  // console.log("[addresses POST] authError:", authError)
+  // console.log("[addresses POST] user:", user?.id, user?.email)
 
   if (!user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
     .eq("email", user.email)
     .single()
 
-  console.log("[addresses POST] customerError:", customerError)
-  console.log("[addresses POST] customer:", customer)
+  // console.log("[addresses POST] customerError:", customerError)
+  // console.log("[addresses POST] customer:", customer)
 
   if (!customer) {
     return NextResponse.json({
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  console.log("[addresses POST] insertError:", error)
+  // console.log("[addresses POST] insertError:", error)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

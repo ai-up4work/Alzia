@@ -41,7 +41,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
     try {
       // Step 0: Check authentication and credits
       setCurrentStep(0);
-      console.log('🔍 Checking authentication and credits...');
+      // console.log('🔍 Checking authentication and credits...');
       
       if (!isAuthenticated) {
         throw new Error('Please log in to use virtual try-on');
@@ -73,7 +73,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       // Step 1: Generate virtual try-on
       setCurrentStep(1);
-      console.log('🎨 Generating virtual try-on...');
+      // console.log('🎨 Generating virtual try-on...');
       
       const formData = new FormData();
       formData.append('garment', garmentFile);
@@ -93,11 +93,11 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         );
       }
       
-      console.log('✅ Virtual try-on generated');
+      // console.log('✅ Virtual try-on generated');
 
       // Step 2: Deduct credit
       setCurrentStep(2);
-      console.log('💳 Deducting credit...');
+      // console.log('💳 Deducting credit...');
       
       const useCreditResponse = await fetch('/api/use-tryon-credit', {
         method: 'POST',
@@ -113,14 +113,14 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       if (useCreditResponse.ok) {
         const useCreditData = await useCreditResponse.json();
-        console.log(`✅ Credit deducted. Remaining: ${useCreditData.creditsRemaining}`);
+        // console.log(`✅ Credit deducted. Remaining: ${useCreditData.creditsRemaining}`);
       } else {
         console.error('⚠️ Failed to deduct credit');
       }
 
       // Step 3: Generate combined image
       setCurrentStep(3);
-      console.log('🖼️ Creating combined preview...');
+      // console.log('🖼️ Creating combined preview...');
       
       const combinedImageBase64 = await generateCombinedImage(
         garmentFile,
@@ -128,7 +128,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
         data.image
       );
 
-      console.log('✅ Combined preview created');
+      // console.log('✅ Combined preview created');
 
       // Step 4: Upload output image to Cloudinary
       setCurrentStep(4);
@@ -213,7 +213,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
 
       // Step 7: Generate access token for result
       setCurrentStep(7);
-      console.log('🔒 Generating secure access token...');
+      // console.log('🔒 Generating secure access token...');
 
       let resultProxyUrl = outputCloudinaryUrl;
       let expiresAt: number | undefined;
@@ -234,7 +234,7 @@ export function useVirtualTryOn(): UseVirtualTryOnReturn {
           resultProxyUrl = tokenData.url;
           expiresAt = tokenData.expiresAt;
           expiresIn = tokenData.expiresIn;
-          console.log('✅ Token generated');
+          // console.log('✅ Token generated');
         }
       } catch (tokenError) {
         console.warn('⚠️ Token generation error:', tokenError);

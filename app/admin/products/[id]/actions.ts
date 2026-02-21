@@ -13,10 +13,10 @@ export async function updateProduct(id: string, formData: FormData) {
   const supabase = await createClient()
 
   // Debug — remove after fixing
-  console.log("Updating product:", id)
-  console.log("name:", formData.get("name"))
-  console.log("status:", formData.get("status"))
-  console.log("category_id:", formData.get("category_id"))
+  // console.log("Updating product:", id)
+  // console.log("name:", formData.get("name"))
+  // console.log("status:", formData.get("status"))
+  // console.log("category_id:", formData.get("category_id"))
 
   const { data, error: productError } = await supabase
     .from("products")
@@ -38,7 +38,7 @@ export async function updateProduct(id: string, formData: FormData) {
     .eq("id", id)
     .select() // <-- ADD THIS to get back what was actually updated
 
-  console.log("Update result:", data, productError)
+  // console.log("Update result:", data, productError)
 
 
   if (productError) throw new Error(productError.message)

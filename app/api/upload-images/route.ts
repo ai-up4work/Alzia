@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📤 Uploading garment and person images to Cloudinary...');
+    // console.log('📤 Uploading garment and person images to Cloudinary...');
 
     // Convert File to Buffer
     const garmentBuffer = Buffer.from(await garmentFile.arrayBuffer());
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
             console.error('❌ Garment upload error:', error);
             reject(error);
           } else {
-            console.log('✅ Garment uploaded:', result?.secure_url);
+            // console.log('✅ Garment uploaded:', result?.secure_url);
             resolve(result);
           }
         }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
             console.error('❌ Person upload error:', error);
             reject(error);
           } else {
-            console.log('✅ Person uploaded:', result?.secure_url);
+            // console.log('✅ Person uploaded:', result?.secure_url);
             resolve(result);
           }
         }

@@ -44,7 +44,7 @@ async function getRelatedProducts(categoryId: string, excludeId: string) {
     .neq("id", excludeId)
     .limit(4)
 
-    console.log("Fetched related products for category", categoryId, products)
+    // console.log("Fetched related products for category", categoryId, products)
 
   return products || []
 }

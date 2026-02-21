@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Received files:', {
-      garment: garmentFile.name,
-      person: personFile.name,
-    });
+    // console.log('Received files:', {
+    //   garment: garmentFile.name,
+    //   person: personFile.name,
+    // });
 
     // Convert Files to Blobs
     const garmentBlob = new Blob([await garmentFile.arrayBuffer()], { 
@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
       type: personFile.type || 'image/png' 
     });
 
-    console.log('Connecting to WeShopAI Space...');
+    // console.log('Connecting to WeShopAI Space...');
     const client = await Client.connect("WeShopAI/WeShopAI-Virtual-Try-On");
 
-    console.log('Trying WeShopAI...');
+    // console.log('Trying WeShopAI...');
     
     const job = client.submit("/generate_image", [
       garmentBlob,
@@ -44,16 +44,16 @@ export async function POST(request: NextRequest) {
     let modelUsed = '';
 
     for await (const message of job) {
-      console.log('Message type:', message.type);
+      // console.log('Message type:', message.type);
       if (message.type === 'data') {
-        console.log('Data:', JSON.stringify(message.data, null, 2));
+        // console.log('Data:', JSON.stringify(message.data, null, 2));
         if (message.data && message.data[0] !== null) {
           result = message;
           modelUsed = 'WeShopAI';
-          console.log('✅ WeShopAI Success!');
+          // console.log('✅ WeShopAI Success!');
           break;
         } else {
-          console.log('⚠️ WeShopAI returned null');
+          // console.log('⚠️ WeShopAI returned null');
         }
         break;
       }
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`✨ Result from: ${modelUsed}`);
+    // console.log(`✨ Result from: ${modelUsed}`);
 
     const resultData = result.data[0];
     

@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     const proxyUrl = `/api/tryon-image?token=${token}`;
 
-    console.log('🔒 Generated token for image:', { token: token.substring(0, 8) + '...', expiresAt });
+    // console.log('🔒 Generated token for image:', { token: token.substring(0, 8) + '...', expiresAt });
 
     return NextResponse.json({
       token,

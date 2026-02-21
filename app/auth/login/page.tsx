@@ -22,7 +22,7 @@ function LoginForm() {
     setError("")
 
     try {
-      console.log("🔐 Starting login process...")
+      // console.log("🔐 Starting login process...")
       const supabase = createClient()
 
       // Sign in the user
@@ -37,7 +37,7 @@ function LoginForm() {
         throw new Error("No user data returned")
       }
 
-      console.log("✅ User authenticated:", authData.user.id)
+      // console.log("✅ User authenticated:", authData.user.id)
 
       // Get user role and status from customers table
       const { data: customer, error: customerError } = await supabase
@@ -54,7 +54,7 @@ function LoginForm() {
         throw new Error("Customer profile not found in database")
       }
 
-      console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
+      // console.log("✅ Customer role:", customer.role, "| Status:", customer.status)
 
       if (customer.status !== "active") {
         await supabase.auth.signOut()
@@ -64,12 +64,12 @@ function LoginForm() {
       // Determine redirect URL
       const redirectUrl = getRoleBasedRedirect(customer.role, redirect)
       
-      console.log("🎯 Redirect URL:", redirectUrl, "for role:", customer.role)
+      // console.log("🎯 Redirect URL:", redirectUrl, "for role:", customer.role)
       
       // Small delay to ensure auth cookies are set
       await new Promise(resolve => setTimeout(resolve, 300))
       
-      console.log("🚀 Executing redirect to:", redirectUrl)
+      // console.log("🚀 Executing redirect to:", redirectUrl)
       
       // Use window.location.href for a hard navigation
       window.location.href = redirectUrl

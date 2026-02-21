@@ -87,7 +87,7 @@ export default function SupabaseCollectionsGrid() {
 
       // Check if this is still the latest fetch attempt
       if (currentAttempt !== fetchAttemptRef.current) {
-        console.log('Fetch cancelled - newer request in progress');
+        // console.log('Fetch cancelled - newer request in progress');
         return;
       }
 
@@ -196,7 +196,7 @@ export default function SupabaseCollectionsGrid() {
       
       // Auto-retry for network errors
       if (retryCount < 3 && !err.message?.includes('Row level security')) {
-        console.log(`Retrying... Attempt ${retryCount + 1}/3`);
+        // console.log(`Retrying... Attempt ${retryCount + 1}/3`);
         setRetryCount(prev => prev + 1);
         setTimeout(() => {
           fetchCollections();

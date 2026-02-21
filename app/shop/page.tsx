@@ -84,7 +84,7 @@ async function getProducts(filters: {
 
   const { data: products } = await query
 
-  console.log("Fetched products" , products)
+  // console.log("Fetched products" , products)
 
   return products || []
 }

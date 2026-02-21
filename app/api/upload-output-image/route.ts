@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📤 Uploading output image to Cloudinary...');
+    // console.log('📤 Uploading output image to Cloudinary...');
 
     // Upload output image from URL to Cloudinary with jobId folder structure
     const upload = await cloudinary.uploader.upload(imageUrl, {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       resource_type: 'image',
     });
 
-    console.log('✅ Output uploaded:', upload.secure_url);
+    // console.log('✅ Output uploaded:', upload.secure_url);
 
     return NextResponse.json({
       url: upload.secure_url,

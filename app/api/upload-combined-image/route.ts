@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('📤 Uploading combined image to Cloudinary...');
+    // console.log('📤 Uploading combined image to Cloudinary...');
 
     // Convert File to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());

@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Received files:', {
-      garment: garmentFile.name,
-      person: personFile.name,
-    });
+    // console.log('Received files:', {
+    //   garment: garmentFile.name,
+    //   person: personFile.name,
+    // });
 
     // Convert Files to Blobs
     const garmentBlob = new Blob([await garmentFile.arrayBuffer()], { 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     console.log('Connecting to IDM-VTON Space (more reliable than WeShopAI)...');
     const client = await Client.connect("yisol/IDM-VTON");
 
-    console.log('Submitting virtual try-on job...');
+    // console.log('Submitting virtual try-on job...');
     
     // IDM-VTON API parameters:
     // Parameter 0: dict with background (person image)
@@ -53,18 +53,18 @@ export async function POST(request: NextRequest) {
       42,                          // seed
     ]);
 
-    console.log('Waiting for result...');
+    // console.log('Waiting for result...');
     
     let result;
     for await (const message of job) {
-      console.log('📨 Message type:', message.type);
+      // console.log('📨 Message type:', message.type);
       
       if (message.type === 'status') {
         console.log('⏳ Status:', message.stage || 'processing');
       }
       
       if (message.type === 'data') {
-        console.log('✅ Data received!');
+        // console.log('✅ Data received!');
         result = message;
         break;
       }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       throw new Error('No result received from IDM-VTON');
     }
 
-    console.log('Result data structure:', JSON.stringify(result.data, null, 2));
+    // console.log('Result data structure:', JSON.stringify(result.data, null, 2));
 
     // IDM-VTON returns the image in data[0]
     const resultData = result.data[0];
@@ -98,21 +98,21 @@ export async function POST(request: NextRequest) {
     // Extract image URL
     if (typeof resultData === 'string') {
       imageUrl = resultData;
-      console.log('Image URL (string):', imageUrl);
+      // console.log('Image URL (string):', imageUrl);
     } else if (resultData && typeof resultData === 'object') {
       // Check common properties
       if ('url' in resultData) {
         imageUrl = (resultData as any).url;
-        console.log('Image URL from .url:', imageUrl);
+        // console.log('Image URL from .url:', imageUrl);
       } else if ('path' in resultData) {
         imageUrl = (resultData as any).path;
-        console.log('Image URL from .path:', imageUrl);
+        // console.log('Image URL from .path:', imageUrl);
       } else {
-        console.log('Searching all object properties...');
+        // console.log('Searching all object properties...');
         for (const [key, value] of Object.entries(resultData)) {
           if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
             imageUrl = value;
-            console.log(`Found URL at '${key}':`, imageUrl);
+            // console.log(`Found URL at '${key}':`, imageUrl);
             break;
           }
         }
