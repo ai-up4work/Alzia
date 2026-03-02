@@ -1,12 +1,15 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Heart, ShoppingCart, Star, Sparkles, TrendingDown, Zap } from "lucide-react"
+import { toast } from "sonner"
+import { Heart, ShoppingCart, Star, Sparkles, TrendingDown, Zap, Check } from "lucide-react"
+import { useCart } from "@/lib/wholesale-cart-context"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -40,7 +43,7 @@ export interface Product {
   category?: { id: string; name: string; slug: string }
   brand?: { id: string; name: string; slug: string; logo_url: string | null }
   images?: { id: string; image_url: string; is_primary: boolean }[]
-  // Supabase returns this as a single object (not array) due to unique constraint
+  // Supabase returns as object (not array) due to unique constraint on product_id
   wholesale_pricing?: WholesalePricing | WholesalePricing[] | null
 }
 
@@ -55,9 +58,7 @@ export interface WholesaleProductCardProps {
 
 function getWP(product: Product): WholesalePricing | null {
   if (!product.wholesale_pricing) return null
-  if (Array.isArray(product.wholesale_pricing)) {
-    return product.wholesale_pricing[0] ?? null
-  }
+  if (Array.isArray(product.wholesale_pricing)) return product.wholesale_pricing[0] ?? null
   return product.wholesale_pricing
 }
 
@@ -106,21 +107,14 @@ const cardVariants = {
 
 // ── Pricing tier strip ────────────────────────────────────────────────────────
 
-function PricingTierStrip({
-  wp,
-  quantity,
-}: {
-  wp: WholesalePricing
-  quantity: number
-}) {
+function PricingTierStrip({ wp, quantity }: { wp: WholesalePricing; quantity: number }) {
   const minPrice = Number(wp.min_price)
   const maxPrice = Number(wp.max_price)
   const moq = Number(wp.moq)
 
   const atBestPrice = quantity >= moq
-  const moqProgress = moq <= 1
-    ? 100
-    : Math.min(((quantity - 1) / (moq - 1)) * 100, 100)
+  const moqProgress =
+    moq <= 1 ? 100 : Math.min(((quantity - 1) / (moq - 1)) * 100, 100)
 
   const priceAt = (qty: number): number => {
     if (qty >= moq || moq <= 1) return minPrice
@@ -129,11 +123,11 @@ function PricingTierStrip({
   }
 
   const tiers = [
-    { qty: 1,                      price: priceAt(1) },
-    { qty: Math.ceil(moq * 0.25),  price: priceAt(Math.ceil(moq * 0.25)) },
-    { qty: Math.ceil(moq * 0.5),   price: priceAt(Math.ceil(moq * 0.5)) },
-    { qty: Math.ceil(moq * 0.75),  price: priceAt(Math.ceil(moq * 0.75)) },
-    { qty: moq,                    price: minPrice },
+    { qty: 1,                     price: priceAt(1) },
+    { qty: Math.ceil(moq * 0.25), price: priceAt(Math.ceil(moq * 0.25)) },
+    { qty: Math.ceil(moq * 0.5),  price: priceAt(Math.ceil(moq * 0.5)) },
+    { qty: Math.ceil(moq * 0.75), price: priceAt(Math.ceil(moq * 0.75)) },
+    { qty: moq,                   price: minPrice },
   ]
 
   const uniqueTiers = tiers.filter(
@@ -157,7 +151,6 @@ function PricingTierStrip({
         </motion.span>
       </div>
 
-      {/* Progress bar */}
       <div className="relative h-2 rounded-full bg-muted overflow-hidden mb-3">
         <motion.div
           className={`h-full rounded-full ${
@@ -181,7 +174,6 @@ function PricingTierStrip({
         })}
       </div>
 
-      {/* Tier price labels */}
       <div className="flex items-end justify-between gap-1">
         {uniqueTiers.map((t, i) => {
           const isActive =
@@ -298,6 +290,81 @@ function SavingsBadge({
   )
 }
 
+// ── Add to Cart button ────────────────────────────────────────────────────────
+
+function AddToCartButton({
+  product,
+  quantity,
+  unitPrice,
+  size = "default",
+}: {
+  product: Product
+  quantity: number
+  unitPrice: number
+  size?: "default" | "sm"
+}) {
+  const { addItem, openCart } = useCart()
+  const [added, setAdded] = useState(false)
+
+  const handleAddToCart = () => {
+    // ✅ Correct signature: addItem(product, quantity, unit_price)
+    // unit_price is locked in at the dynamic wholesale price for this quantity
+    // retail CartContext is completely unaffected
+    addItem(product, quantity, unitPrice)
+
+    toast.success("Added to cart", {
+      description: `${quantity}× ${product.name} — ${formatPrice(unitPrice)}/unit`,
+      action: {
+        label: "View Cart",
+        onClick: openCart,
+      },
+    })
+
+    setAdded(true)
+    setTimeout(() => setAdded(false), 2000)
+  }
+
+  return (
+    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className="w-full">
+      <Button
+        onClick={handleAddToCart}
+        size={size}
+        className={`w-full transition-colors duration-300 ${
+          added
+            ? "bg-green-500 hover:bg-green-500 text-white"
+            : "bg-secondary hover:bg-secondary/90 text-white"
+        }`}
+      >
+        <AnimatePresence mode="wait">
+          {added ? (
+            <motion.span
+              key="check"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="flex items-center gap-1.5"
+            >
+              <Check className="w-4 h-4" />
+              Added!
+            </motion.span>
+          ) : (
+            <motion.span
+              key="cart"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="flex items-center gap-1.5"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Add to Cart
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </Button>
+    </motion.div>
+  )
+}
+
 // ── Grid card ─────────────────────────────────────────────────────────────────
 
 function GridCard({
@@ -319,7 +386,6 @@ function GridCard({
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" whileHover="hover">
       <Card className="group overflow-hidden hover:shadow-xl transition-all duration-500 border-border flex flex-col gap-0 py-0">
-        {/* Image */}
         <Link
           href={`/wholesale/product/${product.slug}`}
           className="relative block h-52 overflow-hidden bg-muted flex-shrink-0"
@@ -366,7 +432,6 @@ function GridCard({
         </Link>
 
         <CardContent className="p-4 flex flex-col flex-1 gap-0">
-          {/* Name & meta */}
           <div className="mb-3">
             <Badge variant="secondary" className="text-xs mb-1.5 bg-muted text-muted-foreground">
               {product.sku}
@@ -386,7 +451,6 @@ function GridCard({
             </div>
           </div>
 
-          {/* Live pricing block */}
           <div className="rounded-xl bg-muted/50 border border-border/60 p-3 mb-3">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>
@@ -406,16 +470,13 @@ function GridCard({
                 </motion.div>
               </div>
               {/* <div className="text-right pt-1">
-                {wp && (
-                  <SavingsBadge wp={wp} unitPrice={unitPrice} atBestPrice={atBestPrice} />
-                )}
+                {wp && <SavingsBadge wp={wp} unitPrice={unitPrice} atBestPrice={atBestPrice} />}
               </div> */}
             </div>
 
             <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-muted-foreground">
-                Retail{" "}
-                <span className="line-through">{formatPrice(product.retail_price)}</span>
+                Retail <span className="line-through">{formatPrice(product.retail_price)}</span>
               </span>
               <span className="text-muted-foreground">
                 Total{" "}
@@ -434,15 +495,9 @@ function GridCard({
             {wp && <PricingTierStrip wp={wp} quantity={quantity} />}
           </div>
 
-          {/* Quantity + CTA */}
           <div className="mt-auto space-y-2">
             <QuantityStepper quantity={quantity} onQuantityChange={onQuantityChange} />
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-              <Button className="w-full bg-secondary hover:bg-secondary/90 text-white" size="sm">
-                <ShoppingCart className="w-4 h-4 mr-1.5" />
-                Add to Cart
-              </Button>
-            </motion.div>
+            <AddToCartButton product={product} quantity={quantity} unitPrice={unitPrice} size="sm" />
           </div>
         </CardContent>
       </Card>
@@ -579,7 +634,6 @@ function ListCard({
                     <SavingsBadge wp={wp} unitPrice={unitPrice} atBestPrice={atBestPrice} />
                   </div>
                 )}
-
                 {wp && <PricingTierStrip wp={wp} quantity={quantity} />}
               </div>
             </div>
@@ -588,16 +642,9 @@ function ListCard({
               <div className="w-36">
                 <QuantityStepper quantity={quantity} onQuantityChange={onQuantityChange} />
               </div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="ml-auto"
-              >
-                <Button className="bg-secondary hover:bg-secondary/90 text-white">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
-                </Button>
-              </motion.div>
+              <div className="ml-auto w-40">
+                <AddToCartButton product={product} quantity={quantity} unitPrice={unitPrice} />
+              </div>
             </div>
           </CardContent>
         </div>
@@ -615,19 +662,7 @@ export default function WholesaleProductCard({
   onQuantityChange,
 }: WholesaleProductCardProps) {
   if (viewMode === "list") {
-    return (
-      <ListCard
-        product={product}
-        quantity={quantity}
-        onQuantityChange={onQuantityChange}
-      />
-    )
+    return <ListCard product={product} quantity={quantity} onQuantityChange={onQuantityChange} />
   }
-  return (
-    <GridCard
-      product={product}
-      quantity={quantity}
-      onQuantityChange={onQuantityChange}
-    />
-  )
+  return <GridCard product={product} quantity={quantity} onQuantityChange={onQuantityChange} />
 }

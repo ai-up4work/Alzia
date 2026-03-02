@@ -6,7 +6,9 @@ import { AuthProvider } from "@/lib/auth-context"
 import { CartProvider } from "@/lib/cart-context"
 import { WishlistProvider } from "@/lib/wishlist-context"
 import { CartDrawer } from "@/components/cart-drawer"
+import { WholesaleCartDrawer } from "@/components/wholesale-cart-drawer"
 import { WishlistDrawer } from "@/components/wishlist-drawer"
+import { WholesaleCartProvider } from "@/lib/wholesale-cart-context"
 import { Toaster } from "sonner"
 import "./globals.css"
 
@@ -56,7 +58,7 @@ export const metadata: Metadata = {
     siteName: "Alzìa Cosmetics Sri Lanka",
     images: [
       {
-        url: "/og-image-v3.png",  // Web/Facebook
+        url: "/og-image-v3.png",
         width: 1200,
         height: 630,
         alt: "Alzìa Cosmetics Sri Lanka – Makeup & Skincare",
@@ -73,19 +75,10 @@ export const metadata: Metadata = {
     creator: "@up4work",
   },
   icons: {
-    icon: [
-      {
-        url: "/favicon.ico",
-        sizes: "any",
-      },
-    ],
-    apple: {
-      url: "/favicon.png",
-      sizes: "180x180",
-      type: "image/png",
-    },
+    icon: [{ url: "/favicon.ico", sizes: "any" }],
+    apple: { url: "/favicon.png", sizes: "180x180", type: "image/png" },
   },
-  generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -94,18 +87,26 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable} ${fraunces.variable}`}>
+    <html
+      lang="en"
+      className={`${montserrat.variable} ${cormorant.variable} ${cinzel.variable} ${fraunces.variable}`}
+    >
       <body className={montserrat.className}>
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              {children}
-              <CartDrawer />
-              <WishlistDrawer />
-              <Toaster position="top-right" richColors />
-              <Analytics />
-            </WishlistProvider>
-          </CartProvider>
+          <WholesaleCartProvider>
+            <CartProvider>
+              <WishlistProvider>
+                {children}
+                {/* Retail cart drawer — opens for normal users */}
+                <CartDrawer />
+                {/* Wholesale cart drawer — opens for wholesalers */}
+                <WholesaleCartDrawer />
+                <WishlistDrawer />
+                <Toaster position="top-right" richColors />
+                <Analytics />
+              </WishlistProvider>
+            </CartProvider>
+          </WholesaleCartProvider>
         </AuthProvider>
       </body>
     </html>

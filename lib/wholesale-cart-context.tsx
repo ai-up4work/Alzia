@@ -9,8 +9,7 @@ import type { Product } from "@/lib/types"
 export interface CartItem {
   product: Product
   quantity: number
-  // Locked-in wholesale unit price at the time of adding to cart
-  unit_price: number
+  unit_price: number // locked-in dynamic wholesale price
 }
 
 interface CartState {
@@ -22,13 +21,12 @@ type CartAction =
   | { type: "ADD_ITEM"; product: Product; quantity: number; unit_price: number }
   | { type: "REMOVE_ITEM"; productId: string }
   | { type: "UPDATE_QUANTITY"; productId: string; quantity: number }
+  | { type: "UPDATE_QUANTITY_AND_PRICE"; productId: string; quantity: number; unit_price: number }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_CART" }
   | { type: "OPEN_CART" }
   | { type: "CLOSE_CART" }
   | { type: "LOAD_CART"; items: CartItem[] }
-
-// ── Context shape ─────────────────────────────────────────────────────────────
 
 interface WholesaleCartContextValue {
   state: CartState
@@ -36,12 +34,12 @@ interface WholesaleCartContextValue {
   addItem: (product: Product, quantity: number, unit_price: number) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
+  updateQuantityAndPrice: (productId: string, quantity: number, unit_price: number) => void
   clearCart: () => void
   toggleCart: () => void
   openCart: () => void
   closeCart: () => void
   totalItems: number
-  // Subtotal uses locked-in wholesale unit_price, never retail_price
   subtotal: number
 }
 
@@ -55,18 +53,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       const existingIndex = state.items.findIndex(
         (item) => item.product.id === action.product.id
       )
-
       if (existingIndex > -1) {
-        // Item already in cart — update quantity and re-lock the new unit_price
         const newItems = [...state.items]
         newItems[existingIndex] = {
           ...newItems[existingIndex],
           quantity: newItems[existingIndex].quantity + action.quantity,
-          unit_price: action.unit_price,
+          unit_price: action.unit_price, // re-lock price at new quantity
         }
         return { ...state, items: newItems }
       }
-
       return {
         ...state,
         items: [
@@ -99,6 +94,24 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
     }
 
+    // ✅ Updates both quantity AND unit_price together (used by drawer)
+    case "UPDATE_QUANTITY_AND_PRICE": {
+      if (action.quantity <= 0) {
+        return {
+          ...state,
+          items: state.items.filter((item) => item.product.id !== action.productId),
+        }
+      }
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.product.id === action.productId
+            ? { ...item, quantity: action.quantity, unit_price: action.unit_price }
+            : item
+        ),
+      }
+    }
+
     case "CLEAR_CART":
       return { ...state, items: [] }
 
@@ -124,7 +137,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 export function WholesaleCartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [], isOpen: false })
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem("wholesale-cart")
@@ -137,22 +149,21 @@ export function WholesaleCartProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Persist to localStorage on change
   useEffect(() => {
     localStorage.setItem("wholesale-cart", JSON.stringify(state.items))
   }, [state.items])
 
-  const addItem = (product: Product, quantity: number, unit_price: number) => {
+  const addItem = (product: Product, quantity: number, unit_price: number) =>
     dispatch({ type: "ADD_ITEM", product, quantity, unit_price })
-  }
 
-  const removeItem = (productId: string) => {
+  const removeItem = (productId: string) =>
     dispatch({ type: "REMOVE_ITEM", productId })
-  }
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number) =>
     dispatch({ type: "UPDATE_QUANTITY", productId, quantity })
-  }
+
+  const updateQuantityAndPrice = (productId: string, quantity: number, unit_price: number) =>
+    dispatch({ type: "UPDATE_QUANTITY_AND_PRICE", productId, quantity, unit_price })
 
   const clearCart = () => dispatch({ type: "CLEAR_CART" })
   const toggleCart = () => dispatch({ type: "TOGGLE_CART" })
@@ -161,7 +172,7 @@ export function WholesaleCartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0)
 
-  // Subtotal uses locked-in wholesale unit_price — completely isolated from retail
+  // Subtotal always uses locked-in unit_price, never retail_price
   const subtotal = state.items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
@@ -175,6 +186,7 @@ export function WholesaleCartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQuantity,
+        updateQuantityAndPrice,
         clearCart,
         toggleCart,
         openCart,
