@@ -9,8 +9,12 @@ import { Badge } from "@/components/ui/badge"
 export default async function AdminCustomersPage() {
   const supabase = await createClient()
 
-  const { data: customers } = await supabase.from("customers").select("*").order("created_at", { ascending: false })
-
+  const { data: customers } = await supabase
+    .from("customers")
+    .select("*")
+    .neq("role", "admin")
+    .order("created_at", { ascending: false })
+    
   const getTypeBadge = (type: string) => {
     switch (type) {
       case "wholesale":
