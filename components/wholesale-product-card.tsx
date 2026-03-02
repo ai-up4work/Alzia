@@ -387,7 +387,7 @@ function GridCard({
     <motion.div variants={cardVariants} initial="hidden" animate="visible" whileHover="hover">
       <Card className="group overflow-hidden hover:shadow-xl transition-all duration-500 border-border flex flex-col gap-0 py-0">
         <Link
-          href={`/wholesale/product/${product.slug}`}
+          href={`/product/${product.slug}`}
           className="relative block h-52 overflow-hidden bg-muted flex-shrink-0"
         >
           <motion.img
@@ -436,7 +436,7 @@ function GridCard({
             <Badge variant="secondary" className="text-xs mb-1.5 bg-muted text-muted-foreground">
               {product.sku}
             </Badge>
-            <Link href={`/wholesale/product/${product.slug}`}>
+            <Link href={`/product/${product.slug}`}>
               <h3 className="font-serif text-base text-foreground font-medium mb-1 hover:text-primary transition-colors line-clamp-1">
                 {product.name}
               </h3>
