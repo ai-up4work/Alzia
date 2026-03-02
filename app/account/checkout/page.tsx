@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { useCart } from "@/lib/cart-context"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -13,16 +12,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { ChevronLeft, CreditCard, Truck, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { CheckoutSteps } from "@/components/CheckoutSteps"
+import { supabase } from "@/lib/supabase/supabase"
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("en-LK", {
     style: "currency",
     currency: "LKR",
-    currencyDisplay: "code", // 👈 forces LKR instead of symbol
+    currencyDisplay: "code",
     maximumFractionDigits: 0,
   }).format(price)
 }
-
 
 const productImages: Record<string, string> = {
   "radiance-renewal-serum": "/luxury-serum-bottle-vitamin-c-gold-elegant.jpg",
@@ -33,13 +32,65 @@ const productImages: Record<string, string> = {
   "flawless-finish-foundation": "/luxury-makeup-lipstick-foundation-elegant.jpg",
 }
 
+const WHATSAPP_NUMBER = "94779303482" // Sri Lanka country code + number
+
+function buildWhatsAppMessage(
+  orderNumber: string,
+  formData: {
+    firstName: string
+    lastName: string
+    email: string
+    phone: string
+    addressLine1: string
+    addressLine2: string
+    city: string
+    state: string
+    pinCode: string
+    landmark: string
+    deliveryInstructions: string
+    paymentMethod: string
+  },
+  items: { name: string; quantity: number; price: number }[],
+  subtotal: number,
+  deliveryCharge: number,
+  total: number
+) {
+  const itemLines = items
+    .map((i) => `  • ${i.name} x${i.quantity} — LKR ${i.price.toLocaleString()}`)
+    .join("\n")
+
+  const address = [
+    formData.addressLine1,
+    formData.addressLine2,
+    formData.city,
+    formData.state,
+    formData.pinCode,
+    formData.landmark ? `(Near ${formData.landmark})` : "",
+  ]
+    .filter(Boolean)
+    .join(", ")
+
+  return encodeURIComponent(
+    `🛍️ *New Order Received!*\n\n` +
+    `*Order #:* ${orderNumber}\n` +
+    `*Customer:* ${formData.firstName} ${formData.lastName}\n` +
+    `*Email:* ${formData.email}\n` +
+    `*Phone:* ${formData.phone}\n\n` +
+    `*📦 Items:*\n${itemLines}\n\n` +
+    `*Subtotal:* LKR ${subtotal.toLocaleString()}\n` +
+    `*Delivery:* ${deliveryCharge === 0 ? "FREE" : `LKR ${deliveryCharge.toLocaleString()}`}\n` +
+    `*Total:* LKR ${total.toLocaleString()}\n\n` +
+    `*💳 Payment:* ${formData.paymentMethod === "cod" ? "Cash on Delivery" : "Online"}\n\n` +
+    `*📍 Address:*\n${address}\n` +
+    (formData.deliveryInstructions ? `\n*Instructions:* ${formData.deliveryInstructions}` : "")
+  )
+}
+
 export default function CheckoutPage() {
-  const router = useRouter()
   const { state, subtotal, clearCart } = useCart()
   const [step, setStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-
-  // Track which steps have been completed (validated)
+  const [error, setError] = useState<string | null>(null)
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({})
 
   const [formData, setFormData] = useState({
@@ -64,23 +115,18 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  // Validation functions for each step
-  const isStep1Valid = () => {
-    return !!(formData.email && formData.firstName && formData.lastName && formData.phone)
-  }
+  const isStep1Valid = () =>
+    !!(formData.email && formData.firstName && formData.lastName && formData.phone)
 
-  const isStep2Valid = () => {
-    return !!(formData.addressLine1 && formData.city && formData.state && formData.pinCode)
-  }
+  const isStep2Valid = () =>
+    !!(formData.addressLine1 && formData.city && formData.state && formData.pinCode)
 
   const handleContinueToStep = (nextStep: number) => {
-    // Mark current step as completed
     setCompletedSteps((prev) => ({ ...prev, [step]: true }))
     setStep(nextStep)
   }
 
   const handleStepClick = (targetStep: number) => {
-    // Only allow navigation to completed steps or current step
     if (targetStep <= step || completedSteps[targetStep - 1]) {
       setStep(targetStep)
     }
@@ -88,18 +134,88 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setIsLoading(true)
+    setError(null)
 
-    // Generate order number
-    const orderNumber = `LUM${Date.now().toString(36).toUpperCase()}`
+    try {
+      const orderNumber = `LUM${Date.now().toString(36).toUpperCase()}`
 
-    // In a real app, you would save the order to the database here
-    // For demo, we'll simulate the order creation
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+      // ── 1. Insert into orders ─────────────────────────────────────────
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          order_number: orderNumber,
+          customer_email: formData.email,
+          customer_name: `${formData.firstName} ${formData.lastName}`,
+          customer_phone: formData.phone,
+          status: "pending",
+          payment_status: "pending",
+          payment_method: formData.paymentMethod,
+          subtotal,
+          delivery_charge: deliveryCharge,
+          discount_amount: 0,
+          tax_amount: 0,
+          total_amount: total,
+          delivery_instructions: formData.deliveryInstructions || null,
+          shipping_address: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            addressLine1: formData.addressLine1,
+            addressLine2: formData.addressLine2 || null,
+            city: formData.city,
+            state: formData.state,
+            pinCode: formData.pinCode,
+            landmark: formData.landmark || null,
+            phone: formData.phone,
+          },
+        })
+        .select("id")
+        .single()
 
-    clearCart()
-    // Use window.location.href for absolute URL redirect
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
-    window.location.href = `${baseUrl}/account/order-confirmation?order=${orderNumber}`
+      if (orderError) throw new Error(`Order creation failed: ${orderError.message}`)
+
+      // ── 2. Insert order_items ─────────────────────────────────────────
+      const orderItems = state.items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_sku: item.product.sku,
+        product_image: productImages[item.product.slug] ?? null,
+        quantity: item.quantity,
+        unit_price: item.product.retail_price,
+        total_price: item.product.retail_price * item.quantity,
+      }))
+
+      const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
+
+      if (itemsError) throw new Error(`Order items failed: ${itemsError.message}`)
+
+      // ── 3. Open WhatsApp with pre-filled message ──────────────────────
+      const waItems = state.items.map((item) => ({
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.product.retail_price * item.quantity,
+      }))
+
+      const waMessage = buildWhatsAppMessage(
+        orderNumber,
+        formData,
+        waItems,
+        subtotal,
+        deliveryCharge,
+        total
+      )
+
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${waMessage}`, "_blank")
+
+      // ── 4. Clear cart and redirect ────────────────────────────────────
+      clearCart()
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin
+      window.location.href = `${baseUrl}/account/order-confirmation?order=${orderNumber}`
+    } catch (err) {
+      console.error(err)
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      setIsLoading(false)
+    }
   }
 
   if (state.items.length === 0) {
@@ -139,75 +255,40 @@ export default function CheckoutPage() {
             <div>
               <h1 className="font-serif text-3xl md:text-4xl text-foreground font-light mb-8">Checkout</h1>
 
-              {/* Progress Steps - Now using the new component */}
               <CheckoutSteps currentStep={step} onStepClick={handleStepClick} />
 
               {/* Step 1: Contact Information */}
               {step === 1 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="font-serif text-xl text-foreground">Contact Information</h2>
-
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        placeholder="your@email.com"
-                        className="mt-1.5 h-12 rounded-xl"
-                        required
-                      />
+                      <Input id="email" name="email" type="email" value={formData.email}
+                        onChange={handleInputChange} placeholder="your@email.com"
+                        className="mt-1.5 h-12 rounded-xl" required />
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          className="mt-1.5 h-12 rounded-xl"
-                          required
-                        />
+                        <Input id="firstName" name="firstName" value={formData.firstName}
+                          onChange={handleInputChange} className="mt-1.5 h-12 rounded-xl" required />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input
-                          id="lastName"
-                          name="lastName"
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          className="mt-1.5 h-12 rounded-xl"
-                          required
-                        />
+                        <Input id="lastName" name="lastName" value={formData.lastName}
+                          onChange={handleInputChange} className="mt-1.5 h-12 rounded-xl" required />
                       </div>
                     </div>
-
                     <div>
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        placeholder="+91 98765 43210"
-                        className="mt-1.5 h-12 rounded-xl"
-                        required
-                      />
+                      <Input id="phone" name="phone" type="tel" value={formData.phone}
+                        onChange={handleInputChange} placeholder="+94 77 930 3482"
+                        className="mt-1.5 h-12 rounded-xl" required />
                     </div>
                   </div>
-
-                  <Button
-                    size="lg"
-                    className="w-full rounded-full"
-                    onClick={() => handleContinueToStep(2)}
-                    disabled={!isStep1Valid()}
-                  >
+                  <Button size="lg" className="w-full rounded-full"
+                    onClick={() => handleContinueToStep(2)} disabled={!isStep1Valid()}>
                     Continue to Shipping
                   </Button>
                 </div>
@@ -217,112 +298,57 @@ export default function CheckoutPage() {
               {step === 2 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="font-serif text-xl text-foreground">Shipping Address</h2>
-
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="addressLine1">Address Line 1</Label>
-                      <Input
-                        id="addressLine1"
-                        name="addressLine1"
-                        value={formData.addressLine1}
-                        onChange={handleInputChange}
-                        placeholder="House/Flat No., Building Name"
-                        className="mt-1.5 h-12 rounded-xl"
-                        required
-                      />
+                      <Input id="addressLine1" name="addressLine1" value={formData.addressLine1}
+                        onChange={handleInputChange} placeholder="House/Flat No., Building Name"
+                        className="mt-1.5 h-12 rounded-xl" required />
                     </div>
-
                     <div>
                       <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
-                      <Input
-                        id="addressLine2"
-                        name="addressLine2"
-                        value={formData.addressLine2}
-                        onChange={handleInputChange}
-                        placeholder="Street, Area"
-                        className="mt-1.5 h-12 rounded-xl"
-                      />
+                      <Input id="addressLine2" name="addressLine2" value={formData.addressLine2}
+                        onChange={handleInputChange} placeholder="Street, Area"
+                        className="mt-1.5 h-12 rounded-xl" />
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="city">City</Label>
-                        <Input
-                          id="city"
-                          name="city"
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          className="mt-1.5 h-12 rounded-xl"
-                          required
-                        />
+                        <Input id="city" name="city" value={formData.city}
+                          onChange={handleInputChange} className="mt-1.5 h-12 rounded-xl" required />
                       </div>
                       <div>
                         <Label htmlFor="state">State</Label>
-                        <Input
-                          id="state"
-                          name="state"
-                          value={formData.state}
-                          onChange={handleInputChange}
-                          className="mt-1.5 h-12 rounded-xl"
-                          required
-                        />
+                        <Input id="state" name="state" value={formData.state}
+                          onChange={handleInputChange} className="mt-1.5 h-12 rounded-xl" required />
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="pinCode">PIN Code</Label>
-                        <Input
-                          id="pinCode"
-                          name="pinCode"
-                          value={formData.pinCode}
-                          onChange={handleInputChange}
-                          className="mt-1.5 h-12 rounded-xl"
-                          required
-                        />
+                        <Input id="pinCode" name="pinCode" value={formData.pinCode}
+                          onChange={handleInputChange} className="mt-1.5 h-12 rounded-xl" required />
                       </div>
                       <div>
                         <Label htmlFor="landmark">Landmark (Optional)</Label>
-                        <Input
-                          id="landmark"
-                          name="landmark"
-                          value={formData.landmark}
-                          onChange={handleInputChange}
-                          placeholder="Near..."
-                          className="mt-1.5 h-12 rounded-xl"
-                        />
+                        <Input id="landmark" name="landmark" value={formData.landmark}
+                          onChange={handleInputChange} placeholder="Near..."
+                          className="mt-1.5 h-12 rounded-xl" />
                       </div>
                     </div>
-
                     <div>
                       <Label htmlFor="deliveryInstructions">Delivery Instructions (Optional)</Label>
-                      <Textarea
-                        id="deliveryInstructions"
-                        name="deliveryInstructions"
-                        value={formData.deliveryInstructions}
-                        onChange={handleInputChange}
+                      <Textarea id="deliveryInstructions" name="deliveryInstructions"
+                        value={formData.deliveryInstructions} onChange={handleInputChange}
                         placeholder="Any special instructions for delivery..."
-                        className="mt-1.5 rounded-xl resize-none"
-                        rows={3}
-                      />
+                        className="mt-1.5 rounded-xl resize-none" rows={3} />
                     </div>
                   </div>
-
                   <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="rounded-full bg-transparent"
-                      onClick={() => setStep(1)}
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      size="lg"
-                      className="flex-1 rounded-full"
-                      onClick={() => handleContinueToStep(3)}
-                      disabled={!isStep2Valid()}
-                    >
+                    <Button variant="outline" size="lg" className="rounded-full bg-transparent"
+                      onClick={() => setStep(1)}>Back</Button>
+                    <Button size="lg" className="flex-1 rounded-full"
+                      onClick={() => handleContinueToStep(3)} disabled={!isStep2Valid()}>
                       Continue to Payment
                     </Button>
                   </div>
@@ -339,9 +365,7 @@ export default function CheckoutPage() {
                     onValueChange={(value) => setFormData((prev) => ({ ...prev, paymentMethod: value }))}
                     className="space-y-4"
                   >
-                    <div
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${formData.paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-border"}`}
-                    >
+                    <div className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${formData.paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-border"}`}>
                       <RadioGroupItem value="cod" id="cod" />
                       <Label htmlFor="cod" className="flex-1 cursor-pointer">
                         <div className="flex items-center gap-3">
@@ -354,9 +378,7 @@ export default function CheckoutPage() {
                       </Label>
                     </div>
 
-                    <div
-                      className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-not-allowed transition-colors opacity-60 border-border bg-muted/30`}
-                    >
+                    <div className="flex items-center gap-4 p-4 rounded-xl border-2 cursor-not-allowed transition-colors opacity-60 border-border bg-muted/30">
                       <RadioGroupItem value="online" id="online" disabled />
                       <Label htmlFor="online" className="flex-1 cursor-not-allowed">
                         <div className="flex items-center gap-3">
@@ -380,17 +402,26 @@ export default function CheckoutPage() {
                     <p className="text-sm text-muted-foreground">Your payment information is secure and encrypted</p>
                   </div>
 
+                  {/* Error message */}
+                  {error && (
+                    <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl">
+                      <p className="text-sm text-destructive">{error}</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="rounded-full bg-transparent"
-                      onClick={() => setStep(2)}
-                    >
-                      Back
-                    </Button>
-                    <Button size="lg" className="flex-1 rounded-full" onClick={handlePlaceOrder} disabled={isLoading}>
-                      {isLoading ? "Processing..." : `Place Order - ${formatPrice(total)}`}
+                    <Button variant="outline" size="lg" className="rounded-full bg-transparent"
+                      onClick={() => setStep(2)} disabled={isLoading}>Back</Button>
+                    <Button size="lg" className="flex-1 rounded-full"
+                      onClick={handlePlaceOrder} disabled={isLoading}>
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Processing...
+                        </span>
+                      ) : (
+                        `Place Order · ${formatPrice(total)}`
+                      )}
                     </Button>
                   </div>
                 </div>
