@@ -528,7 +528,7 @@ function ListCard({
       <Card className="overflow-hidden hover:shadow-xl transition-shadow border-border">
         <div className="flex">
           <Link
-            href={`/wholesale/product/${product.slug}`}
+            href={`/product/${product.slug}`}
             className="w-44 flex-shrink-0 relative overflow-hidden group self-stretch"
           >
             <motion.img
