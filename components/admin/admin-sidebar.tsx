@@ -34,7 +34,7 @@ const navigationSections = [
     items: [
       { name: "Products", href: "/admin/products", icon: Package },
       { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
-      { name: "Discounts", href: "/admin/discounts", icon: Tag },
+      // { name: "Discounts", href: "/admin/discounts", icon: Tag, isLocked: true },
     ]
   },
   {
@@ -42,7 +42,7 @@ const navigationSections = [
     items: [
       { name: "Deliveries", href: "/admin/deliveries", icon: Truck },
       { name: "Customers", href: "/admin/customers", icon: Users },
-      { name: "Wholesale", href: "/admin/wholesale", icon: Store },
+      // { name: "Wholesale", href: "/admin/wholesale", icon: Store, isLocked: true },
     ]
   },
   {
