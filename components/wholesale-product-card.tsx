@@ -564,7 +564,7 @@ function ListCard({
                 </AnimatePresence>
               </div>
 
-              <Link href={`/wholesale/product/${product.slug}`}>
+              <Link href={`/product/${product.slug}`}>
                 <h3 className="font-serif text-xl text-foreground font-medium mb-1 hover:text-primary transition-colors">
                   {product.name}
                 </h3>
