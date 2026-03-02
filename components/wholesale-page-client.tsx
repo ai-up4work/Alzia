@@ -223,6 +223,42 @@ function FilterSidebar({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4 }}
     >
+        <AnimatePresence>
+        {hasFilterChanges && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <Button
+              onClick={applyFilters}
+              disabled={isPending}
+              className="w-full bg-secondary hover:bg-secondary/90 text-white"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Apply Filters
+                </>
+              )}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Button
+        variant="outline"
+        className="w-full border-border hover:bg-muted"
+        onClick={clearFilters}
+        disabled={isPending}
+      >
+        Clear All Filters
+      </Button>
       <div>
         <h3 className="font-medium text-foreground mb-4">Wholesale Price Range</h3>
         <Slider
@@ -289,42 +325,7 @@ function FilterSidebar({
         </div>
       </div>
 
-      <AnimatePresence>
-        {hasFilterChanges && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <Button
-              onClick={applyFilters}
-              disabled={isPending}
-              className="w-full bg-secondary hover:bg-secondary/90 text-white"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Applying...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Apply Filters
-                </>
-              )}
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <Button
-        variant="outline"
-        className="w-full border-border hover:bg-muted"
-        onClick={clearFilters}
-        disabled={isPending}
-      >
-        Clear All Filters
-      </Button>
+      
     </motion.div>
   )
 }
