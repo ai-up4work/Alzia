@@ -12,8 +12,8 @@ async function fileToBase64DataUrl(file: File): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const garmentFile = formData.get('garment') as File;
-    const personFile  = formData.get('person')  as File;
+    const garmentFile = formData.get('person') as File;
+    const personFile  = formData.get('garment')  as File;
 
     if (!garmentFile || !personFile) {
       return NextResponse.json(
