@@ -1,14 +1,19 @@
 // app/api/virtual-tryon/route.ts
-// WeShopAI only - IDM-VTON disabled (inaccurate results)
 import { NextRequest, NextResponse } from 'next/server';
 import { Client } from '@gradio/client';
 
+async function fileToBase64DataUrl(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString('base64');
+  const mime = file.type || 'image/png';
+  return `data:${mime};base64,${base64}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // IMPORTANT: This must use formData(), not json()
     const formData = await request.formData();
     const garmentFile = formData.get('garment') as File;
-    const personFile = formData.get('person') as File;
+    const personFile  = formData.get('person')  as File;
 
     if (!garmentFile || !personFile) {
       return NextResponse.json(
@@ -17,103 +22,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // console.log('Received files:', {
-    //   garment: garmentFile.name,
-    //   person: personFile.name,
-    // });
-
-    // Convert Files to Blobs
-    const garmentBlob = new Blob([await garmentFile.arrayBuffer()], { 
-      type: garmentFile.type || 'image/png' 
-    });
-    const personBlob = new Blob([await personFile.arrayBuffer()], { 
-      type: personFile.type || 'image/png' 
-    });
-
-    // console.log('Connecting to WeShopAI Space...');
-    const client = await Client.connect("WeShopAI/WeShopAI-Virtual-Try-On");
-
-    // console.log('Trying WeShopAI...');
-    
-    const job = client.submit("/generate_image", [
-      garmentBlob,
-      personBlob,
+    // Convert to base64 data URLs — the API accepts these as the `url` field
+    const [garmentDataUrl, personDataUrl] = await Promise.all([
+      fileToBase64DataUrl(garmentFile),
+      fileToBase64DataUrl(personFile),
     ]);
 
-    let result;
-    let modelUsed = '';
+    const client = await Client.connect("WeShopAI/WeShopAI-Virtual-Try-On");
 
-    for await (const message of job) {
-      // console.log('Message type:', message.type);
-      if (message.type === 'data') {
-        // console.log('Data:', JSON.stringify(message.data, null, 2));
-        if (message.data && message.data[0] !== null) {
-          result = message;
-          modelUsed = 'WeShopAI';
-          // console.log('✅ WeShopAI Success!');
-          break;
-        } else {
-          // console.log('⚠️ WeShopAI returned null');
-        }
-        break;
-      }
-    }
+    // API schema (confirmed via gradio client):
+    //   main_image       = person  (the model to dress)
+    //   background_image = garment (the clothing item)
+    // Images are passed as ImageData dicts with `url` = base64 data URL
+    const result = await client.predict("/generate_image", {
+      main_image: {
+        url:       personDataUrl,
+        orig_name: personFile.name,
+        mime_type: personFile.type || 'image/png',
+        is_stream: false,
+        meta:      { _type: 'gradio.FileData' },
+      },
+      background_image: {
+        url:       garmentDataUrl,
+        orig_name: garmentFile.name,
+        mime_type: garmentFile.type || 'image/png',
+        is_stream: false,
+        meta:      { _type: 'gradio.FileData' },
+      },
+    });
 
-    // ❌ IDM-VTON fallback disabled — results were too inaccurate
-    // if (!result || !result.data || result.data[0] === null) {
-    //   console.log('🔄 Using IDM-VTON as fallback...');
-    //   isLowQuality = true;
-    //   
-    //   const idmClient = await Client.connect("yisol/IDM-VTON");
-    //   
-    //   const idmJob = idmClient.submit("/tryon", [
-    //     { background: personBlob },
-    //     garmentBlob,
-    //     "A garment",
-    //     true,
-    //     false,
-    //     30,
-    //     42,
-    //   ]);
-    //
-    //   for await (const message of idmJob) {
-    //     if (message.type === 'status') {
-    //       console.log('IDM-VTON Status:', message.stage || 'processing');
-    //     }
-    //     if (message.type === 'data') {
-    //       result = message;
-    //       modelUsed = 'IDM-VTON';
-    //       console.log('✅ IDM-VTON Success!');
-    //       break;
-    //     }
-    //   }
-    // }
+    console.log('Raw result:', JSON.stringify(result.data, null, 2));
 
-    // If WeShopAI returned null or failed — model is busy
-    if (!result || !result.data || result.data[0] === null) {
+    const resultData = result.data?.[0] ?? result.data;
+
+    if (!resultData) {
       return NextResponse.json(
-        { 
-          error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again',
-        },
+        { error: 'Our AI model is currently busy — please wait a moment and try again.' },
         { status: 503 }
       );
     }
 
-    // console.log(`✨ Result from: ${modelUsed}`);
-
-    const resultData = result.data[0];
-    
+    // Extract image URL from the ImageData dict response
     let imageUrl: string | null = null;
 
     if (typeof resultData === 'string') {
       imageUrl = resultData;
     } else if (resultData && typeof resultData === 'object') {
-      if ('url' in resultData) {
-        imageUrl = (resultData as any).url;
-      } else if ('path' in resultData) {
-        imageUrl = (resultData as any).path;
-      } else {
-        for (const [key, value] of Object.entries(resultData)) {
+      imageUrl = (resultData as any).url ?? (resultData as any).path ?? null;
+      if (!imageUrl) {
+        for (const value of Object.values(resultData as object)) {
           if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
             imageUrl = value;
             break;
@@ -133,8 +90,7 @@ export async function POST(request: NextRequest) {
       throw new Error(`Download failed: ${imageResponse.status}`);
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    const base64Image = Buffer.from(await imageResponse.arrayBuffer()).toString('base64');
     const dataUrl = `data:image/png;base64,${base64Image}`;
 
     console.log('🎉 Success!');
@@ -142,17 +98,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       image: dataUrl,
-      model: modelUsed,
+      model: 'WeShopAI',
       isLowQuality: false,
     });
 
   } catch (error) {
     console.error('Error:', error);
-    
     return NextResponse.json(
-      { 
-        error: 'Our AI model is currently busy — many people are generating try-ons right now! Please wait a moment and try again',
-        details: error instanceof Error ? error.message : String(error)
+      {
+        error: 'Our AI model is currently busy — please wait a moment and try again.',
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
